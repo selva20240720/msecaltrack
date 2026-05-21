@@ -805,6 +805,9 @@ const KEY_SRC_TS   = 'caltrack-source-ts';
 const KEY_SB_URL   = 'caltrack-sb-url';
 const KEY_SB_KEY   = 'caltrack-sb-key';
 
+// ── DEFAULT EQUIPMENT URL — baked in, loads on every phone automatically ──
+const DEFAULT_EQ_URL = 'https://raw.githubusercontent.com/selva20240720/msecaltrack/main/equipment.json';
+
 // Supabase config — set once in Settings tab
 let SB_URL = localStorage.getItem(KEY_SB_URL) || '';
 let SB_KEY = localStorage.getItem(KEY_SB_KEY) || '';
@@ -868,7 +871,7 @@ let cameraStream = null;
 let scanInterval = null;
 let weeklyChart  = null;
 let editingEqId  = null;
-let sourceUrl    = localStorage.getItem(KEY_SRC_URL) || '';
+let sourceUrl    = localStorage.getItem(KEY_SRC_URL) || DEFAULT_EQ_URL;
 
 // ═══════════════════════════════════════════
 // EQUIPMENT SOURCE — fetch from URL or localStorage
@@ -883,18 +886,8 @@ function setSyncStatus(state, msg) {
 }
 
 async function loadEquipmentFromSource() {
-  if (!sourceUrl) {
-    // fall back to localStorage
-    const local = localStorage.getItem(KEY_EQ);
-    if (local) {
-      equipmentDB = JSON.parse(local);
-      buildMap();
-      setSyncStatus('local', `${equipmentDB.length} instruments — stored on this phone`);
-    } else {
-      setSyncStatus('err', 'No source URL set — go to Equipment tab to configure');
-    }
-    return;
-  }
+  // Always use DEFAULT_EQ_URL if nothing saved
+  if (!sourceUrl) sourceUrl = DEFAULT_EQ_URL;
 
   setSyncStatus('loading', 'Syncing equipment list…');
   try {
@@ -905,6 +898,7 @@ async function loadEquipmentFromSource() {
     equipmentDB = data;
     buildMap();
     localStorage.setItem(KEY_EQ, JSON.stringify(data));
+    localStorage.setItem(KEY_SRC_URL, sourceUrl);
     localStorage.setItem(KEY_SRC_TS, new Date().toISOString());
     setSyncStatus('ok', `${data.length} instruments synced ✓`);
     showToast(`✓ ${data.length} instruments loaded from shared list`);
@@ -916,9 +910,9 @@ async function loadEquipmentFromSource() {
       buildMap();
       const ts = localStorage.getItem(KEY_SRC_TS);
       const ago = ts ? ' · cached ' + new Date(ts).toLocaleDateString() : '';
-      setSyncStatus('err', `Using cached list (${equipmentDB.length})${ago} — tap ↻`);
+      setSyncStatus('local', `${equipmentDB.length} instruments (cached)${ago}`);
     } else {
-      setSyncStatus('err', 'Cannot load list — check URL in Equipment tab');
+      setSyncStatus('err', 'Cannot load list — check internet connection');
     }
   }
 }
