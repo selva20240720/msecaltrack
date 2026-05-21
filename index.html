@@ -516,6 +516,10 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     <span class="tab-btn-label">Settings</span>
   </button>
+  <button class="tab-btn" onclick="switchTab('qc')" id="tab-qc">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span class="tab-btn-label">QC</span>
+  </button>
 </div>
 
 <main>
@@ -806,6 +810,120 @@ CREATE POLICY "allow all" ON caltrack_logs FOR ALL USING (true) WITH CHECK (true
     </div>
   </div>
 
+  <!-- QC RECALIBRATION TAB -->
+  <div id="qc-tab" class="hidden">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <span style="font-size:15px;font-weight:700">QC Recalibration Records</span>
+      <button onclick="openQCForm()" style="padding:8px 14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        New Record
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:flex;gap:8px;margin-bottom:16px" id="qc-stats"></div>
+
+    <!-- Export -->
+    <button onclick="exportQCCSV()" style="width:100%;padding:11px;background:var(--surface);border:1px solid rgba(77,159,255,.4);border-radius:var(--r);color:var(--blue);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:14px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Export QC Records — CSV
+    </button>
+
+    <!-- Search -->
+    <input type="text" placeholder="Search by ID, certificate, technician…" oninput="renderQCList(this.value)"
+      style="width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;outline:none;margin-bottom:14px">
+
+    <!-- List -->
+    <div id="qc-list"></div>
+  </div>
+
+  <!-- QC FORM MODAL -->
+  <div class="modal-backdrop" id="qc-modal" onclick="bgClose('qc-modal')">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="qc-modal-title">New Recalibration Record</span>
+        <button class="modal-close" onclick="closeQCModal()">×</button>
+      </div>
+      <div class="modal-sub">Complete calibration details for this instrument</div>
+
+      <div class="modal-label">Instrument ID *</div>
+      <input type="text" id="qc-instr-id" placeholder="e.g. MSSI-CL-001" autocomplete="off"
+        oninput="qcLookupInstr(this.value)"
+        style="font-family:var(--mono);text-transform:uppercase">
+      <div id="qc-instr-info" style="display:none;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;padding:10px;margin-top:6px;font-size:12px;color:var(--text2)"></div>
+
+      <div class="modal-label">Calibration Status *</div>
+      <div style="display:flex;gap:8px;margin-bottom:4px" id="qc-status-row">
+        <button class="pf-btn" id="qcs-sent" onclick="setQCStatus('sent')" style="flex:1;padding:9px">Sent for Cal</button>
+        <button class="pf-btn" id="qcs-received" onclick="setQCStatus('received')" style="flex:1;padding:9px">Received Back</button>
+        <button class="pf-btn" id="qcs-completed" onclick="setQCStatus('completed')" style="flex:1;padding:9px">Completed ✓</button>
+      </div>
+
+      <div class="modal-label">Certificate Number</div>
+      <input type="text" id="qc-cert-no" placeholder="e.g. CAL-2026-00123" autocomplete="off" style="font-family:var(--mono)">
+
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <div class="modal-label">Cal Date</div>
+          <input type="text" id="qc-cal-date" placeholder="YYYY-MM-DD" style="font-family:var(--mono)">
+        </div>
+        <div style="flex:1">
+          <div class="modal-label">Next Due Date</div>
+          <input type="text" id="qc-next-due" placeholder="YYYY-MM-DD" style="font-family:var(--mono)">
+        </div>
+      </div>
+
+      <div class="modal-label">Calibrated By / Lab</div>
+      <input type="text" id="qc-lab" placeholder="e.g. NAMAS Calibration Ltd" autocomplete="off">
+
+      <div class="modal-label">Technician</div>
+      <input type="text" id="qc-tech" placeholder="Your name" autocomplete="name">
+
+      <!-- AS FOUND readings -->
+      <div style="margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:10px">📥 As Found (Before Calibration)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="as-found-grid">
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">0% (Zero)</div><input type="text" id="af0" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">25%</div><input type="text" id="af25" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">50% (Mid)</div><input type="text" id="af50" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">75%</div><input type="text" id="af75" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">100% (Full Scale)</div><input type="text" id="af100" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+        </div>
+      </div>
+
+      <!-- AS LEFT readings -->
+      <div style="margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">📤 As Left (After Calibration)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">0% (Zero)</div><input type="text" id="al0" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">25%</div><input type="text" id="al25" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">50% (Mid)</div><input type="text" id="al50" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">75%</div><input type="text" id="al75" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+          <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px">100% (Full Scale)</div><input type="text" id="al100" placeholder="Reading" style="width:100%;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"></div>
+        </div>
+      </div>
+
+      <div class="modal-label">Measurement Unit</div>
+      <input type="text" id="qc-unit" placeholder="e.g. bar, mA, °C, V" style="font-family:var(--mono)">
+
+      <div class="modal-label">Overall Result</div>
+      <div style="display:flex;gap:8px;margin-bottom:4px">
+        <button class="pf-btn" id="qcr-pass" onclick="setQCResult('pass')" style="flex:1;padding:9px">✓ PASS</button>
+        <button class="pf-btn" id="qcr-fail" onclick="setQCResult('fail')" style="flex:1;padding:9px">✗ FAIL</button>
+        <button class="pf-btn" id="qcr-adjusted" onclick="setQCResult('adjusted')" style="flex:1;padding:9px">⚙ ADJUSTED</button>
+      </div>
+
+      <div class="modal-label">Notes / Remarks</div>
+      <textarea id="qc-notes" placeholder="Any observations, adjustments made, or remarks…" style="width:100%;height:70px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;outline:none;resize:none"></textarea>
+
+      <div class="modal-btn-row" id="qc-btn-row">
+        <button class="modal-btn primary" onclick="saveQCRecord()">Save Record</button>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -1011,7 +1129,7 @@ function bgClose(id){
 // TABS
 // ═══════════════════════════════════════════
 function switchTab(tab){
-  ['form','log','equipment','central','dashboard','settings'].forEach(t=>{
+  ['form','log','equipment','central','dashboard','settings','qc'].forEach(t=>{
     document.getElementById(t+'-tab').classList.toggle('hidden',t!==tab);
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
@@ -1023,6 +1141,7 @@ function switchTab(tab){
   if(tab==='central')loadCentral();
   if(tab==='dashboard')renderDashboard();
   if(tab==='settings')renderSettings();
+  if(tab==='qc')renderQCList();
 }
 
 // ═══════════════════════════════════════════
@@ -1198,7 +1317,37 @@ function submitBatch(){
   activityLog.unshift(entry);
   try{localStorage.setItem(KEY_LOG,JSON.stringify(activityLog));}catch(e){}
   sbInsert(entry); // write to central database
+  autoWhatsApp(entry); // auto-send summary to manager
   showSuccessScreen(entry);
+}
+
+// ═══════════════════════════════════════════
+// AUTO WHATSAPP — fires after every batch
+// ═══════════════════════════════════════════
+function autoWhatsApp(entry){
+  const items = entry.items || [];
+  const fails = items.filter(i=>i.pf==='fail');
+  const dateLabel = new Date().toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  let msg = `📋 *MSSI Cal Lab — Batch ${entry.mode==='issue'?'Issued Out':'Returned In'}*\n`;
+  msg += `📅 ${dateLabel} · ${entry.timeLabel}\n`;
+  msg += `👤 ${entry.tech} · 📍 ${entry.site}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  msg += `${entry.mode==='issue'?'🟡':'🟢'} *${items.length} Instrument${items.length!==1?'s':''} ${entry.mode==='issue'?'Issued Out':'Returned In'}*\n\n`;
+  items.forEach(i=>{
+    msg += `• ${i.id} — ${i.model}\n`;
+    if(i.isMaster) msg += `  ${i.pf==='pass'?'✓ PASS':'✗ FAIL'}${i.actualReading?' · '+i.actualReading+(i.unit?' '+i.unit:''):''}\n`;
+    if(i.note) msg += `  Note: ${i.note}\n`;
+  });
+  if(fails.length){
+    msg += `\n🔴 *${fails.length} Check Failure${fails.length!==1?'s':''}*\n`;
+    fails.forEach(i=>{ msg += `• ${i.id}: ${i.note||'No note'}\n`; });
+  }
+  msg += `\n━━━━━━━━━━━━━━━━━━\n_MSSI Cal Lab CalTrack_`;
+
+  // Open WhatsApp pre-loaded — technician taps Send
+  setTimeout(()=>{
+    window.location.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  }, 1500); // small delay so success screen shows first
 }
 function showSuccessScreen(entry){
   document.getElementById('form-fields').style.display='none';
@@ -1907,6 +2056,222 @@ function shareWhatsAppCentral(){
   }
   msg+=`\n━━━━━━━━━━━━━━━━━━\n_MSSI Cal Lab CalTrack_`;
   window.location.href='https://wa.me/?text='+encodeURIComponent(msg);
+}
+
+// ═══════════════════════════════════════════
+// QC RECALIBRATION
+// ═══════════════════════════════════════════
+const KEY_QC = 'caltrack-qc-records';
+let qcRecords = JSON.parse(localStorage.getItem(KEY_QC) || '[]');
+let editingQCId = null;
+let qcStatus = null;
+let qcResult = null;
+
+function saveQCStore(){ localStorage.setItem(KEY_QC, JSON.stringify(qcRecords)); }
+
+function openQCForm(id){
+  editingQCId = id || null;
+  qcStatus = null; qcResult = null;
+  const r = id ? qcRecords.find(x=>x.id===id) : null;
+  document.getElementById('qc-modal-title').textContent = id ? 'Edit Recalibration Record' : 'New Recalibration Record';
+  document.getElementById('qc-instr-id').value = r?.instrId || '';
+  document.getElementById('qc-instr-id').readOnly = !!id;
+  document.getElementById('qc-cert-no').value = r?.certNo || '';
+  document.getElementById('qc-cal-date').value = r?.calDate || '';
+  document.getElementById('qc-next-due').value = r?.nextDue || '';
+  document.getElementById('qc-lab').value = r?.lab || '';
+  document.getElementById('qc-tech').value = r?.tech || (session?.name || '');
+  document.getElementById('qc-unit').value = r?.unit || '';
+  document.getElementById('qc-notes').value = r?.notes || '';
+  // As found
+  ['0','25','50','75','100'].forEach(p=>{
+    document.getElementById('af'+p).value = r?.asFound?.[p] || '';
+    document.getElementById('al'+p).value = r?.asLeft?.[p] || '';
+  });
+  if(r?.status) setQCStatus(r.status);
+  if(r?.result) setQCResult(r.result);
+  if(r?.instrId) qcLookupInstr(r.instrId);
+  document.getElementById('qc-btn-row').innerHTML = id
+    ? `<button class="modal-btn danger" onclick="deleteQCRecord('${id}')">Delete</button><button class="modal-btn primary" onclick="saveQCRecord()">Save Changes</button>`
+    : `<button class="modal-btn primary" onclick="saveQCRecord()">Save Record</button>`;
+  document.getElementById('qc-modal').classList.add('open');
+}
+
+function closeQCModal(){ document.getElementById('qc-modal').classList.remove('open'); }
+
+function setQCStatus(s){
+  qcStatus = s;
+  ['sent','received','completed'].forEach(x=>{
+    const b = document.getElementById('qcs-'+x);
+    b.classList.toggle('sel', x===s);
+    b.classList.toggle(x==='sent'?'fail':x==='received'?'pass':'pass', x===s);
+  });
+}
+
+function setQCResult(r){
+  qcResult = r;
+  ['pass','fail','adjusted'].forEach(x=>{
+    const b = document.getElementById('qcr-'+x);
+    b.classList.toggle('sel', x===r);
+    b.classList.toggle(x==='fail'?'fail':'pass', x===r);
+  });
+}
+
+function qcLookupInstr(val){
+  const id = val.trim().toUpperCase();
+  const instr = equipmentMap[id];
+  const el = document.getElementById('qc-instr-info');
+  if(instr){
+    el.style.display='block';
+    el.innerHTML = `<strong style="color:var(--text)">${instr.model}</strong>${instr.make?' · '+instr.make:''}<br>S/N: ${instr.serial||'—'} · Range: ${instr.range||'—'}<br>Cal Due: <span style="color:${instr.calDue&&Math.ceil((new Date(instr.calDue)-new Date())/86400000)<60?'var(--amber)':'var(--accent)'}">${instr.calDue||'—'}</span>`;
+    if(!document.getElementById('qc-unit').value && instr.unit) document.getElementById('qc-unit').value = instr.unit;
+  } else { el.style.display='none'; }
+}
+
+function saveQCRecord(){
+  const instrId = document.getElementById('qc-instr-id').value.trim().toUpperCase();
+  if(!instrId){ showToast('⚠ Instrument ID required'); return; }
+  if(!qcStatus){ showToast('⚠ Select calibration status'); return; }
+  const getAF = p => document.getElementById('af'+p).value.trim();
+  const getAL = p => document.getElementById('al'+p).value.trim();
+  const rec = {
+    id: editingQCId || 'QC'+Date.now().toString(36).toUpperCase(),
+    instrId,
+    model: equipmentMap[instrId]?.model || instrId,
+    certNo: document.getElementById('qc-cert-no').value.trim(),
+    calDate: document.getElementById('qc-cal-date').value.trim(),
+    nextDue: document.getElementById('qc-next-due').value.trim(),
+    lab: document.getElementById('qc-lab').value.trim(),
+    tech: document.getElementById('qc-tech').value.trim() || session?.name || '',
+    unit: document.getElementById('qc-unit').value.trim(),
+    status: qcStatus,
+    result: qcResult,
+    asFound: {0:getAF('0'),25:getAF('25'),50:getAF('50'),75:getAF('75'),100:getAF('100')},
+    asLeft:  {0:getAL('0'),25:getAL('25'),50:getAL('50'),75:getAL('75'),100:getAL('100')},
+    notes: document.getElementById('qc-notes').value.trim(),
+    timestamp: editingQCId ? (qcRecords.find(x=>x.id===editingQCId)?.timestamp || new Date().toISOString()) : new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  // Update equipment calDue if nextDue filled
+  if(rec.nextDue && equipmentMap[instrId]){
+    const eq = loadEq();
+    const idx = eq.findIndex(e=>e.id===instrId);
+    if(idx>=0){ eq[idx].calDue = rec.nextDue; saveEq(eq); }
+  }
+  if(editingQCId){
+    const idx = qcRecords.findIndex(x=>x.id===editingQCId);
+    if(idx>=0) qcRecords[idx]=rec; else qcRecords.unshift(rec);
+  } else { qcRecords.unshift(rec); }
+  saveQCStore();
+  closeQCModal();
+  renderQCList();
+  showToast(editingQCId?'✓ Record updated':'✓ QC record saved');
+}
+
+function deleteQCRecord(id){
+  if(!confirm('Delete this QC record?')) return;
+  qcRecords = qcRecords.filter(x=>x.id!==id);
+  saveQCStore(); closeQCModal(); renderQCList();
+  showToast('Record deleted');
+}
+
+function renderQCList(search=''){
+  const q=(search||'').toLowerCase();
+  const filtered = q
+    ? qcRecords.filter(r=>r.instrId.toLowerCase().includes(q)||r.certNo?.toLowerCase().includes(q)||r.tech?.toLowerCase().includes(q)||r.model?.toLowerCase().includes(q))
+    : qcRecords;
+
+  // Stats
+  const total=qcRecords.length;
+  const completed=qcRecords.filter(r=>r.status==='completed').length;
+  const pending=qcRecords.filter(r=>r.status==='sent').length;
+  const fails=qcRecords.filter(r=>r.result==='fail').length;
+  document.getElementById('qc-stats').innerHTML=`
+    <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:var(--accent)">${total}</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-top:2px">Total</div>
+    </div>
+    <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:var(--amber)">${pending}</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-top:2px">Pending</div>
+    </div>
+    <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:var(--blue)">${completed}</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-top:2px">Done</div>
+    </div>
+    <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:var(--red)">${fails}</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-top:2px">Failed</div>
+    </div>`;
+
+  const list = document.getElementById('qc-list');
+  if(!filtered.length){
+    list.innerHTML=`<div style="text-align:center;padding:40px 16px;color:var(--text3)">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 10px;opacity:.3"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <p style="font-size:13px">${q?'No records match':'No QC records yet — tap New Record'}</p>
+    </div>`;
+    return;
+  }
+
+  const statusColor = {sent:'var(--amber)',received:'var(--blue)',completed:'var(--accent)'};
+  const statusLabel = {sent:'SENT FOR CAL',received:'RECEIVED BACK',completed:'COMPLETED'};
+  const resultColor = {pass:'var(--accent)',fail:'var(--red)',adjusted:'var(--purple)'};
+
+  list.innerHTML = filtered.map(r=>{
+    const pts = [0,25,50,75,100].filter(p=>r.asFound?.[p]||r.asLeft?.[p]);
+    return `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:9px;cursor:pointer" onclick="openQCForm('${r.id}')">
+      <div style="display:flex;align-items:flex-start;gap:9px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${statusColor[r.status]||'var(--text3)'};margin-top:5px;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+            <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">${r.instrId}</span>
+            <span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.2);color:${statusColor[r.status]||'var(--text3)'}">${statusLabel[r.status]||r.status}</span>
+            ${r.result?`<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.2);color:${resultColor[r.result]}">${r.result.toUpperCase()}</span>`:''}
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:3px">${r.model}</div>
+          ${r.certNo?`<div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Cert: ${r.certNo}</div>`:''}
+          <div style="font-size:11px;color:var(--text3)">
+            ${r.calDate?'Cal: '+r.calDate:''}${r.nextDue?' · Next: <span style="color:var(--accent)">'+r.nextDue+'</span>':''}
+          </div>
+          ${r.lab?`<div style="font-size:11px;color:var(--text3)">${r.lab}</div>`:''}
+          ${pts.length?`
+          <div style="margin-top:7px;background:var(--surface2);border-radius:8px;padding:8px">
+            <div style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-bottom:5px;letter-spacing:.06em">READINGS (${r.unit||'—'})</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${[0,25,50,75,100].map(p=>(r.asFound?.[p]||r.asLeft?.[p])?`
+              <div style="font-size:10px;font-family:var(--mono);text-align:center">
+                <div style="color:var(--text3);font-size:9px">${p}%</div>
+                ${r.asFound?.[p]?`<div style="color:var(--amber)">${r.asFound[p]}</div>`:''}
+                ${r.asLeft?.[p]?`<div style="color:var(--accent)">${r.asLeft[p]}</div>`:''}
+              </div>`:''
+              ).join('')}
+            </div>
+            <div style="font-size:9px;color:var(--text3);margin-top:4px"><span style="color:var(--amber)">■</span> As Found &nbsp;<span style="color:var(--accent)">■</span> As Left</div>
+          </div>`:''}
+          <div style="font-size:11px;color:var(--text3);margin-top:5px">${r.tech||''} · ${new Date(r.timestamp).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportQCCSV(){
+  if(!qcRecords.length){showToast('No QC records to export');return;}
+  const headers=['Record ID','Instrument ID','Model','Status','Result','Certificate No','Cal Date','Next Due','Lab','Technician','Unit','AF 0%','AF 25%','AF 50%','AF 75%','AF 100%','AL 0%','AL 25%','AL 50%','AL 75%','AL 100%','Notes','Timestamp'];
+  const rows=qcRecords.map(r=>[
+    r.id,r.instrId,r.model,r.status,r.result||'',r.certNo||'',r.calDate||'',r.nextDue||'',
+    r.lab||'',r.tech||'',r.unit||'',
+    r.asFound?.[0]||'',r.asFound?.[25]||'',r.asFound?.[50]||'',r.asFound?.[75]||'',r.asFound?.[100]||'',
+    r.asLeft?.[0]||'',r.asLeft?.[25]||'',r.asLeft?.[50]||'',r.asLeft?.[75]||'',r.asLeft?.[100]||'',
+    r.notes||'',r.timestamp
+  ].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  const a=document.createElement('a');a.href=url;
+  a.download=`CalTrack_QC_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('✓ QC records exported');
 }
 
 // ═══════════════════════════════════════════
