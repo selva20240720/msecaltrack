@@ -1852,6 +1852,21 @@ function showToast(msg){
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+
+// Force unregister old service workers so phones always get the latest version
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+}
+
+// Clear old caches
+if ('caches' in window) {
+  caches.keys().then(keys => {
+    keys.forEach(key => caches.delete(key));
+  });
+}
+
 setMode('issue');
 rerenderBatch();
 initSession();
