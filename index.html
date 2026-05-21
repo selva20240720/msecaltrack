@@ -58,9 +58,10 @@ header{padding:12px 16px 10px;display:flex;align-items:center;justify-content:sp
 
 /* TABS */
 .tab-bar{display:flex;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:77px;z-index:40}
-.tab-btn{flex:1;padding:9px 2px 8px;background:none;border:none;color:var(--text3);font-family:var(--sans);font-size:10px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2px solid transparent;transition:all .2s}
+.tab-btn{flex:1;padding:10px 2px;background:none;border:none;color:var(--text3);font-family:var(--sans);font-size:9px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-bottom:2px solid transparent;transition:all .2s;min-width:0}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-btn svg{width:15px;height:15px}
+.tab-btn svg{width:19px;height:19px;flex-shrink:0}
+.tab-btn-label{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:clip;max-width:52px;text-align:center;line-height:1}
 
 /* MAIN */
 main{flex:1;overflow-y:auto;padding:16px;padding-bottom:32px}
@@ -489,19 +490,27 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('form')" id="tab-form">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-    Batch Log
+    <span class="tab-btn-label">Log</span>
   </button>
   <button class="tab-btn" onclick="switchTab('log')" id="tab-log">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-    Activity
+    <span class="tab-btn-label">Activity</span>
   </button>
   <button class="tab-btn" onclick="switchTab('equipment')" id="tab-equipment">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-    Equipment
+    <span class="tab-btn-label">Equip</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('central')" id="tab-central">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
+    <span class="tab-btn-label">Central</span>
   </button>
   <button class="tab-btn" onclick="switchTab('dashboard')" id="tab-dashboard">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-    Dashboard
+    <span class="tab-btn-label">Dash</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('settings')" id="tab-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span class="tab-btn-label">Settings</span>
   </button>
 </div>
 
@@ -658,6 +667,129 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
     <div class="chart-card"><div class="chart-label">Top Sites</div><div class="top-list" id="top-sites"></div></div>
   </div>
 
+  <!-- CENTRAL LIVE DASHBOARD TAB -->
+  <div id="central-tab" class="hidden">
+    <div class="dash-top">
+      <span class="dash-title">🌐 Central View</span>
+      <button class="dash-refresh" onclick="loadCentral()">↻ Refresh</button>
+    </div>
+    <div class="dash-date" id="central-status">Not connected — configure Supabase in Settings</div>
+
+    <!-- Live KPIs -->
+    <div class="kpi-row" id="central-kpis" style="margin-bottom:8px">
+      <div class="kpi-card"><div class="kpi-label">Total Today</div><div class="kpi-value green" id="ck-today">—</div><div class="kpi-sub">All technicians</div></div>
+      <div class="kpi-card"><div class="kpi-label">Out Now</div><div class="kpi-value amber" id="ck-out">—</div><div class="kpi-sub">Not returned</div></div>
+    </div>
+    <div class="kpi-row" style="margin-bottom:16px">
+      <div class="kpi-card"><div class="kpi-label">Failures</div><div class="kpi-value red" id="ck-fail">—</div><div class="kpi-sub">Check failures</div></div>
+      <div class="kpi-card"><div class="kpi-label">Active Techs</div><div class="kpi-value blue" id="ck-techs">—</div><div class="kpi-sub">Today</div></div>
+    </div>
+
+    <!-- Currently Out -->
+    <div class="chart-card" style="margin-bottom:12px">
+      <div class="chart-label" style="display:flex;align-items:center;justify-content:space-between">
+        Currently Out — Not Returned
+        <span id="out-count" style="color:var(--amber);font-size:11px"></span>
+      </div>
+      <div id="currently-out-list" style="display:flex;flex-direction:column;gap:7px">
+        <div style="color:var(--text3);font-size:12px;text-align:center;padding:12px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Live feed -->
+    <div class="chart-card">
+      <div class="chart-label" style="display:flex;align-items:center;gap:8px">
+        <span>Live Feed — All Technicians</span>
+        <span id="live-dot" style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;animation:pulse 1.5s infinite"></span>
+      </div>
+      <div id="central-feed" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto">
+        <div style="color:var(--text3);font-size:12px;text-align:center;padding:12px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Per-technician breakdown -->
+    <div class="chart-card" style="margin-top:12px">
+      <div class="chart-label">Technician Activity Today</div>
+      <div class="top-list" id="central-techs"></div>
+    </div>
+
+    <!-- 7-day chart -->
+    <div class="chart-card" style="margin-top:12px">
+      <div class="chart-label">Issues vs Returns — Last 7 Days (All Technicians)</div>
+      <div class="chart-wrap"><canvas id="chart-central"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="settings-tab" class="hidden">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px">Settings</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Configure shared database for central logging</div>
+
+    <!-- Supabase setup -->
+    <div class="url-setup">
+      <div class="url-setup-title">
+        🗄️ Supabase Database
+        <span class="source-badge" id="sb-status-badge" style="margin-left:4px">NOT SET</span>
+      </div>
+      <div class="url-setup-desc">
+        Connect a free Supabase database so all technicians' logs go to one place.<br><br>
+        <strong style="color:var(--accent)">Setup steps:</strong><br>
+        1. Go to <strong>supabase.com</strong> → New project (free)<br>
+        2. Go to <strong>SQL Editor</strong> → paste and run the setup SQL below<br>
+        3. Go to <strong>Settings → API</strong> → copy Project URL and anon key<br>
+        4. Paste both below and tap Save
+      </div>
+
+      <div style="background:var(--surface3);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6;overflow-x:auto;white-space:pre" id="setup-sql">CREATE TABLE caltrack_logs (
+  id bigserial primary key,
+  batch_id text,
+  mode text,
+  technician text,
+  site text,
+  timestamp timestamptz,
+  instr_id text,
+  model text,
+  make text,
+  serial text,
+  cal_due text,
+  is_master boolean,
+  pass_fail text,
+  reading text,
+  unit text,
+  note text
+);
+ALTER TABLE caltrack_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow all" ON caltrack_logs FOR ALL USING (true) WITH CHECK (true);</div>
+      <button onclick="copySQL()" style="width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:14px">📋 Copy SQL to clipboard</button>
+
+      <div class="modal-label" style="margin-top:0">Supabase Project URL</div>
+      <input type="text" id="sb-url-input" placeholder="https://xxxxxxxxxxxx.supabase.co" style="font-family:var(--mono);font-size:12px;margin-bottom:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;width:100%;color:var(--text);outline:none">
+
+      <div class="modal-label">Supabase Anon Key</div>
+      <input type="text" id="sb-key-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…" style="font-family:var(--mono);font-size:11px;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;width:100%;color:var(--text);outline:none">
+
+      <button class="url-setup-btn" onclick="saveSupabase()">💾 Save & Test Connection</button>
+    </div>
+
+    <!-- Equipment source -->
+    <div class="url-setup" style="margin-top:14px">
+      <div class="url-setup-title">
+        🔗 Equipment List Source
+        <span class="source-badge" id="source-badge-settings">NOT SET</span>
+      </div>
+      <div class="url-setup-desc">Raw URL of your equipment.json on GitHub</div>
+      <input type="text" id="eq-source-url-settings" placeholder="https://raw.githubusercontent.com/…/equipment.json" style="font-family:var(--mono);font-size:11px;margin-bottom:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;width:100%;color:var(--text);outline:none">
+      <button class="url-setup-btn" onclick="saveSourceUrlFromSettings()">💾 Save URL &amp; Sync</button>
+    </div>
+
+    <!-- Danger zone -->
+    <div style="margin-top:14px;background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.2);border-radius:var(--r);padding:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">⚠ Clear Local Data</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Clears logs and session stored on THIS phone only. Central database is not affected.</div>
+      <button onclick="clearLocalData()" style="padding:10px 16px;background:rgba(255,77,109,.15);border:1px solid rgba(255,77,109,.3);border-radius:var(--r);color:var(--red);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer">Clear This Phone's Data</button>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -669,6 +801,56 @@ const KEY_LOG      = 'caltrack-log';
 const KEY_SESSION  = 'caltrack-session';
 const KEY_SRC_URL  = 'caltrack-source-url';
 const KEY_SRC_TS   = 'caltrack-source-ts';
+const KEY_SB_URL   = 'caltrack-sb-url';
+const KEY_SB_KEY   = 'caltrack-sb-key';
+
+// Supabase config — set once in Settings tab
+let SB_URL = localStorage.getItem(KEY_SB_URL) || '';
+let SB_KEY = localStorage.getItem(KEY_SB_KEY) || '';
+
+async function sbInsert(entry) {
+  if (!SB_URL || !SB_KEY) return; // not configured yet
+  try {
+    const rows = (entry.items || []).map(item => ({
+      batch_id:   entry.batchId,
+      mode:       entry.mode,
+      technician: entry.tech,
+      site:       entry.site,
+      timestamp:  entry.timestamp,
+      instr_id:   item.id,
+      model:      item.model,
+      make:       item.make || '',
+      serial:     item.serial || '',
+      cal_due:    item.calDue || '',
+      is_master:  !!item.isMaster,
+      pass_fail:  item.pf || '',
+      reading:    item.actualReading || '',
+      unit:       item.unit || '',
+      note:       item.note || ''
+    }));
+    await fetch(`${SB_URL}/rest/v1/caltrack_logs`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${SB_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(rows)
+    });
+  } catch(e) { console.warn('Supabase write failed:', e); }
+}
+
+async function sbFetch(limit=200) {
+  if (!SB_URL || !SB_KEY) return null;
+  try {
+    const r = await fetch(
+      `${SB_URL}/rest/v1/caltrack_logs?order=timestamp.desc&limit=${limit}`,
+      { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } }
+    );
+    return await r.json();
+  } catch(e) { return null; }
+}
 
 // ═══════════════════════════════════════════
 // STATE
@@ -811,7 +993,7 @@ function bgClose(id){
 // TABS
 // ═══════════════════════════════════════════
 function switchTab(tab){
-  ['form','log','equipment','dashboard'].forEach(t=>{
+  ['form','log','equipment','central','dashboard','settings'].forEach(t=>{
     document.getElementById(t+'-tab').classList.toggle('hidden',t!==tab);
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
@@ -820,7 +1002,9 @@ function switchTab(tab){
     document.getElementById('eq-source-url').value=sourceUrl;
     renderEquipment();
   }
+  if(tab==='central')loadCentral();
   if(tab==='dashboard')renderDashboard();
+  if(tab==='settings')renderSettings();
 }
 
 // ═══════════════════════════════════════════
@@ -995,6 +1179,7 @@ function submitBatch(){
   };
   activityLog.unshift(entry);
   try{localStorage.setItem(KEY_LOG,JSON.stringify(activityLog));}catch(e){}
+  sbInsert(entry); // write to central database
   showSuccessScreen(entry);
 }
 function showSuccessScreen(entry){
@@ -1309,6 +1494,179 @@ function renderTopList(cid,items,amber){
       <div class="top-item-bar-wrap"><div class="top-item-bar${amber?' amber':''}" style="width:${Math.round(count/max*100)}%"></div></div>
       <div class="top-item-count">${count}</div>
     </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// CENTRAL LIVE DASHBOARD
+// ═══════════════════════════════════════════
+let centralChart = null;
+let centralPollTimer = null;
+
+async function loadCentral() {
+  const statusEl = document.getElementById('central-status');
+  if (!SB_URL || !SB_KEY) {
+    statusEl.textContent = '⚠ Not connected — go to Settings tab to configure Supabase';
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+  statusEl.textContent = 'Fetching live data…';
+  statusEl.style.color = 'var(--text3)';
+  const rows = await sbFetch(500);
+  if (!rows || !Array.isArray(rows)) {
+    statusEl.textContent = '⚠ Connection failed — check Settings';
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+  const now = new Date();
+  statusEl.textContent = 'Live · updated ' + now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  statusEl.style.color = 'var(--text3)';
+  const todayStr = now.toDateString();
+  const todayRows = rows.filter(r => new Date(r.timestamp).toDateString() === todayStr);
+  const issuedAll = rows.filter(r => r.mode === 'issue');
+  const returnedAll = rows.filter(r => r.mode === 'return');
+  const idCount = {};
+  issuedAll.forEach(r => idCount[r.instr_id] = (idCount[r.instr_id]||0)+1);
+  returnedAll.forEach(r => idCount[r.instr_id] = (idCount[r.instr_id]||0)-1);
+  const netOut = Object.values(idCount).filter(v=>v>0).reduce((s,v)=>s+v,0);
+  const failRows = rows.filter(r => r.pass_fail === 'fail');
+  const todayTechs = [...new Set(todayRows.map(r => r.technician))];
+  document.getElementById('ck-today').textContent = todayRows.length;
+  document.getElementById('ck-out').textContent = Math.max(0, netOut);
+  document.getElementById('ck-fail').textContent = failRows.length;
+  document.getElementById('ck-techs').textContent = todayTechs.length;
+
+  // Currently out list
+  const outList = document.getElementById('currently-out-list');
+  document.getElementById('out-count').textContent = netOut + ' instrument' + (netOut!==1?'s':'');
+  const outDetails = Object.entries(idCount).filter(([,v])=>v>0).map(([id])=> {
+    return issuedAll.filter(r=>r.instr_id===id).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0];
+  }).filter(Boolean);
+  outList.innerHTML = !outDetails.length
+    ? '<div style="color:var(--text3);font-size:12px;text-align:center;padding:10px">✓ All instruments returned</div>'
+    : outDetails.map(r=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+        <div style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">${r.instr_id}</div>
+          <div style="font-size:11px;color:var(--text3)">${r.model} · ${r.technician}</div>
+          <div style="font-size:10px;color:var(--text3)">📍 ${r.site} · ${new Date(r.timestamp).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('');
+
+  // Live feed — group by batch
+  const batches = {};
+  rows.forEach(r => {
+    if (!batches[r.batch_id]) batches[r.batch_id] = {...r, items:[]};
+    batches[r.batch_id].items.push(r);
+  });
+  const sorted = Object.values(batches).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,40);
+  const feed = document.getElementById('central-feed');
+  feed.innerHTML = !sorted.length
+    ? '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px">No logs yet</div>'
+    : sorted.map(b => {
+        const fails = b.items.filter(i=>i.pass_fail==='fail');
+        const ids = b.items.map(i=>i.instr_id).join(', ');
+        const t = new Date(b.timestamp);
+        const isToday = t.toDateString()===todayStr;
+        const timeStr = isToday
+          ? t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
+          : t.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;display:flex;gap:8px;align-items:flex-start">
+          <div style="width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;background:${b.mode==='issue'?'var(--amber)':'var(--accent)'}"></div>
+          <div style="flex:1;min-width:0">
+            <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;${b.mode==='issue'?'background:rgba(255,176,32,.12);color:var(--amber)':'background:rgba(0,229,176,.12);color:var(--accent)'}">${b.mode==='issue'?'ISSUED OUT':'RETURNED IN'} · ${b.items.length} item${b.items.length!==1?'s':''}</span>
+            <div style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);margin:3px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ids}</div>
+            <div style="font-size:11px;color:var(--text2)">👤 ${b.technician} · 📍 ${b.site}</div>
+            ${fails.length?`<div style="font-size:11px;color:var(--red);margin-top:2px">⚠ FAIL: ${fails.map(i=>i.instr_id).join(', ')}</div>`:''}
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0">${timeStr}</div>
+        </div>`;
+      }).join('');
+
+  // Per-tech breakdown
+  const techCounts = {};
+  todayRows.forEach(r=>{ techCounts[r.technician]=(techCounts[r.technician]||0)+1; });
+  const techSorted = Object.entries(techCounts).sort((a,b)=>b[1]-a[1]);
+  const techMax = techSorted[0]?.[1]||1;
+  document.getElementById('central-techs').innerHTML = techSorted.length
+    ? techSorted.map(([name,count])=>`
+        <div class="top-item">
+          <div class="top-item-name" title="${name}">${name}</div>
+          <div class="top-item-bar-wrap"><div class="top-item-bar" style="width:${Math.round(count/techMax*100)}%"></div></div>
+          <div class="top-item-count">${count}</div>
+        </div>`).join('')
+    : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px">No activity today</div>';
+
+  // 7-day chart
+  const days=[],id7=[],rd7=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(now);d.setDate(d.getDate()-i);const ds=d.toDateString();
+    days.push(d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric'}));
+    id7.push(rows.filter(r=>new Date(r.timestamp).toDateString()===ds&&r.mode==='issue').length);
+    rd7.push(rows.filter(r=>new Date(r.timestamp).toDateString()===ds&&r.mode==='return').length);
+  }
+  if(centralChart){centralChart.destroy();centralChart=null;}
+  centralChart=new Chart(document.getElementById('chart-central').getContext('2d'),{
+    type:'bar',
+    data:{labels:days,datasets:[
+      {label:'Issued Out',data:id7,backgroundColor:'rgba(255,176,32,.7)',borderColor:'#ffb020',borderWidth:1,borderRadius:4},
+      {label:'Returned',data:rd7,backgroundColor:'rgba(0,229,176,.7)',borderColor:'#00e5b0',borderWidth:1,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8a96a8',font:{size:11},boxWidth:12}}},
+      scales:{x:{ticks:{color:'#5a6478',font:{size:10}},grid:{color:'rgba(37,43,54,.6)'}},
+              y:{ticks:{color:'#5a6478',font:{size:10},stepSize:1},grid:{color:'rgba(37,43,54,.6)'},beginAtZero:true}}
+    }
+  });
+  clearTimeout(centralPollTimer);
+  centralPollTimer=setTimeout(()=>{if(!document.getElementById('central-tab').classList.contains('hidden'))loadCentral();},30000);
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+function renderSettings(){
+  document.getElementById('sb-url-input').value=SB_URL;
+  document.getElementById('sb-key-input').value=SB_KEY;
+  document.getElementById('eq-source-url-settings').value=sourceUrl;
+  const badge=document.getElementById('sb-status-badge');
+  badge.textContent=SB_URL?'CONNECTED':'NOT SET';
+  badge.className='source-badge '+(SB_URL?'remote':'local');
+  const srcBadge=document.getElementById('source-badge-settings');
+  srcBadge.textContent=sourceUrl?'SET':'NOT SET';
+  srcBadge.className='source-badge '+(sourceUrl?'remote':'local');
+}
+async function saveSupabase(){
+  const url=document.getElementById('sb-url-input').value.trim().replace(/\/$/,'');
+  const key=document.getElementById('sb-key-input').value.trim();
+  if(!url||!key){showToast('⚠ Enter both URL and key');return;}
+  SB_URL=url;SB_KEY=key;
+  localStorage.setItem(KEY_SB_URL,url);
+  localStorage.setItem(KEY_SB_KEY,key);
+  showToast('Testing connection…');
+  const rows=await sbFetch(1);
+  if(rows!==null){showToast('✓ Supabase connected!');renderSettings();}
+  else showToast('⚠ Failed — check URL and key');
+}
+function saveSourceUrlFromSettings(){
+  const val=document.getElementById('eq-source-url-settings').value.trim();
+  if(!val){showToast('⚠ Paste a URL first');return;}
+  sourceUrl=val;localStorage.setItem(KEY_SRC_URL,val);
+  document.getElementById('eq-source-url').value=val;
+  loadEquipmentFromSource().then(()=>renderEquipment());
+  showToast('URL saved — syncing…');
+}
+function copySQL(){
+  navigator.clipboard.writeText(document.getElementById('setup-sql').textContent)
+    .then(()=>showToast('✓ SQL copied'))
+    .catch(()=>showToast('Select and copy the SQL manually'));
+}
+function clearLocalData(){
+  if(!confirm('Clear all local logs and session on this phone?'))return;
+  localStorage.removeItem(KEY_LOG);localStorage.removeItem(KEY_SESSION);
+  activityLog=[];session=null;
+  showToast('✓ Local data cleared');
+  openSessionModal();
 }
 
 // ═══════════════════════════════════════════
