@@ -1748,7 +1748,7 @@ function clearLocalData(){
 
   // 2. Register service worker (inline as blob)
   const swCode = `
-const CACHE = 'caltrack-v2';
+const CACHE = 'caltrack-v5';
 const ASSETS = ['./', './index.html'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(()=>{})));
