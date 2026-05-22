@@ -402,6 +402,56 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
   </div>
 </div>
 
+<!-- JOB NUMBER MODAL — shown first before anything else -->
+<div class="modal-backdrop" id="job-modal" style="align-items:center;justify-content:center;padding:20px">
+  <div class="modal" style="border-radius:20px;max-height:85dvh">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="width:56px;height:56px;background:rgba(0,229,176,.15);border:2px solid var(--accent);border-radius:14px;display:grid;place-items:center;margin:0 auto 12px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px">New Job</div>
+      <div style="font-size:12px;color:var(--text3)">Auto-generated job number for this site visit</div>
+    </div>
+
+    <!-- Job number display -->
+    <div style="background:var(--surface2);border:2px solid var(--accent);border-radius:var(--r);padding:16px;text-align:center;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Job Number</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--accent);letter-spacing:.05em" id="job-number-display">S26-0001</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">S = Site · 26 = Year · Auto sequence</div>
+    </div>
+
+    <!-- Action -->
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Action</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="mode-btn issue" id="job-issue-btn" onclick="setJobMode('issue')" style="flex:1;padding:12px;border-radius:var(--r);border:1px solid var(--border2);font-size:13px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Issue Out
+      </button>
+      <button class="mode-btn return" id="job-return-btn" onclick="setJobMode('return')" style="flex:1;padding:12px;border-radius:var(--r);border:1px solid var(--border2);font-size:13px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Return In
+      </button>
+    </div>
+
+    <!-- For Return — pick existing job -->
+    <div id="job-return-picker" style="display:none;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Select Open Job to Return</div>
+      <div id="open-jobs-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto"></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">— or create new job for return —</div>
+    </div>
+
+    <!-- Site -->
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Site / Location</div>
+    <input type="text" id="job-site" placeholder="e.g. Block 4 – Compressor Station"
+      style="width:100%;padding:12px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;margin-bottom:16px">
+
+    <button onclick="confirmJob()" style="width:100%;padding:14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      Confirm &amp; Start Logging
+    </button>
+  </div>
+</div>
+
 <!-- Camera -->
 <div id="camera-container">
   <video id="cam-video" autoplay muted playsinline></video>
@@ -509,6 +559,10 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
     <span class="tab-btn-label">Log</span>
   </button>
+  <button class="tab-btn" onclick="switchTab('jobs')" id="tab-jobs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <span class="tab-btn-label">Jobs</span>
+  </button>
   <button class="tab-btn" onclick="switchTab('log')" id="tab-log">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
     <span class="tab-btn-label">Activity</span>
@@ -556,6 +610,18 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
     </div>
 
     <div id="form-fields">
+      <!-- Active job banner -->
+      <div id="active-job-banner" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 13px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="openJobModal()">
+        <div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase">Active Job</div>
+          <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)" id="active-job-display">—</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text2)" id="active-job-site">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Tap to change job</div>
+        </div>
+      </div>
+
       <div class="mode-toggle">
         <button class="mode-btn issue active" id="btn-issue" onclick="setMode('issue')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>Issue Out
@@ -615,6 +681,35 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
         <span id="submit-label">Issue Out 0 Instruments</span>
       </button>
     </div>
+  </div>
+
+  <!-- JOBS TAB -->
+  <div id="jobs-tab" class="hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <span style="font-size:15px;font-weight:700">Job Register</span>
+      <button onclick="openJobModal()" style="padding:8px 14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        New Job
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:flex;gap:8px;margin-bottom:16px" id="jobs-stats"></div>
+
+    <!-- Filter -->
+    <div class="log-filter" style="margin-bottom:14px">
+      <button class="filter-btn active" onclick="filterJobs('all',this)">All</button>
+      <button class="filter-btn" onclick="filterJobs('open',this)">Open</button>
+      <button class="filter-btn" onclick="filterJobs('closed',this)">Closed</button>
+    </div>
+
+    <!-- Export -->
+    <button onclick="exportJobsCSV()" style="width:100%;padding:11px;background:var(--surface);border:1px solid rgba(77,159,255,.4);border-radius:var(--r);color:var(--blue);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:14px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Export Jobs — CSV
+    </button>
+
+    <div id="jobs-list"></div>
   </div>
 
   <!-- ACTIVITY TAB -->
@@ -1171,11 +1266,14 @@ function bgClose(id){
 // TABS
 // ═══════════════════════════════════════════
 function switchTab(tab){
-  ['form','log','equipment','central','dashboard','settings','qc'].forEach(t=>{
-    document.getElementById(t+'-tab').classList.toggle('hidden',t!==tab);
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  ['form','jobs','log','equipment','central','dashboard','settings','qc'].forEach(t=>{
+    const el=document.getElementById(t+'-tab');
+    if(el) el.classList.toggle('hidden',t!==tab);
+    const btn=document.getElementById('tab-'+t);
+    if(btn) btn.classList.toggle('active',t===tab);
   });
   if(tab==='log')renderLog();
+  if(tab==='jobs')renderJobsTab();
   if(tab==='equipment'){
     document.getElementById('eq-source-url').value=sourceUrl;
     renderEquipment();
@@ -1362,16 +1460,18 @@ function submitBatch(){
   const entry={
     batchId:'B'+Date.now().toString(36).toUpperCase(),
     mode:currentMode,tech:session.name,site,
+    jobNum: activeJob?.jobNum || '—',
     timestamp:now.toISOString(),
     timeLabel:now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
     dateLabel:now.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}),
     items:batchQueue.map(i=>({...i})),
-    approval:'pending' // starts as pending — manager must approve
+    approval:'pending'
   };
   activityLog.unshift(entry);
   try{localStorage.setItem(KEY_LOG,JSON.stringify(activityLog));}catch(e){}
-  sbInsert(entry); // write to central database
-  autoWhatsApp(entry); // auto-send summary to manager
+  attachJobToBatch(entry); // link to active job
+  sbInsert(entry);
+  autoWhatsApp(entry);
   showSuccessScreen(entry);
 }
 
@@ -1413,6 +1513,7 @@ function autoWhatsApp(entry){
   let msg = `🔔 *MSSI Cal Lab — Approval Required*\n`;
   msg += `━━━━━━━━━━━━━━━━━━\n`;
   msg += `${entry.mode==='issue'?'🟡 ISSUE OUT REQUEST':'🟢 RETURN IN REQUEST'}\n\n`;
+  msg += `📋 *Job Number:* ${entry.jobNum || '—'}\n`;
   msg += `👤 *Technician:* ${entry.tech}\n`;
   msg += `📍 *Site:* ${entry.site}\n`;
   msg += `🕐 *Time:* ${entry.timeLabel} · ${entry.dateLabel}\n\n`;
@@ -1503,6 +1604,7 @@ function renderLog(){
       <div class="log-dot ${e.mode}"></div>
       <div class="log-body">
         <div class="log-badge ${e.mode}">${e.mode==='issue'?'ISSUED OUT':'RETURNED IN'} · ${items.length} item${items.length!==1?'s':''}</div>
+        ${e.jobNum?`<div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px">${e.jobNum}</div>`:''}
         <div class="log-instr">${ids}</div>
         <div class="log-detail">${e.tech} · ${e.site}</div>
         ${fails.length?`<div class="log-detail" style="color:var(--red)">⚠ FAIL: ${fails.map(i=>i.id).join(', ')}</div>`:''}
@@ -2424,6 +2526,7 @@ function handleApprovalURL(){
 
     // Switch to correct tab to show the result
     switchTab('central');
+    if(entry.mode==='return') closeJobIfComplete(batchId);
     showToast(`✓ ${entry.mode==='issue'?'Issue Out':'Return In'} APPROVED by ${approverName}`);
 
     // Send confirmation WhatsApp back to technician
@@ -2461,6 +2564,278 @@ function handleApprovalURL(){
     rejectMsg += `Please contact your supervisor for next steps.\n_MSSI Cal Lab CalTrack_`;
     setTimeout(()=>{ window.location.href = 'https://wa.me/?text=' + encodeURIComponent(rejectMsg); }, 1500);
   }
+}
+
+// ═══════════════════════════════════════════
+// JOB NUMBER SYSTEM
+// ═══════════════════════════════════════════
+const KEY_JOBS    = 'caltrack-jobs';
+const KEY_JOB_SEQ = 'caltrack-job-seq';
+
+let jobs = JSON.parse(localStorage.getItem(KEY_JOBS) || '[]');
+let activeJob = null; // current job in form
+let jobFilter = 'all';
+let pendingJobMode = 'issue'; // mode selected in job modal
+
+function saveJobs(){ localStorage.setItem(KEY_JOBS, JSON.stringify(jobs)); }
+
+function getNextJobNumber(){
+  const year = new Date().getFullYear().toString().slice(-2); // "26"
+  const seq  = parseInt(localStorage.getItem(KEY_SEQ_KEY)||'0') + 1;
+  localStorage.setItem(KEY_SEQ_KEY, seq.toString());
+  return `S${year}-${String(seq).padStart(4,'0')}`;
+}
+const KEY_SEQ_KEY = 'caltrack-job-seq';
+
+function getOpenJobs(){
+  return jobs.filter(j=>j.status==='open');
+}
+
+// ── JOB MODAL ──
+function openJobModal(){
+  // Generate next number
+  const nextNum = generateNextJobNum();
+  document.getElementById('job-number-display').textContent = nextNum;
+  document.getElementById('job-site').value = session?.site || '';
+  setJobMode('issue');
+  renderOpenJobPicker();
+  document.getElementById('job-modal').classList.add('open');
+}
+
+function generateNextJobNum(){
+  const year = new Date().getFullYear().toString().slice(-2);
+  const lastSeq = parseInt(localStorage.getItem(KEY_SEQ_KEY) || '0');
+  const nextSeq = lastSeq + 1;
+  return `S${year}-${String(nextSeq).padStart(4,'0')}`;
+}
+
+function setJobMode(mode){
+  pendingJobMode = mode;
+  document.getElementById('job-issue-btn').classList.toggle('active', mode==='issue');
+  document.getElementById('job-issue-btn').classList.toggle('issue', mode==='issue');
+  document.getElementById('job-return-btn').classList.toggle('active', mode==='return');
+  document.getElementById('job-return-btn').classList.toggle('return', mode==='return');
+  // Show open job picker for return mode
+  document.getElementById('job-return-picker').style.display = mode==='return' ? 'block' : 'none';
+  // For issue out — show new job number; for return — still show it but picker is primary
+  if(mode==='return') renderOpenJobPicker();
+}
+
+function renderOpenJobPicker(){
+  const open = getOpenJobs();
+  const el = document.getElementById('open-jobs-list');
+  if(!open.length){
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px">No open jobs — create a new return job below</div>';
+    return;
+  }
+  el.innerHTML = open.map(j=>`
+    <div onclick="selectReturnJob('${j.jobNum}')" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px">
+      <div style="flex:1">
+        <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent)">${j.jobNum}</div>
+        <div style="font-size:11px;color:var(--text2)">${j.site}</div>
+        <div style="font-size:10px;color:var(--text3)">${j.tech} · ${j.items?.length||0} instruments out</div>
+      </div>
+      <div style="font-size:10px;font-weight:700;background:rgba(255,176,32,.12);color:var(--amber);padding:3px 8px;border-radius:5px">OPEN</div>
+    </div>`).join('');
+}
+
+function selectReturnJob(jobNum){
+  const job = jobs.find(j=>j.jobNum===jobNum);
+  if(!job) return;
+  document.getElementById('job-number-display').textContent = jobNum;
+  document.getElementById('job-site').value = job.site;
+  // Highlight selected
+  document.querySelectorAll('#open-jobs-list > div').forEach(el=>{
+    el.style.borderColor = el.textContent.includes(jobNum) ? 'var(--accent)' : 'var(--border2)';
+  });
+}
+
+function confirmJob(){
+  if(!session){ openSessionModal(); return; }
+  const jobNum = document.getElementById('job-number-display').textContent;
+  const site   = document.getElementById('job-site').value.trim() || session.site;
+  const mode   = pendingJobMode;
+
+  if(!site){ showToast('⚠ Enter site location'); return; }
+
+  // For return — find existing job or create new
+  let existingJob = jobs.find(j=>j.jobNum===jobNum);
+
+  if(mode==='issue' && !existingJob){
+    // Create new job
+    const year = new Date().getFullYear().toString().slice(-2);
+    const seq = parseInt(localStorage.getItem(KEY_SEQ_KEY)||'0') + 1;
+    localStorage.setItem(KEY_SEQ_KEY, seq.toString());
+    const newJobNum = `S${year}-${String(seq).padStart(4,'0')}`;
+    const newJob = {
+      jobNum: newJobNum,
+      site, tech: session.name,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      items: [],
+      batches: []
+    };
+    jobs.unshift(newJob);
+    saveJobs();
+    activeJob = newJob;
+    document.getElementById('job-number-display').textContent = newJobNum;
+  } else if(existingJob){
+    activeJob = existingJob;
+  } else {
+    // Return with no existing job — create one
+    const newJob = {
+      jobNum, site, tech: session.name,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      items: [], batches: []
+    };
+    jobs.unshift(newJob);
+    saveJobs();
+    activeJob = newJob;
+  }
+
+  // Update form
+  document.getElementById('active-job-display').textContent = activeJob.jobNum;
+  document.getElementById('active-job-site').textContent = activeJob.site;
+  document.getElementById('site-override').value = activeJob.site;
+  setMode(mode);
+
+  // Close modal
+  document.getElementById('job-modal').classList.remove('open');
+  showToast(`✓ Job ${activeJob.jobNum} active — start scanning`);
+}
+
+// ── ATTACH JOB TO BATCH SUBMIT ──
+function attachJobToBatch(entry){
+  if(!activeJob) return;
+  // Add items to job
+  const itemIds = entry.items.map(i=>i.id);
+  if(entry.mode==='issue'){
+    activeJob.items = [...new Set([...(activeJob.items||[]), ...itemIds])];
+    activeJob.batches = [...(activeJob.batches||[]), entry.batchId];
+  } else if(entry.mode==='return'){
+    // Mark returned items
+    activeJob.returnedItems = [...new Set([...(activeJob.returnedItems||[]), ...itemIds])];
+    activeJob.returnBatches = [...(activeJob.returnBatches||[]), entry.batchId];
+    // Check if all items returned
+    const allOut = activeJob.items||[];
+    const allBack = activeJob.returnedItems||[];
+    if(allOut.length>0 && allOut.every(id=>allBack.includes(id))){
+      activeJob.status = 'pending-close'; // needs approval to fully close
+    }
+  }
+  activeJob.lastUpdated = new Date().toISOString();
+  const idx = jobs.findIndex(j=>j.jobNum===activeJob.jobNum);
+  if(idx>=0) jobs[idx] = activeJob;
+  saveJobs();
+}
+
+// Close job when all items returned and approved
+function closeJobIfComplete(batchId){
+  const job = jobs.find(j=>(j.returnBatches||[]).includes(batchId));
+  if(!job) return;
+  if(job.status==='pending-close'){
+    job.status='closed';
+    job.closedAt=new Date().toISOString();
+    const idx=jobs.findIndex(j=>j.jobNum===job.jobNum);
+    if(idx>=0) jobs[idx]=job;
+    saveJobs();
+    showToast(`✓ Job ${job.jobNum} closed — all instruments returned`);
+  }
+}
+
+// ── JOBS TAB RENDER ──
+function renderJobsTab(){
+  const open   = jobs.filter(j=>j.status==='open').length;
+  const closed = jobs.filter(j=>j.status==='closed').length;
+  const total  = jobs.length;
+  document.getElementById('jobs-stats').innerHTML=`
+    <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:var(--blue)">${total}</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-top:2px">Total</div>
+    </div>
+    <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:var(--amber)">${open}</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-top:2px">Open</div>
+    </div>
+    <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:var(--accent)">${closed}</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-top:2px">Closed</div>
+    </div>`;
+
+  const filtered = jobFilter==='all' ? jobs : jobs.filter(j=>j.status===jobFilter || (jobFilter==='open'&&j.status==='pending-close'));
+  const list = document.getElementById('jobs-list');
+
+  if(!filtered.length){
+    list.innerHTML=`<div style="text-align:center;padding:40px 14px;color:var(--text3)">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 10px;opacity:.25"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p style="font-size:13px">No jobs yet — tap New Job to start</p>
+    </div>`;
+    return;
+  }
+
+  const statusColor = {open:'var(--amber)','pending-close':'var(--blue)',closed:'var(--accent)'};
+  const statusLabel = {open:'OPEN','pending-close':'PENDING CLOSE',closed:'CLOSED'};
+
+  list.innerHTML = filtered.map(j=>{
+    const out = (j.items||[]).length;
+    const back = (j.returnedItems||[]).length;
+    const created = new Date(j.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    const pct = out>0 ? Math.round(back/out*100) : 0;
+    return `
+    <div style="background:var(--surface);border:1px solid ${j.status==='open'?'rgba(255,176,32,.3)':j.status==='closed'?'rgba(0,229,176,.2)':'var(--border)'};border-radius:var(--r);padding:13px;margin-bottom:9px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)">${j.jobNum}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">📍 ${j.site}</div>
+          <div style="font-size:11px;color:var(--text3)">👤 ${j.tech} · 📅 ${created}</div>
+        </div>
+        <span style="font-size:9px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(0,0,0,.2);color:${statusColor[j.status]||'var(--text3)'};white-space:nowrap">${statusLabel[j.status]||j.status}</span>
+      </div>
+      ${out>0?`
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px">
+          <span>Instruments: ${back}/${out} returned</span>
+          <span>${pct}%</span>
+        </div>
+        <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${pct===100?'var(--accent)':'var(--amber)'};border-radius:3px;transition:width .5s"></div>
+        </div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        ${(j.items||[]).join(', ')||'No instruments yet'}
+      </div>`:''}
+      ${j.status==='open'?`
+      <button onclick="openJobModal();document.getElementById('job-number-display').textContent='${j.jobNum}';document.getElementById('job-site').value='${j.site}';setJobMode('return')" style="margin-top:10px;width:100%;padding:9px;background:rgba(0,229,176,.1);border:1px solid rgba(0,229,176,.25);border-radius:9px;color:var(--accent);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer">
+        Return instruments for this job ↩
+      </button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function filterJobs(f,btn){
+  jobFilter=f;
+  document.querySelectorAll('.log-filter .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderJobsTab();
+}
+
+function exportJobsCSV(){
+  if(!jobs.length){showToast('No jobs to export');return;}
+  const headers=['Job Number','Site','Technician','Status','Created','Closed','Instruments Out','Instruments Returned'];
+  const rows=jobs.map(j=>[
+    j.jobNum,j.site,j.tech,j.status,
+    j.createdAt?new Date(j.createdAt).toLocaleDateString('en-GB'):'',
+    j.closedAt?new Date(j.closedAt).toLocaleDateString('en-GB'):'',
+    (j.items||[]).join('; '),
+    (j.returnedItems||[]).join('; ')
+  ].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  const a=document.createElement('a');a.href=url;
+  a.download=`CalTrack_Jobs_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('✓ Jobs exported');
 }
 
 // ═══════════════════════════════════════════
@@ -2569,6 +2944,13 @@ initSession();
 loadEquipmentFromSource();
 updatePendingBadge();
 handleApprovalURL(); // handle WhatsApp approval taps
+
+// Show job modal after short delay (after session loads)
+setTimeout(()=>{
+  if(session && !handleApprovalURL._handled){
+    openJobModal();
+  }
+}, 800);
 </script>
 </body>
 </html>
