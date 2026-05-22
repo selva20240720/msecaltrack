@@ -441,9 +441,20 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
     </div>
 
     <!-- Site -->
-    <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Site / Location</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Customer Name *</div>
+    <input type="text" id="job-customer" placeholder="e.g. PDO, OQ, Shell Oman"
+      style="width:100%;padding:12px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;margin-bottom:12px"
+      autocomplete="organization">
+
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Site / Location *</div>
     <input type="text" id="job-site" placeholder="e.g. Block 4 – Compressor Station"
-      style="width:100%;padding:12px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;margin-bottom:16px">
+      style="width:100%;padding:12px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;margin-bottom:12px"
+      autocomplete="off">
+
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Work Description (optional)</div>
+    <input type="text" id="job-description" placeholder="e.g. Annual Calibration Survey"
+      style="width:100%;padding:12px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;margin-bottom:16px"
+      autocomplete="off">
 
     <button onclick="confirmJob()" style="width:100%;padding:14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -881,26 +892,36 @@ input.filled{border-color:var(--accent2);background:rgba(0,184,138,.06)}
         4. Paste both below and tap Save
       </div>
 
-      <div style="background:var(--surface3);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6;overflow-x:auto;white-space:pre" id="setup-sql">CREATE TABLE caltrack_logs (
+      <div style="background:var(--surface3);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6;overflow-x:auto;white-space:pre" id="setup-sql">-- 1. Main logs table
+CREATE TABLE caltrack_logs (
   id bigserial primary key,
-  batch_id text,
-  mode text,
-  technician text,
-  site text,
-  timestamp timestamptz,
-  instr_id text,
-  model text,
-  make text,
-  serial text,
-  cal_due text,
-  is_master boolean,
-  pass_fail text,
-  reading text,
-  unit text,
-  note text
+  batch_id text, mode text, technician text, site text,
+  timestamp timestamptz, instr_id text, model text, make text,
+  serial text, cal_due text, is_master boolean,
+  pass_fail text, reading text, unit text, note text
 );
 ALTER TABLE caltrack_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "allow all" ON caltrack_logs FOR ALL USING (true) WITH CHECK (true);</div>
+CREATE POLICY "allow all" ON caltrack_logs FOR ALL USING (true) WITH CHECK (true);
+
+-- 2. Job counter table (for unique job numbers)
+CREATE TABLE caltrack_counter (
+  id text primary key,
+  value integer default 0
+);
+INSERT INTO caltrack_counter (id, value) VALUES ('job_seq', 0);
+ALTER TABLE caltrack_counter ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow all" ON caltrack_counter FOR ALL USING (true) WITH CHECK (true);
+
+-- 3. Atomic increment function (prevents duplicate job numbers)
+CREATE OR REPLACE FUNCTION get_next_job_seq()
+RETURNS integer LANGUAGE plpgsql AS $$
+DECLARE next_val integer;
+BEGIN
+  UPDATE caltrack_counter SET value = value + 1 WHERE id = 'job_seq'
+  RETURNING value INTO next_val;
+  RETURN next_val;
+END;
+$$;</div>
       <button onclick="copySQL()" style="width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:14px">📋 Copy SQL to clipboard</button>
 
       <div class="modal-label" style="margin-top:0">Supabase Project URL</div>
@@ -1124,6 +1145,62 @@ async function sbFetch(limit=200) {
     );
     return await r.json();
   } catch(e) { return null; }
+}
+
+// ═══════════════════════════════════════════
+// SUPABASE ATOMIC JOB COUNTER
+// Uses a dedicated table: caltrack_counter
+// Row: { id: 'job_seq', value: 45 }
+// Atomically increments and returns next number
+// ═══════════════════════════════════════════
+async function sbGetNextJobNumber() {
+  if (!SB_URL || !SB_KEY) return null;
+  try {
+    // Try to call the RPC function first (fastest, atomic)
+    const rpcRes = await fetch(`${SB_URL}/rest/v1/rpc/get_next_job_seq`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${SB_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    });
+    if (rpcRes.ok) {
+      const seq = await rpcRes.json();
+      if (typeof seq === 'number') {
+        const year = new Date().getFullYear().toString().slice(-2);
+        return `S${year}-${String(seq).padStart(4,'0')}`;
+      }
+    }
+
+    // Fallback: read and increment manually
+    const getRes = await fetch(
+      `${SB_URL}/rest/v1/caltrack_counter?id=eq.job_seq&select=value`,
+      { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } }
+    );
+    const rows = await getRes.json();
+    const current = rows?.[0]?.value || 0;
+    const next = current + 1;
+
+    // Update counter
+    await fetch(`${SB_URL}/rest/v1/caltrack_counter?id=eq.job_seq`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${SB_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ value: next })
+    });
+
+    const year = new Date().getFullYear().toString().slice(-2);
+    return `S${year}-${String(next).padStart(4,'0')}`;
+  } catch(e) {
+    console.warn('Job counter fetch failed:', e);
+    return null;
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1461,6 +1538,7 @@ function submitBatch(){
     batchId:'B'+Date.now().toString(36).toUpperCase(),
     mode:currentMode,tech:session.name,site,
     jobNum: activeJob?.jobNum || '—',
+    customer: activeJob?.customer || '—',
     timestamp:now.toISOString(),
     timeLabel:now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
     dateLabel:now.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}),
@@ -1515,6 +1593,7 @@ function autoWhatsApp(entry){
   msg += `${entry.mode==='issue'?'🟡 ISSUE OUT REQUEST':'🟢 RETURN IN REQUEST'}\n\n`;
   msg += `📋 *Job Number:* ${entry.jobNum || '—'}\n`;
   msg += `👤 *Technician:* ${entry.tech}\n`;
+  msg += `🏢 *Customer:* ${activeJob?.customer || entry.customer || '—'}\n`;
   msg += `📍 *Site:* ${entry.site}\n`;
   msg += `🕐 *Time:* ${entry.timeLabel} · ${entry.dateLabel}\n\n`;
   msg += `📦 *${items.length} Instrument${items.length!==1?'s':''}:*\n`;
@@ -1604,7 +1683,7 @@ function renderLog(){
       <div class="log-dot ${e.mode}"></div>
       <div class="log-body">
         <div class="log-badge ${e.mode}">${e.mode==='issue'?'ISSUED OUT':'RETURNED IN'} · ${items.length} item${items.length!==1?'s':''}</div>
-        ${e.jobNum?`<div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px">${e.jobNum}</div>`:''}
+        ${e.jobNum?`<div style="font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px">${e.jobNum}${e.customer&&e.customer!=='—'?' · '+e.customer:''}</div>`:''}
         <div class="log-instr">${ids}</div>
         <div class="log-detail">${e.tech} · ${e.site}</div>
         ${fails.length?`<div class="log-detail" style="color:var(--red)">⚠ FAIL: ${fails.map(i=>i.id).join(', ')}</div>`:''}
@@ -2592,14 +2671,33 @@ function getOpenJobs(){
 }
 
 // ── JOB MODAL ──
-function openJobModal(){
-  // Generate next number
-  const nextNum = generateNextJobNum();
-  document.getElementById('job-number-display').textContent = nextNum;
+async function openJobModal(){
+  // Show modal immediately with loading state
+  const display = document.getElementById('job-number-display');
+  display.textContent = 'Loading…';
+  display.style.color = 'var(--text3)';
   document.getElementById('job-site').value = session?.site || '';
   setJobMode('issue');
   renderOpenJobPicker();
   document.getElementById('job-modal').classList.add('open');
+
+  // Try to get number from Supabase
+  if (SB_URL && SB_KEY) {
+    const sbNum = await sbGetNextJobNumber();
+    if (sbNum) {
+      display.textContent = sbNum;
+      display.style.color = 'var(--accent)';
+      // Also store locally as a preview (not committed yet)
+      display.dataset.confirmed = 'false';
+      return;
+    }
+  }
+
+  // Fallback to local if Supabase not connected
+  const localNum = generateNextJobNum();
+  display.textContent = localNum;
+  display.style.color = 'var(--amber)'; // amber = local fallback
+  showToast('⚠ Using local counter — connect Supabase for shared numbering');
 }
 
 function generateNextJobNum(){
@@ -2632,8 +2730,9 @@ function renderOpenJobPicker(){
     <div onclick="selectReturnJob('${j.jobNum}')" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px">
       <div style="flex:1">
         <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent)">${j.jobNum}</div>
-        <div style="font-size:11px;color:var(--text2)">${j.site}</div>
-        <div style="font-size:10px;color:var(--text3)">${j.tech} · ${j.items?.length||0} instruments out</div>
+        ${j.customer?`<div style="font-size:12px;font-weight:600;color:var(--text)">🏢 ${j.customer}</div>`:''}
+        <div style="font-size:11px;color:var(--text2)">📍 ${j.site}</div>
+        <div style="font-size:10px;color:var(--text3)">👤 ${j.tech} · ${j.items?.length||0} instruments out</div>
       </div>
       <div style="font-size:10px;font-weight:700;background:rgba(255,176,32,.12);color:var(--amber);padding:3px 8px;border-radius:5px">OPEN</div>
     </div>`).join('');
@@ -2643,66 +2742,61 @@ function selectReturnJob(jobNum){
   const job = jobs.find(j=>j.jobNum===jobNum);
   if(!job) return;
   document.getElementById('job-number-display').textContent = jobNum;
+  document.getElementById('job-number-display').style.color = 'var(--accent)';
   document.getElementById('job-site').value = job.site;
+  document.getElementById('job-customer').value = job.customer || '';
+  document.getElementById('job-description').value = job.desc || '';
   // Highlight selected
   document.querySelectorAll('#open-jobs-list > div').forEach(el=>{
     el.style.borderColor = el.textContent.includes(jobNum) ? 'var(--accent)' : 'var(--border2)';
   });
 }
 
-function confirmJob(){
+async function confirmJob(){
   if(!session){ openSessionModal(); return; }
-  const jobNum = document.getElementById('job-number-display').textContent;
-  const site   = document.getElementById('job-site').value.trim() || session.site;
-  const mode   = pendingJobMode;
+  const display = document.getElementById('job-number-display');
+  const customer = document.getElementById('job-customer').value.trim();
+  const site     = document.getElementById('job-site').value.trim() || session.site;
+  const desc     = document.getElementById('job-description').value.trim();
+  const mode     = pendingJobMode;
 
+  if(display.textContent === 'Loading…'){ showToast('⚠ Job number loading — wait'); return; }
+  if(!customer){ showToast('⚠ Enter customer name'); return; }
   if(!site){ showToast('⚠ Enter site location'); return; }
 
-  // For return — find existing job or create new
-  let existingJob = jobs.find(j=>j.jobNum===jobNum);
+  const jobNum = display.textContent;
 
-  if(mode==='issue' && !existingJob){
-    // Create new job
-    const year = new Date().getFullYear().toString().slice(-2);
-    const seq = parseInt(localStorage.getItem(KEY_SEQ_KEY)||'0') + 1;
-    localStorage.setItem(KEY_SEQ_KEY, seq.toString());
-    const newJobNum = `S${year}-${String(seq).padStart(4,'0')}`;
-    const newJob = {
-      jobNum: newJobNum,
-      site, tech: session.name,
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      items: [],
-      batches: []
-    };
-    jobs.unshift(newJob);
-    saveJobs();
-    activeJob = newJob;
-    document.getElementById('job-number-display').textContent = newJobNum;
-  } else if(existingJob){
-    activeJob = existingJob;
+  // For return — find existing job
+  if(mode === 'return'){
+    const existingJob = jobs.find(j=>j.jobNum===jobNum);
+    if(existingJob){
+      activeJob = existingJob;
+    } else {
+      const newJob = {jobNum,customer,site,desc,tech:session.name,status:'open',createdAt:new Date().toISOString(),items:[],batches:[]};
+      jobs.unshift(newJob);
+      saveJobs();
+      activeJob = newJob;
+    }
   } else {
-    // Return with no existing job — create one
-    const newJob = {
-      jobNum, site, tech: session.name,
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      items: [], batches: []
-    };
+    // Issue out
+    if(display.style.color !== 'rgb(0, 229, 176)'){
+      const year = new Date().getFullYear().toString().slice(-2);
+      const seq = parseInt(localStorage.getItem(KEY_SEQ_KEY)||'0') + 1;
+      localStorage.setItem(KEY_SEQ_KEY, seq.toString());
+    }
+    const newJob = {jobNum,customer,site,desc,tech:session.name,status:'open',createdAt:new Date().toISOString(),items:[],batches:[]};
     jobs.unshift(newJob);
     saveJobs();
     activeJob = newJob;
   }
 
-  // Update form
+  // Update form banner
   document.getElementById('active-job-display').textContent = activeJob.jobNum;
-  document.getElementById('active-job-site').textContent = activeJob.site;
+  document.getElementById('active-job-site').textContent = (activeJob.customer ? activeJob.customer + ' · ' : '') + activeJob.site;
   document.getElementById('site-override').value = activeJob.site;
   setMode(mode);
-
-  // Close modal
   document.getElementById('job-modal').classList.remove('open');
-  showToast(`✓ Job ${activeJob.jobNum} active — start scanning`);
+  showToast(`✓ Job ${activeJob.jobNum} — ${activeJob.customer||activeJob.site}`);
 }
 
 // ── ATTACH JOB TO BATCH SUBMIT ──
@@ -2787,7 +2881,9 @@ function renderJobsTab(){
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
         <div>
           <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)">${j.jobNum}</div>
+          ${j.customer?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-top:2px">🏢 ${j.customer}</div>`:''}
           <div style="font-size:12px;color:var(--text2);margin-top:2px">📍 ${j.site}</div>
+          ${j.desc?`<div style="font-size:11px;color:var(--text3);font-style:italic">${j.desc}</div>`:''}
           <div style="font-size:11px;color:var(--text3)">👤 ${j.tech} · 📅 ${created}</div>
         </div>
         <span style="font-size:9px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(0,0,0,.2);color:${statusColor[j.status]||'var(--text3)'};white-space:nowrap">${statusLabel[j.status]||j.status}</span>
@@ -2822,9 +2918,9 @@ function filterJobs(f,btn){
 
 function exportJobsCSV(){
   if(!jobs.length){showToast('No jobs to export');return;}
-  const headers=['Job Number','Site','Technician','Status','Created','Closed','Instruments Out','Instruments Returned'];
+  const headers=['Job Number','Customer','Site','Work Description','Technician','Status','Created','Closed','Instruments Out','Instruments Returned'];
   const rows=jobs.map(j=>[
-    j.jobNum,j.site,j.tech,j.status,
+    j.jobNum,j.customer||'',j.site,j.desc||'',j.tech,j.status,
     j.createdAt?new Date(j.createdAt).toLocaleDateString('en-GB'):'',
     j.closedAt?new Date(j.closedAt).toLocaleDateString('en-GB'):'',
     (j.items||[]).join('; '),
