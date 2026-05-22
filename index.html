@@ -3,985 +3,1858 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CalTrack">
 <meta name="theme-color" content="#00e5b0">
 <title>CalTrack — MSSI Cal Lab</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" id="pwa-manifest">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
-:root{
-  --bg:#0a0c0f;--s:#111419;--s2:#181c23;--s3:#1e2430;
-  --b:#252b36;--b2:#2e3847;
-  --green:#00e5b0;--amber:#ffb020;--red:#ff4d6d;--blue:#4d9fff;--purple:#a78bfa;--cyan:#22d3ee;
-  --text:#e8edf5;--t2:#8a96a8;--t3:#5a6478;
-  --mono:'IBM Plex Mono',monospace;--sans:'Space Grotesk',sans-serif;--r:12px;
+:root {
+  --bg:       #080b10;
+  --bg2:      #0d1117;
+  --surface:  #111820;
+  --surface2: #161e28;
+  --surface3: #1c2633;
+  --border:   #1e2d3d;
+  --border2:  #243548;
+  --text:     #e6edf3;
+  --text2:    #8b949e;
+  --text3:    #484f58;
+  --accent:   #00e5b0;
+  --accent2:  #00b88a;
+  --amber:    #f0a500;
+  --red:      #f85149;
+  --blue:     #388bfd;
+  --purple:   #bc8cff;
+  --green:    #3fb950;
+  --sans:     'DM Sans', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --r:        12px;
+  --r2:       8px;
+
+  /* Stage colors */
+  --s1: #f0a500;
+  --s2: #388bfd;
+  --s3: #bc8cff;
+  --s4: #f85149;
+  --s5: #00b4d8;
+  --s6: #ff6b35;
+  --s7: #00e5b0;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none}
-body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height:100dvh}
-#login-screen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:0}
-.login-logo{width:72px;height:72px;background:var(--green);border-radius:20px;display:grid;place-items:center;margin-bottom:20px}
-.login-logo svg{width:36px;height:36px}
-.login-title{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:.05em;margin-bottom:4px}
-.login-title span{color:var(--green)}
-.login-sub{font-size:13px;color:var(--t3);margin-bottom:36px;text-align:center}
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:20px}
-.role-card{background:var(--s);border:1.5px solid var(--b2);border-radius:var(--r);padding:16px 12px;cursor:pointer;text-align:center;transition:border-color .2s,background .2s}
-.role-card:active{background:var(--s2)}
-.role-card.selected{border-color:var(--green);background:rgba(0,229,176,.08)}
-.role-icon{font-size:24px;margin-bottom:8px}
-.role-name{font-size:13px;font-weight:600;color:var(--text)}
-.role-desc{font-size:10px;color:var(--t3);margin-top:3px}
-.login-input{width:100%;padding:13px 14px;background:var(--s);border:1px solid var(--b);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:15px;outline:none;-webkit-appearance:none;margin-bottom:14px}
-.login-input:focus{border-color:var(--green)}
-.login-input::placeholder{color:var(--t3)}
-.login-btn{width:100%;padding:15px;background:var(--green);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:16px;font-weight:700;cursor:pointer}
-header{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--b);background:var(--bg);position:sticky;top:0;z-index:50;gap:8px}
-.logo{display:flex;align-items:center;gap:7px;flex-shrink:0}
-.logo-icon{width:26px;height:26px;background:var(--green);border-radius:7px;display:grid;place-items:center}
-.logo-icon svg{width:13px;height:13px}
-.logo-text{font-family:var(--mono);font-weight:600;font-size:14px}
-.logo-text span{color:var(--green)}
-.user-pill{flex:1;min-width:0;display:flex;align-items:center;gap:6px;background:var(--s);border:1px solid var(--b);border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;overflow:hidden}
-.user-av{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:9px;font-weight:700;flex-shrink:0}
-.user-info{min-width:0;flex:1}
-.user-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.user-role{font-size:10px;color:var(--t3);white-space:nowrap}
-.hdr-time{font-family:var(--mono);font-size:11px;color:var(--t3);flex-shrink:0}
-.nav{display:flex;background:var(--bg);border-bottom:1px solid var(--b);position:sticky;top:49px;z-index:40;overflow-x:auto;scrollbar-width:none}
-.nav::-webkit-scrollbar{display:none}
-.nav-btn{flex:0 0 auto;padding:9px 14px;background:none;border:none;color:var(--t3);font-family:var(--sans);font-size:9px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;position:relative}
-.nav-btn.active{color:var(--green);border-bottom-color:var(--green)}
-.nav-btn svg{width:16px;height:16px}
-.nav-badge{position:absolute;top:5px;right:8px;min-width:14px;height:14px;background:var(--red);color:#fff;font-size:8px;font-weight:700;border-radius:7px;display:none;align-items:center;justify-content:center;padding:0 3px}
-.nav-badge.show{display:flex}
-main{flex:1;overflow-y:auto;padding:16px;padding-bottom:40px}
-.back-btn{display:flex;align-items:center;gap:6px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;background:none;border:none;font-family:var(--sans);padding:0}
-.back-btn svg{width:16px;height:16px}
-.job-card{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:13px;margin-bottom:10px;cursor:pointer;animation:si .2s ease}
-@keyframes si{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-.job-card:active{background:var(--s2)}
-.job-num{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--green)}
-.job-customer{font-size:13px;font-weight:600;margin-bottom:2px}
-.job-meta{font-size:11px;color:var(--t2);margin-bottom:8px}
-.stage-pill{font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.04em;white-space:nowrap}
-.stage-bar{display:flex;gap:3px;margin-bottom:8px}
-.stage-dot{flex:1;height:4px;border-radius:2px;background:var(--b)}
-.stage-dot.done{background:var(--green)}
-.stage-dot.active{background:var(--amber)}
-.detail-header{background:var(--s);border:1px solid var(--b2);border-radius:var(--r);padding:14px;margin-bottom:16px}
-.detail-job-num{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--green);margin-bottom:4px}
-.detail-customer{font-size:16px;font-weight:700;margin-bottom:4px}
-.detail-meta{font-size:12px;color:var(--t2);line-height:1.6}
-.step-row{display:flex;gap:12px;align-items:flex-start}
-.step-col{display:flex;flex-direction:column;align-items:center}
-.step-circle{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:14px;flex-shrink:0;border:2px solid var(--b)}
-.step-circle.done{background:rgba(0,229,176,.15);border-color:var(--green)}
-.step-circle.active{background:rgba(255,176,32,.15);border-color:var(--amber);animation:pa 2s infinite}
-@keyframes pa{0%,100%{border-color:var(--amber)}50%{border-color:rgba(255,176,32,.3)}}
-.step-circle.pending{background:var(--s2);border-color:var(--b)}
-.step-conn{width:2px;flex:1;min-height:20px;background:var(--b);margin:2px 0}
-.step-conn.done{background:var(--green)}
-.step-body{flex:1;padding-bottom:20px;padding-top:4px}
-.step-title{font-size:13px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px}
-.step-info{font-size:11px;color:var(--t3);line-height:1.5;margin-bottom:8px}
-.field{margin-bottom:12px}
-.fl{font-size:10px;color:var(--t3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
-.fi{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;-webkit-appearance:none;appearance:none}
-.fi:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,229,176,.1)}
-.fi::placeholder{color:var(--t3)}
-.fi-sel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6478' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-.fi-sel option{background:var(--s2)}
-.sbtn{width:100%;padding:14px;background:var(--green);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:16px;-webkit-appearance:none}
-.sbtn:active{transform:scale(.98)}
-.sbtn.amber{background:var(--amber);color:#1a0e00}
-.sbtn:disabled{opacity:.4;pointer-events:none}
-.scan-area{background:var(--s);border:1.5px dashed var(--b2);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px}
-.scan-area:active{background:var(--s2)}
-.scan-icon{width:44px;height:44px;border-radius:12px;background:rgba(0,229,176,.1);display:grid;place-items:center}
-.scan-icon svg{width:22px;height:22px;color:var(--green)}
-.mcl-item{background:var(--s2);border:1px solid var(--b);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.mcl-n{font-family:var(--mono);font-size:11px;color:var(--t3);min-width:22px}
-.mcl-body{flex:1;min-width:0}
-.mcl-id{font-family:var(--mono);font-size:12px;font-weight:600}
-.mcl-desc{font-size:11px;color:var(--t3)}
-.mcl-rm{background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px}
-.inv-line{background:var(--s2);border:1px solid var(--b);border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.inv-info{flex:1;min-width:0}
-.inv-id{font-family:var(--mono);font-size:12px;font-weight:600}
-.inv-d{font-size:11px;color:var(--t3)}
-.rate-inp{width:80px;padding:7px 8px;background:var(--s);border:1px solid var(--b);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;text-align:right;-webkit-appearance:none}
-.rate-inp:focus{border-color:var(--green)}
-.tot-row{display:flex;justify-content:space-between;font-size:13px;color:var(--t2);margin-bottom:8px}
-.tot-row.grand{font-size:16px;font-weight:700;color:var(--text);margin-bottom:0;padding-top:10px;border-top:1px solid var(--b)}
-.tot-row.grand span:last-child{color:var(--green);font-family:var(--mono)}
-.photo-area{border:2px dashed var(--b2);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;background:var(--s2);margin-bottom:8px}
-.photo-area:active{border-color:var(--green)}
-.photo-area svg{width:32px;height:32px;color:var(--t3)}
-.ph-prev{width:100%;border-radius:var(--r);max-height:240px;object-fit:contain;background:var(--s2);display:none;margin-bottom:8px}
-.ph-prev.show{display:block}
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:flex-end;justify-content:center}
-.modal-bg.open{display:flex}
-.modal{background:var(--s);border:1px solid var(--b2);border-radius:20px 20px 0 0;padding:22px 18px 36px;width:100%;max-width:480px;animation:mup .25s ease;max-height:90dvh;overflow-y:auto}
-@keyframes mup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-title{font-size:16px;font-weight:700;margin-bottom:4px}
-.modal-sub{font-size:12px;color:var(--t3);margin-bottom:18px}
-.mclose{background:none;border:none;color:var(--t3);font-size:22px;cursor:pointer;line-height:1;float:right;padding:0 0 0 8px}
-.task-card{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:12px 13px;margin-bottom:9px;cursor:pointer;display:flex;gap:10px;align-items:flex-start}
-.task-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:16px;flex-shrink:0}
-.task-body{flex:1;min-width:0}
-.task-job{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green);margin-bottom:2px}
-.task-title{font-size:13px;font-weight:600;margin-bottom:3px}
-.task-detail{font-size:11px;color:var(--t2)}
-#cam-overlay{display:none;position:fixed;inset:0;background:#000;z-index:200;flex-direction:column}
-#cam-overlay.open{display:flex}
-#cam-video{width:100%;height:100%;object-fit:cover}
-#cam-canvas{display:none}
-.cam-ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.sf{width:220px;height:220px;border:2px solid var(--green);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.55);position:relative;animation:pfb 1.5s ease-in-out infinite}
-@keyframes pfb{0%,100%{border-color:var(--green)}50%{border-color:rgba(0,229,176,.3)}}
-.sl{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:sla 2s linear infinite}
-@keyframes sla{0%{top:0}100%{top:100%}}
-.cam-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:20px;display:grid;place-items:center;cursor:pointer;pointer-events:all}
-.cam-hint{color:#fff;font-size:13px;margin-top:20px;text-shadow:0 1px 8px rgba(0,0,0,.8)}
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--s2);border:1px solid var(--b2);border-radius:22px;padding:9px 18px;font-size:12px;font-weight:500;color:var(--text);z-index:300;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,.4);pointer-events:none}
-#toast.show{transform:translateX(-50%) translateY(0)}
-.empty-st{text-align:center;padding:48px 16px;color:var(--t3)}
-.empty-st svg{width:44px;height:44px;margin:0 auto 12px;opacity:.25;display:block}
-.empty-st p{font-size:13px}
-.s1{background:rgba(77,159,255,.15);color:#4d9fff}
-.s2{background:rgba(167,139,250,.15);color:#a78bfa}
-.s3{background:rgba(255,176,32,.15);color:#ffb020}
-.s4{background:rgba(34,211,238,.15);color:#22d3ee}
-.s5{background:rgba(0,229,176,.15);color:#00e5b0}
-.s6{background:rgba(255,77,109,.15);color:#ff4d6d}
-.s7{background:rgba(0,229,176,.15);color:#00e5b0}
-.pf-btn{flex:0 0 auto;padding:5px 12px;background:var(--s);border:1px solid var(--b);border-radius:20px;color:var(--t3);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--sans);white-space:nowrap}
-.pf-btn.active{background:var(--s2);border-color:var(--b2);color:var(--text)}
-.pf-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;margin-bottom:14px}
-.pf-bar::-webkit-scrollbar{display:none}
-.chip{display:inline-flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:3px 8px;font-size:11px;font-family:var(--mono);white-space:nowrap}
-.chip-l{color:var(--t3);font-size:10px}
-.chip-v{color:var(--text);font-weight:500}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--sans); color: var(--text); font-size: 14px; }
+
+/* ── APP SHELL ── */
+#app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; background: var(--bg); position: relative; overflow: hidden; }
+
+/* ── HEADER ── */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg); position: relative; z-index: 50; flex-shrink: 0; }
+.header-logo { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
+.header-logo span { color: var(--accent); }
+.role-pill { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 10px 5px 7px; cursor: pointer; }
+.role-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.role-name { font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+
+/* ── VIEWS ── */
+#login-view, #app-view { position: absolute; inset: 0; }
+#login-view { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: var(--bg); z-index: 100; }
+#app-view { display: flex; flex-direction: column; }
+
+/* ── LOGIN ── */
+.login-logo { font-family: var(--mono); font-size: 28px; font-weight: 700; color: var(--accent); letter-spacing: -0.04em; margin-bottom: 4px; }
+.login-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); margin-bottom: 40px; }
+.login-card { width: 100%; background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; padding: 20px; margin-bottom: 12px; }
+.login-card-title { font-size: 11px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
+.login-name-input { width: 100%; padding: 12px 14px; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r2); color: var(--text); font-family: var(--sans); font-size: 15px; outline: none; margin-bottom: 12px; }
+.login-name-input:focus { border-color: var(--accent); }
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.role-card { padding: 12px 10px; background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--r2); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s; }
+.role-card:active { transform: scale(.97); }
+.role-card.selected { border-color: var(--accent); background: rgba(0,229,176,.08); }
+.role-card-icon { font-size: 22px; }
+.role-card-label { font-size: 11px; font-weight: 600; color: var(--text2); text-align: center; line-height: 1.3; }
+.role-card.selected .role-card-label { color: var(--accent); }
+.login-btn { width: 100%; padding: 14px; background: var(--accent); color: #021a13; border: none; border-radius: var(--r); font-family: var(--sans); font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+
+/* ── TABS ── */
+.tab-bar { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn { flex: 0 0 auto; min-width: 64px; padding: 9px 8px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text3); font-family: var(--sans); font-size: 9px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all .15s; position: relative; }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn svg { width: 18px; height: 18px; }
+.tab-notif { position: absolute; top: 6px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--red); border: 1.5px solid var(--bg); display: none; }
+.tab-notif.show { display: block; }
+
+/* ── MAIN CONTENT ── */
+.main-content { flex: 1; overflow-y: auto; padding: 14px; -webkit-overflow-scrolling: touch; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── STAGE PIPELINE CARD ── */
+.job-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 13px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s; }
+.job-card:active { border-color: var(--border2); }
+.job-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.job-num { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--accent); }
+.stage-badge { font-size: 9px; font-weight: 700; padding: 3px 9px; border-radius: 20px; font-family: var(--mono); letter-spacing: .04em; }
+.job-customer { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.job-meta { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+.stage-progress { display: flex; gap: 3px; align-items: center; }
+.stage-pip { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+.stage-pip.done { background: var(--accent); }
+.stage-pip.active { background: var(--amber); }
+
+/* ── JOB DETAIL ── */
+.stage-list { display: flex; flex-direction: column; gap: 0; }
+.stage-row { display: flex; gap: 12px; align-items: flex-start; }
+.stage-line-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.stage-icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; border: 2px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.stage-icon.done { background: rgba(0,229,176,.1); border-color: var(--accent); }
+.stage-icon.active { background: rgba(240,165,0,.1); border-color: var(--amber); }
+.stage-icon.locked { opacity: .4; }
+.stage-connector { width: 2px; flex: 1; min-height: 20px; background: var(--border); margin: 3px 0; }
+.stage-connector.done { background: var(--accent); }
+.stage-body { flex: 1; padding-bottom: 18px; }
+.stage-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.stage-status { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.stage-action-btn { padding: 9px 16px; border: none; border-radius: var(--r2); font-family: var(--sans); font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.stage-action-btn.primary { background: var(--accent); color: #021a13; }
+.stage-action-btn.secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+.stage-action-btn.warn { background: rgba(240,165,0,.15); color: var(--amber); border: 1px solid rgba(240,165,0,.3); }
+
+/* ── FORMS ── */
+.field-label { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; margin-top: 12px; }
+.field-label:first-child { margin-top: 0; }
+.field-input { width: 100%; padding: 11px 13px; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r2); color: var(--text); font-family: var(--sans); font-size: 14px; outline: none; }
+.field-input:focus { border-color: var(--accent); }
+.field-input.mono { font-family: var(--mono); }
+textarea.field-input { resize: none; height: 80px; }
+
+/* ── MCL TABLE ── */
+.mcl-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 10px 12px; margin-bottom: 7px; }
+.mcl-item-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.mcl-item-id { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); }
+.mcl-item-remove { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; line-height: 1; padding: 0 2px; }
+
+/* ── MODALS ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: flex-end; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
+.modal-overlay.open { display: flex; }
+.modal-sheet { background: var(--bg2); border-radius: 20px 20px 0 0; border: 1px solid var(--border2); border-bottom: none; width: 100%; max-width: 480px; max-height: 90dvh; overflow-y: auto; padding: 20px 16px 32px; animation: sheet-up .25s cubic-bezier(.34,1.2,.64,1); }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.modal-sub { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.modal-btn { flex: 1; padding: 13px; border: none; border-radius: var(--r); font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; }
+.modal-btn.primary { background: var(--accent); color: #021a13; }
+.modal-btn.secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+.modal-btn.danger { background: rgba(248,81,73,.15); color: var(--red); border: 1px solid rgba(248,81,73,.3); }
+
+/* ── PHOTO UPLOAD ── */
+.photo-upload-area { border: 2px dashed var(--border2); border-radius: var(--r); padding: 24px 16px; text-align: center; cursor: pointer; }
+.photo-upload-area.has-photo { border-color: var(--accent); border-style: solid; }
+.photo-preview { width: 100%; border-radius: var(--r2); max-height: 200px; object-fit: cover; }
+
+/* ── INSTRUMENT BATCH ── */
+.batch-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 10px 12px; margin-bottom: 7px; display: flex; align-items: center; gap: 10px; }
+.batch-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
+.batch-icon.master { background: rgba(188,140,255,.12); border: 1px solid rgba(188,140,255,.25); }
+.batch-icon.normal { background: var(--surface2); border: 1px solid var(--border); }
+.batch-info { flex: 1; min-width: 0; }
+.batch-id { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text); }
+.batch-model { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.batch-remove { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; flex-shrink: 0; }
+
+/* ── PASS/FAIL ── */
+.pf-row { display: flex; gap: 6px; margin-top: 6px; }
+.pf-btn { flex: 1; padding: 7px; border-radius: var(--r2); font-family: var(--sans); font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border2); background: var(--surface2); color: var(--text3); }
+.pf-btn.pass.sel { background: rgba(0,229,176,.15); border-color: var(--accent); color: var(--accent); }
+.pf-btn.fail.sel { background: rgba(248,81,73,.15); border-color: var(--red); color: var(--red); }
+
+/* ── CONDITION BUTTONS ── */
+.cond-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.cond-btn { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border2); background: var(--surface2); color: var(--text3); }
+.cond-btn.sel-good { background: rgba(0,229,176,.12); border-color: var(--accent); color: var(--accent); }
+.cond-btn.sel-damaged { background: rgba(240,165,0,.12); border-color: var(--amber); color: var(--amber); }
+.cond-btn.sel-missing { background: rgba(248,81,73,.12); border-color: var(--red); color: var(--red); }
+
+/* ── KPI CARDS ── */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; }
+.kpi-val { font-family: var(--mono); font-size: 26px; font-weight: 700; }
+.kpi-label { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+/* ── SECTION HEADER ── */
+.section-hd { font-size: 10px; font-weight: 700; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; margin-top: 18px; }
+.section-hd:first-child { margin-top: 0; }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text3); }
+.empty-state svg { display: block; margin: 0 auto 12px; opacity: .25; }
+.empty-state p { font-size: 13px; }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border2); border-radius: 24px; padding: 9px 18px; font-size: 13px; font-weight: 500; color: var(--text); z-index: 300; transition: transform .3s cubic-bezier(.34,1.3,.64,1); white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,.5); pointer-events: none; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── CAMERA ── */
+#camera-container { position: fixed; inset: 0; background: #000; z-index: 250; display: none; flex-direction: column; }
+#camera-container.active { display: flex; }
+#cam-video { width: 100%; flex: 1; object-fit: cover; }
+#cam-canvas { display: none; }
+.cam-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(0,0,0,.7); }
+.cam-close { background: rgba(255,255,255,.15); border: none; border-radius: 50%; width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer; color: #fff; }
+.cam-count { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.cam-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 220px; height: 220px; border: 2px solid var(--accent); border-radius: 16px; opacity: .6; pointer-events: none; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── INVOICE ── */
+.inv-line { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 10px 12px; margin-bottom: 7px; }
+.inv-line-info { flex: 1; min-width: 0; }
+.inv-rate-input { width: 90px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r2); color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; text-align: right; flex-shrink: 0; }
+.inv-total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--text2); border-bottom: 1px solid var(--border); }
+.inv-total-row:last-child { border-bottom: none; font-size: 16px; font-weight: 700; color: var(--accent); padding-top: 12px; }
+
+/* ── SETTINGS ── */
+.settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 12px; }
+.settings-card-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+
+/* ── DELIVERY / CERT ── */
+.task-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 13px; margin-bottom: 9px; cursor: pointer; }
+.task-card-num { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 3px; }
+.task-card-customer { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.task-card-meta { font-size: 11px; color: var(--text2); }
+.task-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 20px; font-family: var(--mono); margin-top: 6px; }
+
+/* ── HIDDEN ── */
+.hidden { display: none !important; }
 </style>
 </head>
 <body>
-<div id="toast"></div>
-<div id="cam-overlay">
-  <video id="cam-video" autoplay muted playsinline></video>
+
+<div id="app">
+
+  <!-- LOGIN VIEW -->
+  <div id="login-view">
+    <div class="login-logo">Cal<span>Track</span></div>
+    <div class="login-sub">MSSI Calibration Lab</div>
+    <div class="login-card">
+      <div class="login-card-title">Your Name</div>
+      <input type="text" id="login-name" class="login-name-input" placeholder="Enter your name…" autocomplete="name">
+      <div class="login-card-title">Your Role</div>
+      <div class="role-grid" id="role-grid">
+        <div class="role-card" data-role="technician" onclick="selectRole(this)">
+          <div class="role-card-icon">🔧</div>
+          <div class="role-card-label">Technician</div>
+        </div>
+        <div class="role-card" data-role="ops_head" onclick="selectRole(this)">
+          <div class="role-card-icon">👔</div>
+          <div class="role-card-label">Operations Head</div>
+        </div>
+        <div class="role-card" data-role="coordinator" onclick="selectRole(this)">
+          <div class="role-card-icon">🚗</div>
+          <div class="role-card-label">Coordinator / Driver</div>
+        </div>
+        <div class="role-card" data-role="accounts" onclick="selectRole(this)">
+          <div class="role-card-icon">💼</div>
+          <div class="role-card-label">Accounts</div>
+        </div>
+        <div class="role-card" data-role="quality" onclick="selectRole(this)">
+          <div class="role-card-icon">🎯</div>
+          <div class="role-card-label">Quality Manager</div>
+        </div>
+        <div class="role-card" data-role="lab_head" onclick="selectRole(this)">
+          <div class="role-card-icon">🏛️</div>
+          <div class="role-card-label">Lab Head</div>
+        </div>
+      </div>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Enter CalTrack →</button>
+  </div>
+
+  <!-- APP VIEW -->
+  <div id="app-view" style="display:none;flex-direction:column;height:100%">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-logo">Cal<span>Track</span></div>
+      <div class="role-pill" onclick="doLogout()">
+        <div class="role-dot" id="header-role-dot"></div>
+        <div class="role-name" id="header-role-name">—</div>
+      </div>
+    </div>
+
+    <!-- Tab bar — dynamic per role -->
+    <div class="tab-bar" id="tab-bar"></div>
+
+    <!-- Main scrollable content -->
+    <div class="main-content" id="main-content">
+
+      <!-- PIPELINE tab (ops_head / quality / lab_head) -->
+      <div class="tab-panel" id="panel-pipeline">
+        <div class="kpi-grid" id="pipeline-kpis"></div>
+        <div class="section-hd">All Jobs</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="pipeline-filters"></div>
+        <div id="pipeline-list"></div>
+      </div>
+
+      <!-- MY TASKS tab (all roles) -->
+      <div class="tab-panel" id="panel-tasks">
+        <div class="section-hd" id="tasks-hd">My Pending Tasks</div>
+        <div id="tasks-list"></div>
+      </div>
+
+      <!-- NEW JOB tab (technician / ops_head) -->
+      <div class="tab-panel" id="panel-new-job">
+        <div id="new-job-idle" style="display:flex;flex-direction:column;align-items:center;padding:32px 0;gap:14px;text-align:center">
+          <div style="width:72px;height:72px;border-radius:18px;background:rgba(0,229,176,.1);border:2px solid rgba(0,229,176,.25);display:grid;place-items:center">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:5px">No Active Job</div>
+            <div style="font-size:13px;color:var(--text3)">Start a new job or resume an open one</div>
+          </div>
+          <button onclick="openNewJobModal()" style="padding:14px 32px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer">+ New Job</button>
+          <div id="resume-jobs-list" style="width:100%;text-align:left"></div>
+        </div>
+        <div id="new-job-active" style="display:none">
+          <div id="active-job-banner" style="background:var(--surface);border:1.5px solid var(--accent);border-radius:var(--r);padding:12px 14px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Active Job</div>
+                <div id="active-job-num" style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent)">—</div>
+              </div>
+              <div style="display:flex;gap:7px">
+                <button onclick="openJobDetailModal(null)" style="padding:7px 11px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer">View</button>
+                <button onclick="clearActiveJob()" style="padding:7px 11px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);border-radius:8px;color:var(--red);font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer">Close</button>
+              </div>
+            </div>
+            <div id="active-job-customer" style="font-size:12px;font-weight:600;color:var(--text);margin-top:7px">—</div>
+            <div id="active-job-site" style="font-size:11px;color:var(--text2)">—</div>
+            <div id="active-job-stage-label" style="margin-top:6px"></div>
+          </div>
+          <!-- Stage-specific action area -->
+          <div id="stage-action-area"></div>
+        </div>
+      </div>
+
+      <!-- DELIVERY tab (coordinator) -->
+      <div class="tab-panel" id="panel-delivery">
+        <div class="section-hd">Pending Deliveries</div>
+        <div id="delivery-list"></div>
+      </div>
+
+      <!-- BILLING tab (accounts) -->
+      <div class="tab-panel" id="panel-billing">
+        <div class="section-hd">Jobs Awaiting Billing</div>
+        <div id="billing-list"></div>
+      </div>
+
+      <!-- JOBS tab (all) -->
+      <div class="tab-panel" id="panel-jobs">
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="jobs-filter-row"></div>
+        <div id="jobs-list-panel"></div>
+      </div>
+
+      <!-- SETTINGS tab -->
+      <div class="tab-panel" id="panel-settings">
+        <div class="settings-card">
+          <div class="settings-card-title">⚙️ Supabase Database</div>
+          <div class="field-label">Project URL</div>
+          <input type="text" id="set-sb-url" class="field-input mono" placeholder="https://xxxx.supabase.co">
+          <div class="field-label">Anon Key</div>
+          <input type="text" id="set-sb-key" class="field-input mono" placeholder="eyJ…" style="margin-bottom:12px">
+          <button onclick="saveSupabaseSettings()" style="width:100%;padding:11px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Save & Test Connection</button>
+          <div id="set-sb-status" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:8px;text-align:center"></div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title">👥 Approvers (WhatsApp)</div>
+          <div class="field-label">Operations Head</div>
+          <input type="text" id="set-ap1-name" class="field-input" placeholder="Name" style="margin-bottom:6px">
+          <input type="text" id="set-ap1-phone" class="field-input mono" placeholder="968XXXXXXXX">
+          <div class="field-label">Quality Manager</div>
+          <input type="text" id="set-ap2-name" class="field-input" placeholder="Name e.g. Mr. Deena" style="margin-bottom:6px">
+          <input type="text" id="set-ap2-phone" class="field-input mono" placeholder="968XXXXXXXX">
+          <div class="field-label">Lab Head</div>
+          <input type="text" id="set-ap3-name" class="field-input" placeholder="Name" style="margin-bottom:6px">
+          <input type="text" id="set-ap3-phone" class="field-input mono" placeholder="968XXXXXXXX" style="margin-bottom:12px">
+          <button onclick="saveApproversSettings()" style="width:100%;padding:11px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text2);cursor:pointer">Save Approvers</button>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title">🔗 Equipment List URL</div>
+          <input type="text" id="set-eq-url" class="field-input mono" style="margin-bottom:12px" placeholder="https://raw.githubusercontent.com/…/equipment.json">
+          <button onclick="saveEqUrl()" style="width:100%;padding:11px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text2);cursor:pointer">Save & Sync</button>
+        </div>
+        <div style="margin-top:4px;background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:var(--r);padding:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px">⚠ Danger Zone</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Clear all local data on this phone</div>
+          <button onclick="clearAllLocal()" style="padding:9px 14px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);border-radius:var(--r2);color:var(--red);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer">Clear Local Data</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── MODALS ── -->
+
+<!-- New Job Modal -->
+<div class="modal-overlay" id="modal-new-job" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet">
+    <div class="modal-title">New Job</div>
+    <div class="modal-sub" id="new-job-num-display" style="font-family:var(--mono);font-size:18px;color:var(--accent);font-weight:700">Generating…</div>
+    <div class="field-label">Customer Name *</div>
+    <input type="text" id="nj-customer" class="field-input" placeholder="e.g. PDO, OQ, Shell Oman">
+    <div class="field-label">Site / Location *</div>
+    <input type="text" id="nj-site" class="field-input" placeholder="e.g. Block 4 – Compressor Station">
+    <div class="field-label">Work Description</div>
+    <input type="text" id="nj-desc" class="field-input" placeholder="e.g. Annual Calibration Survey">
+    <div class="field-label">PO Number</div>
+    <input type="text" id="nj-po" class="field-input mono" placeholder="PO-XXXX">
+    <div class="field-label">Contact Person</div>
+    <input type="text" id="nj-contact" class="field-input" placeholder="Customer contact name">
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="document.getElementById('modal-new-job').classList.remove('open')">Cancel</button>
+      <button class="modal-btn primary" onclick="confirmNewJob()">Start Job →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Job Detail Modal -->
+<div class="modal-overlay" id="modal-job-detail" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet" id="modal-job-detail-body"></div>
+</div>
+
+<!-- Stage Action Modal -->
+<div class="modal-overlay" id="modal-stage" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet" id="modal-stage-body"></div>
+</div>
+
+<!-- Camera -->
+<div id="camera-container">
+  <div class="cam-header">
+    <span style="color:#fff;font-size:14px;font-weight:600">Scan QR Code</span>
+    <span class="cam-count" id="cam-count"></span>
+    <button class="cam-close" onclick="closeCamera()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <video id="cam-video" autoplay playsinline muted></video>
   <canvas id="cam-canvas"></canvas>
-  <div class="cam-ui">
-    <div class="sf"><div class="sl"></div></div>
-    <p class="cam-hint">Point at QR code on instrument</p>
-  </div>
-  <button class="cam-close" onclick="closeCamera()">&#10005;</button>
+  <div class="cam-overlay"></div>
 </div>
-<div id="login-screen">
-  <div class="login-logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#021a13" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
-  </div>
-  <div class="login-title">Cal<span>Track</span></div>
-  <div class="login-sub">MSSI Calibration Lab &mdash; Job Management</div>
-  <div class="role-grid">
-    <div class="role-card" data-role="technician" onclick="selRole('technician')">
-      <div class="role-icon">&#128295;</div>
-      <div class="role-name">Technician</div>
-      <div class="role-desc">Site work &amp; calibration</div>
-    </div>
-    <div class="role-card" data-role="manager" onclick="selRole('manager')">
-      <div class="role-icon">&#128084;</div>
-      <div class="role-name">Operations Head</div>
-      <div class="role-desc">Full pipeline view</div>
-    </div>
-    <div class="role-card" data-role="coordinator" onclick="selRole('coordinator')">
-      <div class="role-icon">&#128663;</div>
-      <div class="role-name">Coordinator</div>
-      <div class="role-desc">Delivery &amp; handover</div>
-    </div>
-    <div class="role-card" data-role="accounts" onclick="selRole('accounts')">
-      <div class="role-icon">&#128188;</div>
-      <div class="role-name">Accounts</div>
-      <div class="role-desc">Billing &amp; invoicing</div>
-    </div>
-  </div>
-  <input class="login-input" id="li-name" type="text" placeholder="Your full name" autocomplete="name">
-  <button class="login-btn" onclick="doLogin()">Enter CalTrack &#8594;</button>
-</div>
-<header>
-  <div class="logo">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#021a13" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
-    </div>
-    <span class="logo-text">Cal<span>Track</span></span>
-  </div>
-  <div class="user-pill" onclick="showLogin()">
-    <div class="user-av" id="hdr-av">?</div>
-    <div class="user-info">
-      <div class="user-name" id="hdr-name">&#8212;</div>
-      <div class="user-role" id="hdr-role">&#8212;</div>
-    </div>
-  </div>
-  <span class="hdr-time" id="hdr-clk"></span>
-</header>
-<nav class="nav" id="main-nav"></nav>
-<main id="mc"></main><script>
-const STAGES=[
-  {id:1,key:'issue',      label:'Issue Out',       icon:'📤',col:'s1',desc:'Master instruments issued to technician'},
-  {id:2,key:'onsite',     label:'On Site',         icon:'🔧',col:'s2',desc:'Calibrate customer instruments, create MCL'},
-  {id:3,key:'return',     label:'Return to Lab',   icon:'📥',col:'s3',desc:'Return instruments + upload signed service report'},
-  {id:4,key:'certificate',label:'Certification',   icon:'📜',col:'s4',desc:'Prepare calibration certificates'},
-  {id:5,key:'delivery',   label:'Delivery',        icon:'🚗',col:'s5',desc:'Deliver certificates, get acknowledgement'},
-  {id:6,key:'billing',    label:'Billing',         icon:'💰',col:'s6',desc:'Invoice and payment processing'},
-  {id:7,key:'complete',   label:'Complete',        icon:'✅',col:'s7',desc:'Job fully closed'},
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════
+// CONSTANTS & STORAGE KEYS
+// ════════════════════════════════════════════════════
+const KEY_SESSION   = 'ct2-session';
+const KEY_JOBS      = 'ct2-jobs';
+const KEY_EQ        = 'ct2-equipment';
+const KEY_EQ_URL    = 'ct2-eq-url';
+const KEY_SB_URL    = 'ct2-sb-url';
+const KEY_SB_KEY    = 'ct2-sb-key';
+const KEY_APPROVERS = 'ct2-approvers';
+const KEY_JOB_SEQ   = 'ct2-job-seq';
+
+const DEFAULT_EQ_URL = 'https://raw.githubusercontent.com/selva20240720/msecaltrack/main/equipment.json';
+
+// ════════════════════════════════════════════════════
+// STAGE DEFINITIONS
+// ════════════════════════════════════════════════════
+const STAGES = [
+  { id:1, key:'issue_out',     label:'Issue Out',         icon:'🟡', color:'var(--s1)' },
+  { id:2, key:'on_site',       label:'On Site / MCL',     icon:'📋', color:'var(--s2)' },
+  { id:3, key:'return_lab',    label:'Return to Lab',     icon:'🔵', color:'var(--s3)' },
+  { id:4, key:'certification', label:'Certification',     icon:'📜', color:'var(--s4)' },
+  { id:5, key:'delivery',      label:'Delivery',          icon:'🚗', color:'var(--s5)' },
+  { id:6, key:'billing',       label:'Billing',           icon:'💰', color:'var(--s6)' },
+  { id:7, key:'complete',      label:'Complete',          icon:'✅', color:'var(--s7)' },
 ];
-const ROLES={
-  technician: {label:'Technician',     color:'#4d9fff',tabs:['tasks','newjob','equipment']},
-  manager:    {label:'Operations Head',color:'#00e5b0',tabs:['pipeline','tasks','newjob','equipment','settings']},
-  coordinator:{label:'Coordinator',    color:'#a78bfa',tabs:['tasks']},
-  accounts:   {label:'Accounts',       color:'#ffb020',tabs:['tasks','billing']},
+
+const ROLE_CONFIG = {
+  technician:  { label:'Technician',        dot:'#f0a500', tabs:['new-job','tasks','jobs','settings'],          canApprove:false, readOnly:false },
+  ops_head:    { label:'Operations Head',   dot:'#00e5b0', tabs:['pipeline','tasks','jobs','settings'],         canApprove:true,  readOnly:false },
+  coordinator: { label:'Coordinator',       dot:'#388bfd', tabs:['tasks','delivery','jobs','settings'],         canApprove:false, readOnly:false },
+  accounts:    { label:'Accounts',          dot:'#ff6b35', tabs:['tasks','billing','jobs','settings'],          canApprove:false, readOnly:false },
+  quality:     { label:'Quality Manager',   dot:'#bc8cff', tabs:['pipeline','jobs','settings'],                 canApprove:false, readOnly:true  },
+  lab_head:    { label:'Lab Head',          dot:'#f85149', tabs:['pipeline','jobs','settings'],                 canApprove:false, readOnly:true  },
 };
-const UK='ct-u',JK='ct-j',SK='ct-sb',AK='ct-sb-key2',APK='ct-ap',EK='ct-eq';
-let user=JSON.parse(localStorage.getItem(UK)||'null');
-let jobs=JSON.parse(localStorage.getItem(JK)||'[]');
-let eqMap={},SB_URL=localStorage.getItem(SK)||'',SB_KEY=localStorage.getItem(AK)||'';
-let approvers=JSON.parse(localStorage.getItem(APK)||'[]');
-let curTab='',curJob=null,camCb=null,camStream=null,scanIv=null,selRole_='',pfilt='all',bFixed=[];
 
-function saveJobs(){localStorage.setItem(JK,JSON.stringify(jobs));}
-function gid(){return Date.now().toString(36).toUpperCase();}
-function fdate(iso){return iso?new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';}
-function ftime(iso){return iso?new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'—';}
-function omr(n){return 'OMR '+(parseFloat(n)||0).toFixed(3);}
-function days(iso){return iso?Math.floor((Date.now()-new Date(iso))/86400000):0;}
-function stageDef(id){return STAGES.find(s=>s.id===id)||STAGES[0];}
-function pill(stageId){const s=stageDef(stageId);return `<span class="stage-pill ${s.col}">${s.icon} ${s.label}</span>`;}
-function stageBar(job){return STAGES.map(s=>{const d=job.stage>s.id,a=job.stage===s.id;return `<div class="stage-dot ${d?'done':a?'active':''}"></div>`;}).join('');}
+const TAB_CONFIG = {
+  'pipeline':  { label:'Pipeline', icon:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>' },
+  'tasks':     { label:'Tasks',    icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
+  'new-job':   { label:'Log',      icon:'<path d="M12 5v14M5 12h14"/>' },
+  'delivery':  { label:'Delivery', icon:'<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>' },
+  'billing':   { label:'Billing',  icon:'<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>' },
+  'jobs':      { label:'Jobs',     icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>' },
+  'settings':  { label:'Setup',    icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
+};
 
-let toastT;
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3000);}
+// ════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════
+let session     = JSON.parse(localStorage.getItem(KEY_SESSION) || 'null');
+let jobs        = JSON.parse(localStorage.getItem(KEY_JOBS) || '[]');
+let equipDB     = JSON.parse(localStorage.getItem(KEY_EQ) || '[]');
+let equipMap    = {};
+let SB_URL      = localStorage.getItem(KEY_SB_URL) || '';
+let SB_KEY_VAL  = localStorage.getItem(KEY_SB_KEY) || '';
+let approvers   = JSON.parse(localStorage.getItem(KEY_APPROVERS) || '[]');
+let activeJob   = null;
+let batchQueue  = [];
+let cameraStream = null;
+let scanInterval = null;
+let pendingJobNum = null;
+let currentTab  = '';
+let jobsFilter  = 'all';
 
+function saveJobs(){ localStorage.setItem(KEY_JOBS, JSON.stringify(jobs)); }
+function buildEquipMap(){ equipMap = {}; equipDB.forEach(e=>{ equipMap[e.id]=e; }); }
+buildEquipMap();
+
+// ════════════════════════════════════════════════════
 // LOGIN
-function selRole(r){selRole_=r;document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));document.querySelector(`.role-card[data-role="${r}"]`).classList.add('selected');}
+// ════════════════════════════════════════════════════
+let selectedRole = '';
+function selectRole(el){
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRole = el.dataset.role;
+}
+
 function doLogin(){
-  const name=document.getElementById('li-name').value.trim();
-  if(!selRole_){toast('Select your role');return;}
-  if(!name){toast('Enter your name');return;}
-  user={name,role:selRole_,initials:name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()};
-  localStorage.setItem(UK,JSON.stringify(user));
-  document.getElementById('login-screen').style.display='none';
+  const name = document.getElementById('login-name').value.trim();
+  if(!name){ showToast('Enter your name'); return; }
+  if(!selectedRole){ showToast('Select your role'); return; }
+  session = { name, role: selectedRole };
+  localStorage.setItem(KEY_SESSION, JSON.stringify(session));
   initApp();
 }
-function showLogin(){
-  if(user){document.getElementById('li-name').value=user.name;selRole(user.role);}
-  document.getElementById('login-screen').style.display='flex';
+
+function doLogout(){
+  if(!confirm('Log out?')) return;
+  session = null;
+  localStorage.removeItem(KEY_SESSION);
+  activeJob = null;
+  document.getElementById('app-view').style.display = 'none';
+  document.getElementById('login-view').style.display = 'flex';
 }
 
-// INIT
+// ════════════════════════════════════════════════════
+// APP INIT
+// ════════════════════════════════════════════════════
 function initApp(){
-  if(!user){showLogin();return;}
-  document.getElementById('login-screen').style.display='none';
-  const rc=ROLES[user.role];
-  const av=document.getElementById('hdr-av');
-  av.textContent=user.initials;av.style.background=rc.color+'22';av.style.color=rc.color;
-  document.getElementById('hdr-name').textContent=user.name;
-  document.getElementById('hdr-role').textContent=rc.label;
-  setInterval(()=>{document.getElementById('hdr-clk').textContent=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});},1000);
-  document.getElementById('hdr-clk').textContent=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  buildNav();loadEquip();syncSB();
-  switchTab(ROLES[user.role].tabs[0]);
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('app-view').style.display = 'flex';
+
+  const rc = ROLE_CONFIG[session.role] || ROLE_CONFIG.technician;
+  document.getElementById('header-role-dot').style.background = rc.dot;
+  document.getElementById('header-role-name').textContent = session.name;
+
+  buildTabBar(rc.tabs);
+  loadEquipment();
+  loadCentralJobs();
+  handleApprovalURL();
+
+  const firstTab = rc.tabs[0];
+  switchTab(firstTab);
 }
 
-const NAVD={
-  pipeline: {l:'Pipeline', i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>'},
-  tasks:    {l:'My Tasks',i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'},
-  newjob:   {l:'New Job', i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'},
-  equipment:{l:'Equip',   i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>'},
-  billing:  {l:'Billing', i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'},
-  settings: {l:'Settings',i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'},
-};
-function buildNav(){
-  document.getElementById('main-nav').innerHTML=ROLES[user.role].tabs.map(t=>`
-    <button class="nav-btn" id="nav-${t}" onclick="switchTab('${t}')">
-      ${NAVD[t].i}${NAVD[t].l}
-      <div class="nav-badge" id="badge-${t}"></div>
-    </button>`).join('');
-}
-function switchTab(t){
-  curTab=t;curJob=null;
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const b=document.getElementById('nav-'+t);if(b)b.classList.add('active');
-  renderTab(t);
-}
-function renderTab(t){
-  const m=document.getElementById('mc');
-  if(t==='pipeline')renderPipeline(m);
-  else if(t==='tasks')renderTasks(m);
-  else if(t==='newjob')renderNewJob(m);
-  else if(t==='equipment')renderEquipTab(m);
-  else if(t==='billing')renderBillingTab(m);
-  else if(t==='settings')renderSettings(m);
+function buildTabBar(tabs){
+  const bar = document.getElementById('tab-bar');
+  bar.innerHTML = tabs.map(t=>{
+    const tc = TAB_CONFIG[t];
+    return `<button class="tab-btn" id="tab-btn-${t}" onclick="switchTab('${t}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${tc.icon}</svg>
+      ${tc.label}
+      <div class="tab-notif" id="notif-${t}"></div>
+    </button>`;
+  }).join('');
 }
 
-// PIPELINE
-function renderPipeline(m){
-  updBadges();
-  const FL={all:'All',issue:'Issue Out',onsite:'On Site',return:'Return',certificate:'Cert',delivery:'Delivery',billing:'Billing',complete:'Complete'};
-  let filtered=[...jobs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  if(pfilt!=='all')filtered=filtered.filter(j=>stageDef(j.stage).key===pfilt);
-  m.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <span style="font-size:15px;font-weight:700">Job Pipeline</span>
-      <span style="font-size:11px;color:var(--t3);font-family:var(--mono)">${jobs.length} jobs</span>
-    </div>
-    <div class="pf-bar">${['all','issue','onsite','return','certificate','delivery','billing','complete'].map(f=>`<button class="pf-btn ${pfilt===f?'active':''}" onclick="pfilt='${f}';renderPipeline(document.getElementById('mc'))">${FL[f]}</button>`).join('')}</div>
-    ${filtered.length?filtered.map(jCard).join(''):`<div class="empty-st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><p>No jobs — tap New Job to start</p></div>`}`;
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  const btn = document.getElementById('tab-btn-'+tab);
+  if(btn) btn.classList.add('active');
+  const panel = document.getElementById('panel-'+tab);
+  if(panel) panel.classList.add('active');
+  currentTab = tab;
+
+  if(tab==='pipeline')   renderPipeline();
+  if(tab==='tasks')      renderTasks();
+  if(tab==='new-job')    renderNewJobTab();
+  if(tab==='delivery')   renderDelivery();
+  if(tab==='billing')    renderBilling();
+  if(tab==='jobs')       renderJobsPanel();
+  if(tab==='settings')   renderSettings();
+  updateNotifs();
 }
-function jCard(j){
-  const age=days(j.createdAt);
-  const ageS=age===0?'Today':age===1?'Yesterday':`${age}d ago`;
-  return `<div class="job-card" onclick="openDetail('${j.id}')">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px"><span class="job-num">${j.jobNum}</span>${pill(j.stage)}</div>
-    <div class="job-customer">${j.customer||'—'}</div>
-    <div class="job-meta">📍 ${j.site||'—'} · 👤 ${j.technician||'—'}</div>
-    <div class="stage-bar">${stageBar(j)}</div>
-    <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--t3)">${j.poNumber?'PO: '+j.poNumber:''}</span><span style="font-size:10px;font-family:var(--mono);color:var(--t3)">${ageS}</span></div>
+
+// ════════════════════════════════════════════════════
+// SUPABASE
+// ════════════════════════════════════════════════════
+async function sbPost(table, data){
+  if(!SB_URL||!SB_KEY_VAL) return false;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
+      method:'POST',
+      headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify(data)
+    });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+async function sbPatch(table, match, data){
+  if(!SB_URL||!SB_KEY_VAL) return false;
+  const q = Object.entries(match).map(([k,v])=>`${k}=eq.${v}`).join('&');
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?${q}`, {
+      method:'PATCH',
+      headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify(data)
+    });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+async function sbSelect(table, params=''){
+  if(!SB_URL||!SB_KEY_VAL) return null;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
+      headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`}
+    });
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+async function sbRPC(fn, args={}){
+  if(!SB_URL||!SB_KEY_VAL) return null;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST',
+      headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`,'Content-Type':'application/json'},
+      body: JSON.stringify(args)
+    });
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+async function getNextJobNumber(){
+  const year = new Date().getFullYear().toString().slice(-2);
+  const seq = await sbRPC('get_next_job_seq');
+  if(typeof seq === 'number'){
+    return `S${year}-${String(seq).padStart(4,'0')}`;
+  }
+  // Local fallback
+  const local = parseInt(localStorage.getItem(KEY_JOB_SEQ)||'0') + 1;
+  localStorage.setItem(KEY_JOB_SEQ, local.toString());
+  return `S${year}-${String(local).padStart(4,'0')}`;
+}
+
+async function loadCentralJobs(){
+  const rows = await sbSelect('ct2_jobs', 'order=created_at.desc');
+  if(!rows || !Array.isArray(rows)) return;
+  rows.forEach(r=>{
+    const j = {
+      jobNum:      r.job_num,
+      customer:    r.customer,
+      site:        r.site,
+      desc:        r.description,
+      poNumber:    r.po_number,
+      contact:     r.contact_person,
+      tech:        r.technician,
+      stage:       r.stage || 1,
+      status:      r.status || 'open',
+      masterItems: JSON.parse(r.master_items||'[]'),
+      mclItems:    JSON.parse(r.mcl_items||'[]'),
+      srNumber:    r.sr_number || '',
+      srPhotoData: r.sr_photo || '',
+      certNumbers: JSON.parse(r.cert_numbers||'[]'),
+      certAssigned:r.cert_assigned_to || '',
+      deliveryAck: r.delivery_ack || '',
+      deliveryBy:  r.delivery_by || '',
+      billingType: r.billing_type || '',
+      billingRef:  r.billing_ref || '',
+      approvals:   JSON.parse(r.approvals||'{}'),
+      createdAt:   r.created_at,
+      updatedAt:   r.updated_at,
+    };
+    const idx = jobs.findIndex(x=>x.jobNum===r.job_num);
+    if(idx>=0) jobs[idx]=j; else jobs.unshift(j);
+  });
+  saveJobs();
+  if(currentTab) switchTab(currentTab);
+}
+
+async function syncJobToSupabase(job){
+  const data = {
+    job_num:        job.jobNum,
+    customer:       job.customer||'',
+    site:           job.site||'',
+    description:    job.desc||'',
+    po_number:      job.poNumber||'',
+    contact_person: job.contact||'',
+    technician:     job.tech||'',
+    stage:          job.stage||1,
+    status:         job.status||'open',
+    master_items:   JSON.stringify(job.masterItems||[]),
+    mcl_items:      JSON.stringify(job.mclItems||[]),
+    sr_number:      job.srNumber||'',
+    sr_photo:       job.srPhotoData||'',
+    cert_numbers:   JSON.stringify(job.certNumbers||[]),
+    cert_assigned_to: job.certAssigned||'',
+    delivery_ack:   job.deliveryAck||'',
+    delivery_by:    job.deliveryBy||'',
+    billing_type:   job.billingType||'',
+    billing_ref:    job.billingRef||'',
+    approvals:      JSON.stringify(job.approvals||{}),
+    updated_at:     new Date().toISOString(),
+  };
+  // Upsert
+  if(!SB_URL||!SB_KEY_VAL) return;
+  try{
+    await fetch(`${SB_URL}/rest/v1/ct2_jobs`, {
+      method:'POST',
+      headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify(data)
+    });
+  }catch(e){}
+}
+
+// ════════════════════════════════════════════════════
+// EQUIPMENT
+// ════════════════════════════════════════════════════
+async function loadEquipment(){
+  const url = localStorage.getItem(KEY_EQ_URL) || DEFAULT_EQ_URL;
+  try{
+    const r = await fetch(url,{cache:'no-cache'});
+    const data = await r.json();
+    if(Array.isArray(data)){
+      equipDB = data;
+      localStorage.setItem(KEY_EQ, JSON.stringify(data));
+      buildEquipMap();
+    }
+  }catch(e){
+    const cached = localStorage.getItem(KEY_EQ);
+    if(cached){ equipDB = JSON.parse(cached); buildEquipMap(); }
+  }
+}
+
+// ════════════════════════════════════════════════════
+// NEW JOB TAB
+// ════════════════════════════════════════════════════
+function renderNewJobTab(){
+  if(activeJob){
+    document.getElementById('new-job-idle').style.display = 'none';
+    document.getElementById('new-job-active').style.display = 'block';
+    renderActivJobBanner();
+    renderStageActionArea();
+  } else {
+    document.getElementById('new-job-idle').style.display = 'flex';
+    document.getElementById('new-job-active').style.display = 'none';
+    renderResumeJobs();
+  }
+}
+
+function renderResumeJobs(){
+  const open = jobs.filter(j=>j.status==='open'&&j.tech===session.name).slice(0,5);
+  const el = document.getElementById('resume-jobs-list');
+  if(!open.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<div class="section-hd" style="margin-top:0">Resume Open Job</div>` +
+    open.map(j=>`
+    <div class="task-card" onclick="resumeJob('${j.jobNum}')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">📍 ${j.site} · Stage ${j.stage}/7</div>
+      <div class="task-badge" style="background:rgba(240,165,0,.12);color:var(--amber)">OPEN · RESUME →</div>
+    </div>`).join('');
+}
+
+function resumeJob(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  activeJob = j;
+  batchQueue = [];
+  renderNewJobTab();
+}
+
+function clearActiveJob(){
+  if(!confirm('Close active job? It stays in the Jobs list.')) return;
+  activeJob = null;
+  batchQueue = [];
+  renderNewJobTab();
+}
+
+function renderActivJobBanner(){
+  if(!activeJob) return;
+  document.getElementById('active-job-num').textContent     = activeJob.jobNum;
+  document.getElementById('active-job-customer').textContent= activeJob.customer;
+  document.getElementById('active-job-site').textContent    = '📍 ' + activeJob.site;
+  const stage = STAGES[activeJob.stage-1] || STAGES[0];
+  document.getElementById('active-job-stage-label').innerHTML = `
+    <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(0,0,0,.3);color:${stage.color};font-family:var(--mono)">
+      STAGE ${activeJob.stage}: ${stage.label.toUpperCase()}
+    </span>`;
+}
+
+// ════════════════════════════════════════════════════
+// STAGE ACTION AREA — per stage UI
+// ════════════════════════════════════════════════════
+function renderStageActionArea(){
+  const el = document.getElementById('stage-action-area');
+  if(!activeJob){ el.innerHTML=''; return; }
+  const s = activeJob.stage;
+
+  if(s===1) renderStage1UI(el);
+  else if(s===2) renderStage2UI(el);
+  else if(s===3) renderStage3UI(el);
+  else if(s===4) renderStage4UI(el);
+  else if(s===5) el.innerHTML = stageLockedCard('Waiting for Ops Head to assign delivery','Stage 4 must be completed first');
+  else if(s===6) el.innerHTML = stageLockedCard('Waiting for billing processing','Delivery acknowledgement received');
+  else el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--accent)"><div style="font-size:40px;margin-bottom:8px">✅</div><div style="font-size:16px;font-weight:700">Job Complete!</div></div>`;
+}
+
+function stageLockedCard(title, sub){
+  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;text-align:center;color:var(--text3)">
+    <div style="font-size:24px;margin-bottom:8px">⏳</div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">${title}</div>
+    <div style="font-size:11px">${sub}</div>
   </div>`;
 }
 
-// JOB DETAIL
-function openDetail(id){
-  curJob=id;
-  const job=jobs.find(j=>j.id===id);if(!job)return;
-  const m=document.getElementById('mc');
-  m.innerHTML=`
-    <button class="back-btn" onclick="switchTab('${curTab}')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back
+// Stage 1: Issue Out — scan master instruments
+function renderStage1UI(el){
+  el.innerHTML = `
+    <div class="section-hd">Stage 1 — Issue Out Master Instruments</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Scan your master calibration instruments before leaving the lab.</div>
+    <button onclick="startCamera('stage1')" style="width:100%;padding:13px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--r);color:var(--accent);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+      Scan Instrument QR
     </button>
-    <div class="detail-header">
-      <div class="detail-job-num">${job.jobNum}</div>
-      <div class="detail-customer">${job.customer||'—'}</div>
-      <div class="detail-meta">📍 ${job.site||'—'}<br>👤 ${job.technician||'—'} · 📅 ${fdate(job.createdAt)}${job.poNumber?'<br>📄 PO: '+job.poNumber:''}${job.contactPerson?'<br>🤝 '+job.contactPerson:''}</div>
-    </div>
-    <div id="ps"></div>`;
-  renderSteps(job);
+    <div id="s1-batch"></div>
+    <button onclick="submitStage1()" style="width:100%;padding:14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;margin-top:12px" id="s1-submit">Issue Out ${batchQueue.length} Instruments</button>`;
+  renderBatchInEl('s1-batch');
 }
 
-function renderSteps(job){
-  const c=document.getElementById('ps');if(!c)return;
-  c.innerHTML=STAGES.map((s,i)=>{
-    const done=job.stage>s.id,active=job.stage===s.id,last=i===STAGES.length-1;
-    const sc=done?'done':active?'active':'pending';
-    const sl=done?'✓ Done':active?'● Active':'○ Pending';
-    const scolor=done?'var(--green)':active?'var(--amber)':'var(--t3)';
-    const body=active?renderActiveStep(job,s):done?renderDoneStep(job,s):'';
-    return `<div class="step-row">
-      <div class="step-col">
-        <div class="step-circle ${sc}">${s.icon}</div>
-        ${!last?`<div class="step-conn ${done?'done':''}"></div>`:''}
+// Stage 2: On Site — MCL entry
+function renderStage2UI(el){
+  const items = activeJob.mclItems || [];
+  el.innerHTML = `
+    <div class="section-hd">Stage 2 — On Site / MCL</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Record all customer instruments calibrated on site (MCL).</div>
+    <div class="field-label">Service Report Number</div>
+    <input type="text" id="s2-sr-num" class="field-input mono" placeholder="SR-XXXX" value="${activeJob.srNumber||''}">
+    <div class="section-hd" style="margin-top:16px">MCL — Customer Instruments Calibrated</div>
+    <div id="s2-mcl-list">${renderMCLItems(items)}</div>
+    <button onclick="addMCLItem()" style="width:100%;padding:10px;background:var(--surface);border:1px dashed var(--border2);border-radius:var(--r2);color:var(--text3);font-family:var(--sans);font-size:13px;cursor:pointer;margin-top:4px">+ Add Instrument to MCL</button>
+    <button onclick="submitStage2()" style="width:100%;padding:14px;background:var(--amber);color:#1a0900;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-top:16px">Save MCL &amp; Mark On-Site Complete</button>`;
+}
+
+function renderMCLItems(items){
+  if(!items.length) return `<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px">No items yet — add customer instruments below</div>`;
+  return items.map((item,i)=>`
+    <div class="mcl-item">
+      <div class="mcl-item-top">
+        <span class="mcl-item-id">${item.tagNo||'TAG-'+String(i+1).padStart(3,'0')}</span>
+        <button class="mcl-item-remove" onclick="removeMCLItem(${i})">×</button>
       </div>
-      <div class="step-body">
-        <div class="step-title">${s.label}<span style="font-size:10px;font-weight:600;color:${scolor}">${sl}</span></div>
-        <div class="step-info">${s.desc}</div>
-        ${body}
+      <input class="field-input" value="${item.description||''}" placeholder="Description / Instrument type" oninput="updateMCLItem(${i},'description',this.value)" style="margin-bottom:6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <input class="field-input" value="${item.make||''}" placeholder="Make / Brand" oninput="updateMCLItem(${i},'make',this.value)">
+        <input class="field-input mono" value="${item.serial||''}" placeholder="Serial No." oninput="updateMCLItem(${i},'serial',this.value)">
+        <input class="field-input" value="${item.range||''}" placeholder="Range" oninput="updateMCLItem(${i},'range',this.value)">
+        <input class="field-input" value="${item.result||''}" placeholder="Cal Result" oninput="updateMCLItem(${i},'result',this.value)">
       </div>
+    </div>`).join('');
+}
+
+function addMCLItem(){
+  if(!activeJob.mclItems) activeJob.mclItems=[];
+  activeJob.mclItems.push({tagNo:'',description:'',make:'',serial:'',range:'',result:''});
+  renderStageActionArea();
+}
+function removeMCLItem(i){
+  activeJob.mclItems.splice(i,1);
+  renderStageActionArea();
+}
+function updateMCLItem(i,field,val){
+  if(activeJob.mclItems[i]) activeJob.mclItems[i][field]=val;
+}
+
+// Stage 3: Return to Lab — photo upload
+function renderStage3UI(el){
+  const hasPhoto = !!activeJob.srPhotoData;
+  el.innerHTML = `
+    <div class="section-hd">Stage 3 — Return to Lab</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Return master instruments and upload the signed service report. <strong style="color:var(--red)">Photo is required to close this stage.</strong></div>
+    <div class="section-hd">Master Instruments Returning</div>
+    <div id="s3-batch"></div>
+    <button onclick="startCamera('stage3')" style="width:100%;padding:12px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--r);color:var(--accent);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+      Scan Returning Instruments
+    </button>
+    <div class="section-hd" style="display:flex;align-items:center;gap:6px">
+      Upload Signed Service Report
+      <span style="font-size:9px;background:rgba(248,81,73,.15);color:var(--red);padding:2px 7px;border-radius:20px;font-weight:700">REQUIRED</span>
+    </div>
+    <div class="photo-upload-area ${hasPhoto?'has-photo':''}" onclick="triggerPhotoUpload()" id="s3-photo-area">
+      ${hasPhoto
+        ? `<img src="${activeJob.srPhotoData}" class="photo-preview" alt="Service Report">`
+        : `<div style="font-size:32px;margin-bottom:8px">📸</div>
+           <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Tap to photograph service report</div>
+           <div style="font-size:12px;color:var(--text3)">Take photo of signed service report</div>`}
+    </div>
+    <input type="file" id="sr-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoUpload(event)">
+    ${hasPhoto ? `<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:6px">✓ Service report photo uploaded</div>`:''}
+    <div class="section-hd" style="margin-top:14px">Instrument Conditions</div>
+    <div id="s3-conditions">${renderReturnConditions()}</div>
+    <button onclick="submitStage3()" style="width:100%;padding:14px;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;background:${hasPhoto?'var(--accent)':'var(--surface2)'};color:${hasPhoto?'#021a13':'var(--text3)'}" id="s3-submit">
+      ${hasPhoto ? 'Complete Return & Submit for Approval' : 'Upload Service Report Photo First'}
+    </button>`;
+  renderBatchInEl('s3-batch');
+}
+
+function renderReturnConditions(){
+  const items = batchQueue.length ? batchQueue : (activeJob.masterItems||[]).map(id=>({id,condition:'good',condNote:''}));
+  if(!items.length) return '<div style="color:var(--text3);font-size:12px">No instruments scanned yet</div>';
+  return items.map((item,i)=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:7px">
+      <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">${item.id}</div>
+      <div class="cond-row">
+        <button class="cond-btn ${item.condition==='good'?'sel-good':''}" onclick="setItemCondition(${i},'good')">✓ Good</button>
+        <button class="cond-btn ${item.condition==='damaged'?'sel-damaged':''}" onclick="setItemCondition(${i},'damaged')">⚠ Damaged</button>
+        <button class="cond-btn ${item.condition==='missing'?'sel-missing':''}" onclick="setItemCondition(${i},'missing')">✗ Parts Missing</button>
+      </div>
+      ${item.condition&&item.condition!=='good'?`<input class="field-input" style="margin-top:6px" placeholder="Describe damage / missing parts" value="${item.condNote||''}" oninput="setItemCondNote(${i},this.value)">`:''}
+    </div>`).join('');
+}
+
+function setItemCondition(i, cond){
+  if(!batchQueue.length && activeJob.masterItems){
+    batchQueue = (activeJob.masterItems).map(id=>({id,condition:'good',condNote:''}));
+  }
+  if(batchQueue[i]) batchQueue[i].condition = cond;
+  renderStageActionArea();
+}
+function setItemCondNote(i, val){
+  if(batchQueue[i]) batchQueue[i].condNote = val;
+}
+
+function triggerPhotoUpload(){ document.getElementById('sr-photo-input').click(); }
+function handlePhotoUpload(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    activeJob.srPhotoData = ev.target.result;
+    updateJob(activeJob);
+    renderStageActionArea();
+    showToast('✓ Service report photo uploaded');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ════════════════════════════════════════════════════
+// CAMERA
+// ════════════════════════════════════════════════════
+let cameraMode = '';
+async function startCamera(mode){
+  cameraMode = mode;
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280}}});
+    cameraStream = stream;
+    document.getElementById('cam-video').srcObject = stream;
+    document.getElementById('camera-container').classList.add('active');
+    updateCamCount();
+    document.getElementById('cam-video').addEventListener('loadedmetadata', startScanning, {once:true});
+  }catch(e){ showToast('Camera denied — type ID manually'); }
+}
+function closeCamera(){
+  clearInterval(scanInterval);
+  if(cameraStream){ cameraStream.getTracks().forEach(t=>t.stop()); cameraStream=null; }
+  document.getElementById('camera-container').classList.remove('active');
+  renderStageActionArea();
+}
+function updateCamCount(){
+  document.getElementById('cam-count').textContent = batchQueue.length ? `${batchQueue.length} scanned` : '';
+}
+function startScanning(){
+  const vid=document.getElementById('cam-video'),cvs=document.getElementById('cam-canvas'),ctx=cvs.getContext('2d');
+  scanInterval=setInterval(()=>{
+    if(vid.readyState!==vid.HAVE_ENOUGH_DATA) return;
+    cvs.width=vid.videoWidth; cvs.height=vid.videoHeight;
+    ctx.drawImage(vid,0,0,cvs.width,cvs.height);
+    const code=jsQR(ctx.getImageData(0,0,cvs.width,cvs.height).data,cvs.width,cvs.height);
+    if(code&&code.data) onQRDetected(code.data);
+  },300);
+}
+let lastScan='',lastScanAt=0;
+function onQRDetected(raw){
+  const id=raw.trim().toUpperCase(), now=Date.now();
+  if(id===lastScan&&now-lastScanAt<2500) return;
+  lastScan=id; lastScanAt=now;
+  if(batchQueue.find(i=>i.id===id)){ showToast(id+' already added'); return; }
+  const instr=equipMap[id]||{};
+  batchQueue.push({id, model:instr.model||'Unknown', isMaster:!!instr.isMaster, make:instr.make||'', serial:instr.serial||'', calDue:instr.calDue||'', condition:'good', condNote:'', pf:null, reading:''});
+  showToast('✓ '+id+(instr.isMaster?' ⭐':''));
+  updateCamCount();
+}
+
+function renderBatchInEl(elId){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  if(!batchQueue.length){ el.innerHTML=`<div style="color:var(--text3);font-size:12px;text-align:center;padding:10px">No instruments scanned yet</div>`; return; }
+  el.innerHTML=batchQueue.map((item,i)=>`
+    <div class="batch-item">
+      <div class="batch-icon ${item.isMaster?'master':'normal'}">${item.isMaster?'⭐':'🔧'}</div>
+      <div class="batch-info">
+        <div class="batch-id">${item.id}${item.isMaster?'<span style="font-size:9px;color:var(--purple);margin-left:5px">MASTER</span>':''}</div>
+        <div class="batch-model">${item.model||'—'}</div>
+      </div>
+      <button class="batch-remove" onclick="removeBatchItem(${i})">×</button>
+    </div>`).join('');
+}
+function removeBatchItem(i){ batchQueue.splice(i,1); renderStageActionArea(); }
+
+// ════════════════════════════════════════════════════
+// STAGE SUBMIT FUNCTIONS
+// ════════════════════════════════════════════════════
+async function submitStage1(){
+  if(!batchQueue.length){ showToast('Scan at least one instrument'); return; }
+  activeJob.masterItems = batchQueue.map(i=>i.id);
+  activeJob.stage = 2;
+  activeJob.stageHistory = activeJob.stageHistory||{};
+  activeJob.stageHistory[1] = { completedAt: new Date().toISOString(), by: session.name, items: [...activeJob.masterItems] };
+  updateJob(activeJob);
+  await syncJobToSupabase(activeJob);
+  batchQueue = [];
+  sendStageWhatsApp(activeJob, 1, `${activeJob.masterItems.length} master instruments issued out`);
+  showToast('✓ Stage 1 complete — instruments issued');
+  renderStageActionArea();
+  renderActivJobBanner();
+  updateNotifs();
+}
+
+async function submitStage2(){
+  const srNum = document.getElementById('s2-sr-num')?.value.trim();
+  if(!srNum){ showToast('Enter service report number'); return; }
+  // Save MCL values from inputs
+  const mclItems = activeJob.mclItems||[];
+  activeJob.srNumber = srNum;
+  activeJob.stage = 3;
+  activeJob.stageHistory = activeJob.stageHistory||{};
+  activeJob.stageHistory[2] = { completedAt: new Date().toISOString(), by: session.name, srNumber: srNum, mclCount: mclItems.length };
+  updateJob(activeJob);
+  await syncJobToSupabase(activeJob);
+  sendStageWhatsApp(activeJob, 2, `MCL: ${mclItems.length} instruments calibrated. SR: ${srNum}`);
+  showToast('✓ Stage 2 complete — MCL saved');
+  renderStageActionArea();
+  renderActivJobBanner();
+  updateNotifs();
+}
+
+async function submitStage3(){
+  if(!activeJob.srPhotoData){ showToast('Upload signed service report photo first'); return; }
+  // Save conditions from batchQueue
+  const conditions = batchQueue.map(i=>({id:i.id,condition:i.condition,note:i.condNote}));
+  const damaged = conditions.filter(c=>c.condition!=='good');
+  activeJob.returnConditions = conditions;
+  activeJob.stage = 4;
+  activeJob.stageHistory = activeJob.stageHistory||{};
+  activeJob.stageHistory[3] = { completedAt: new Date().toISOString(), by: session.name, damaged: damaged.length };
+  updateJob(activeJob);
+  await syncJobToSupabase(activeJob);
+  batchQueue = [];
+  let stageNote = 'All instruments returned to lab. SR photo uploaded.';
+  if(damaged.length) stageNote += ` ⚠ ${damaged.length} instrument(s) with condition issues.`;
+  sendStageWhatsApp(activeJob, 3, stageNote);
+  showToast('✓ Stage 3 complete — return logged');
+  renderStageActionArea();
+  renderActivJobBanner();
+  updateNotifs();
+}
+
+// ════════════════════════════════════════════════════
+// PIPELINE (OPS HEAD VIEW)
+// ════════════════════════════════════════════════════
+let pipelineFilter = 'all';
+function renderPipeline(){
+  const rc = ROLE_CONFIG[session.role]||{};
+  const allJobs = jobs;
+
+  // Read-only banner for QM and Lab Head
+  const readOnlyBanner = rc.readOnly ? `
+    <div style="background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.25);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">👁</span>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--purple)">Read-Only View</div>
+        <div style="font-size:11px;color:var(--text3)">You can monitor all jobs. Approvals are handled by the Operations Head.</div>
+      </div>
+    </div>` : '';
+
+  // KPIs
+  const kpis = [
+    { label:'Total Jobs',   val: allJobs.length,                                    color:'var(--blue)' },
+    { label:'Open Jobs',    val: allJobs.filter(j=>j.status==='open').length,        color:'var(--amber)' },
+    { label:'Pending Certs',val: allJobs.filter(j=>j.stage===4).length,             color:'var(--red)' },
+    { label:'Complete',     val: allJobs.filter(j=>j.stage===7).length,             color:'var(--accent)' },
+  ];
+  document.getElementById('pipeline-kpis').innerHTML = readOnlyBanner + kpis.map(k=>`
+    <div class="kpi-card">
+      <div class="kpi-val" style="color:${k.color}">${k.val}</div>
+      <div class="kpi-label">${k.label}</div>
+    </div>`).join('');
+
+  // Filter buttons
+  const filters = ['all','open','stage4','stage5','complete'];
+  const fLabels = {all:'All',open:'Open',stage4:'Cert Pending',stage5:'Delivery',complete:'Done'};
+  document.getElementById('pipeline-filters').innerHTML = filters.map(f=>`
+    <button onclick="setPipelineFilter('${f}')" style="padding:6px 13px;border-radius:20px;border:1px solid ${pipelineFilter===f?'var(--accent)':'var(--border2)'};background:${pipelineFilter===f?'rgba(0,229,176,.12)':'var(--surface)'};color:${pipelineFilter===f?'var(--accent)':'var(--text3)'};font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer">
+      ${fLabels[f]}
+    </button>`).join('');
+
+  let filtered = allJobs;
+  if(pipelineFilter==='open')    filtered = allJobs.filter(j=>j.status==='open');
+  if(pipelineFilter==='stage4')  filtered = allJobs.filter(j=>j.stage===4);
+  if(pipelineFilter==='stage5')  filtered = allJobs.filter(j=>j.stage===5);
+  if(pipelineFilter==='complete')filtered = allJobs.filter(j=>j.stage===7);
+
+  if(!filtered.length){
+    document.getElementById('pipeline-list').innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg><p>No jobs found</p></div>`;
+    return;
+  }
+
+  document.getElementById('pipeline-list').innerHTML = filtered.map(j=>jobPipelineCard(j)).join('');
+}
+
+function setPipelineFilter(f){ pipelineFilter=f; renderPipeline(); }
+
+function jobPipelineCard(j){
+  const stage = STAGES[j.stage-1]||STAGES[0];
+  const pips = STAGES.map((s,i)=>`<div class="stage-pip ${i<j.stage-1?'done':i===j.stage-1?'active':''}"></div>`).join('');
+  return `
+  <div class="job-card" onclick="openJobDetailModal('${j.jobNum}')">
+    <div class="job-card-top">
+      <div class="job-num">${j.jobNum}</div>
+      <div class="stage-badge" style="background:rgba(0,0,0,.3);color:${stage.color}">${stage.icon} ${stage.label}</div>
+    </div>
+    <div class="job-customer">${j.customer||'—'}</div>
+    <div class="job-meta">📍 ${j.site} · 👤 ${j.tech}</div>
+    <div class="stage-progress">${pips}</div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════
+// TASKS (per role)
+// ════════════════════════════════════════════════════
+function renderTasks(){
+  const role = session.role;
+  const rc   = ROLE_CONFIG[role]||{};
+  const el   = document.getElementById('tasks-list');
+
+  // Read-only roles (QM, Lab Head) — show monitoring summary instead
+  if(rc.readOnly){
+    const pending = jobs.filter(j=>j.stage<7);
+    const urgent  = jobs.filter(j=>j.stage===3||j.stage===4);
+    el.innerHTML = `
+      <div style="background:rgba(188,140,255,.06);border:1px solid rgba(188,140,255,.2);border-radius:var(--r);padding:14px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:10px">📊 Lab Overview</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+          <div><span style="font-size:20px;font-weight:700;color:var(--text);display:block">${jobs.length}</span><span style="color:var(--text3)">Total Jobs</span></div>
+          <div><span style="font-size:20px;font-weight:700;color:var(--amber);display:block">${pending.length}</span><span style="color:var(--text3)">In Progress</span></div>
+          <div><span style="font-size:20px;font-weight:700;color:var(--red);display:block">${urgent.length}</span><span style="color:var(--text3)">Need Attention</span></div>
+          <div><span style="font-size:20px;font-weight:700;color:var(--accent);display:block">${jobs.filter(j=>j.stage===7).length}</span><span style="color:var(--text3)">Complete</span></div>
+        </div>
+      </div>
+      ${urgent.length ? `
+      <div class="section-hd" style="color:var(--amber)">⚠ Jobs Needing Attention</div>
+      ${urgent.map(j=>`<div class="task-card" onclick="openJobDetailModal('${j.jobNum}')">
+        <div class="task-card-num">${j.jobNum}</div>
+        <div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">Stage ${j.stage} — ${STAGES[j.stage-1]?.label}</div>
+      </div>`).join('')}` : `<div class="empty-state"><p>All jobs on track</p></div>`}`;
+    return;
+  }
+
+  if(role==='technician'){
+    const taskJobs = jobs.filter(j=>j.tech===session.name && j.stage>=1 && j.stage<=3);
+    renderTechnicianTasks(el, taskJobs);
+  } else if(role==='ops_head'){
+    const s3 = jobs.filter(j=>j.stage===3);
+    const s4 = jobs.filter(j=>j.stage===4&&!j.certAssigned);
+    const s5 = jobs.filter(j=>j.stage===5&&!j.deliveryAck);
+    renderManagerTasks(el, s3, s4, s5);
+  } else if(role==='coordinator'){
+    renderCoordinatorTasks(el, jobs.filter(j=>j.stage===5));
+  } else if(role==='accounts'){
+    renderAccountsTasks(el, jobs.filter(j=>j.stage===6));
+  }
+}
+
+function renderTechnicianTasks(el, taskJobs){
+  if(!taskJobs.length){ el.innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>No pending tasks</p></div>`; return; }
+  el.innerHTML = taskJobs.map(j=>{
+    const stage = STAGES[j.stage-1]||STAGES[0];
+    return `<div class="task-card" onclick="resumeJob('${j.jobNum}');switchTab('new-job')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">📍 ${j.site}</div>
+      <div class="task-badge" style="background:rgba(0,0,0,.2);color:${stage.color}">${stage.icon} ${stage.label}</div>
     </div>`;
   }).join('');
 }
 
-function renderDoneStep(job,s){
-  const d=job.stages?.[s.key]||{};
-  const lines=[];
-  if(d.completedBy)lines.push('👤 '+d.completedBy);
-  if(d.completedAt)lines.push('🕐 '+fdate(d.completedAt)+' '+ftime(d.completedAt));
-  if(d.serviceReportNo)lines.push('📋 SR: '+d.serviceReportNo);
-  if(d.mclCount)lines.push('📦 '+d.mclCount+' items calibrated');
-  if(d.certNumbers)lines.push('📜 Certs: '+d.certNumbers);
-  if(d.deliveredTo)lines.push('✅ Delivered to: '+d.deliveredTo);
-  if(d.invoiceNo)lines.push('💰 Invoice: '+d.invoiceNo);
-  if(d.total)lines.push('💵 '+omr(d.total));
-  if(!lines.length)return '';
-  return `<div style="background:rgba(0,229,176,.06);border:1px solid rgba(0,229,176,.15);border-radius:9px;padding:8px 10px;font-size:11px;color:var(--t2);line-height:1.7">${lines.join('<br>')}</div>`;
+function renderManagerTasks(el, s3, s4, s5){
+  let html = '';
+  if(s3.length){
+    html += `<div class="section-hd">⏳ Awaiting Return Approval (${s3.length})</div>`;
+    html += s3.map(j=>`<div class="task-card" onclick="openJobDetailModal('${j.jobNum}')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">📍 ${j.site} · SR: ${j.srNumber||'—'}</div>
+      ${j.srPhotoData?`<div class="task-badge" style="background:rgba(0,229,176,.1);color:var(--accent)">✓ SR Photo Uploaded</div>`:'<div class="task-badge" style="background:rgba(248,81,73,.1);color:var(--red)">⚠ No SR Photo</div>'}
+      <button onclick="event.stopPropagation();approveStage3Return('${j.jobNum}')" style="margin-top:10px;width:100%;padding:10px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">✓ Approve Return → Move to Certification</button>
+    </div>`).join('');
+  }
+  if(s4.length){
+    html += `<div class="section-hd">📜 Assign Certificate Work (${s4.length})</div>`;
+    html += s4.map(j=>`<div class="task-card" onclick="openAssignCertModal('${j.jobNum}')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">MCL: ${(j.mclItems||[]).length} instruments · SR: ${j.srNumber||'—'}</div>
+      <div class="task-badge" style="background:rgba(248,81,73,.1);color:var(--red)">Cert not assigned</div>
+    </div>`).join('');
+  }
+  if(s5.length){
+    html += `<div class="section-hd">🚗 Delivery Pending Ack (${s5.length})</div>`;
+    html += s5.map(j=>`<div class="task-card" onclick="openJobDetailModal('${j.jobNum}')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">Delivered by: ${j.deliveryBy||'Coordinator'}</div>
+      <div class="task-badge" style="background:rgba(0,180,216,.1);color:var(--s5)">Awaiting acknowledgement</div>
+    </div>`).join('');
+  }
+  if(!html) html=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>No pending tasks — all clear!</p></div>`;
+  el.innerHTML = html;
 }
 
-function canAct(job,s){
-  if(user.role==='manager')return true;
-  if(s.key==='issue'&&user.role==='technician')return true;
-  if(s.key==='onsite'&&user.role==='technician')return true;
-  if(s.key==='return'&&user.role==='technician')return true;
-  if(s.key==='certificate'&&user.role==='technician')return job.assignedCertTech===user.name;
-  if(s.key==='delivery'&&user.role==='coordinator')return true;
-  if(s.key==='billing'&&user.role==='accounts')return true;
-  return false;
+function renderCoordinatorTasks(el, taskJobs){
+  if(!taskJobs.length){ el.innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/></svg><p>No deliveries pending</p></div>`; return; }
+  el.innerHTML = taskJobs.map(j=>`
+    <div class="task-card" onclick="openDeliveryModal('${j.jobNum}')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">📍 ${j.site} · 👤 ${j.contact||'—'}</div>
+      <div class="task-badge" style="background:rgba(0,180,216,.1);color:var(--s5)">🚗 Deliver Certificates</div>
+    </div>`).join('');
 }
 
-function renderActiveStep(job,s){
-  if(!canAct(job,s))return `<div style="font-size:11px;color:var(--t3)">Waiting for your role to act on this stage</div>`;
-  if(s.key==='issue')return stepIssue(job);
-  if(s.key==='onsite')return stepOnSite(job);
-  if(s.key==='return')return stepReturn(job);
-  if(s.key==='certificate')return stepCert(job);
-  if(s.key==='delivery')return stepDelivery(job);
-  if(s.key==='billing')return stepBilling(job);
-  if(s.key==='complete')return '<div style="font-size:13px;font-weight:600;color:var(--green)">✅ Job Complete</div>';
+function renderAccountsTasks(el, taskJobs){
+  if(!taskJobs.length){ el.innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><p>No billing tasks</p></div>`; return; }
+  el.innerHTML = taskJobs.map(j=>`
+    <div class="task-card" onclick="openBillingModal('${j.jobNum}')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">📍 ${j.site} · PO: ${j.poNumber||'—'}</div>
+      <div class="task-badge" style="background:rgba(255,107,53,.1);color:var(--s6)">💰 Process Billing</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════
+// DELIVERY & BILLING TABS
+// ════════════════════════════════════════════════════
+function renderDelivery(){
+  const pending = jobs.filter(j=>j.stage===5);
+  document.getElementById('delivery-list').innerHTML = !pending.length
+    ? `<div class="empty-state"><p>No deliveries pending</p></div>`
+    : pending.map(j=>`<div class="task-card" onclick="openDeliveryModal('${j.jobNum}')">
+        <div class="task-card-num">${j.jobNum}</div>
+        <div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">📍 ${j.site}</div>
+        <div class="task-badge" style="background:rgba(0,180,216,.1);color:var(--s5)">Tap to record delivery</div>
+      </div>`).join('');
+}
+
+function renderBilling(){
+  const pending = jobs.filter(j=>j.stage===6);
+  document.getElementById('billing-list').innerHTML = !pending.length
+    ? `<div class="empty-state"><p>No billing tasks</p></div>`
+    : pending.map(j=>`<div class="task-card" onclick="openBillingModal('${j.jobNum}')">
+        <div class="task-card-num">${j.jobNum}</div>
+        <div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">📍 ${j.site} · PO: ${j.poNumber||'—'}</div>
+        <div class="task-badge" style="background:rgba(255,107,53,.1);color:var(--s6)">Tap to process billing</div>
+      </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════════════
+function openNewJobModal(){
+  document.getElementById('modal-new-job').classList.add('open');
+  document.getElementById('new-job-num-display').textContent = 'Generating…';
+  document.getElementById('nj-customer').value = '';
+  document.getElementById('nj-site').value = session.site||'';
+  document.getElementById('nj-desc').value = '';
+  document.getElementById('nj-po').value = '';
+  document.getElementById('nj-contact').value = '';
+  // Fetch number async
+  getNextJobNumber().then(num=>{
+    pendingJobNum = num;
+    document.getElementById('new-job-num-display').textContent = num;
+  });
+}
+
+async function confirmNewJob(){
+  const customer = document.getElementById('nj-customer').value.trim();
+  const site     = document.getElementById('nj-site').value.trim();
+  if(!customer){ showToast('Enter customer name'); return; }
+  if(!site){ showToast('Enter site location'); return; }
+  if(!pendingJobNum){ showToast('Job number loading…'); return; }
+
+  const job = {
+    jobNum:      pendingJobNum,
+    customer, site,
+    desc:        document.getElementById('nj-desc').value.trim(),
+    poNumber:    document.getElementById('nj-po').value.trim(),
+    contact:     document.getElementById('nj-contact').value.trim(),
+    tech:        session.name,
+    stage:       1,
+    status:      'open',
+    masterItems: [],
+    mclItems:    [],
+    srNumber:    '',
+    srPhotoData: '',
+    certNumbers: [],
+    certAssigned:'',
+    deliveryAck: '',
+    deliveryBy:  '',
+    billingType: '',
+    billingRef:  '',
+    approvals:   {},
+    stageHistory:{},
+    createdAt:   new Date().toISOString(),
+  };
+  jobs.unshift(job);
+  saveJobs();
+  syncJobToSupabase(job);
+  activeJob = job;
+  batchQueue = [];
+  document.getElementById('modal-new-job').classList.remove('open');
+  showToast(`✓ Job ${pendingJobNum} created`);
+  renderNewJobTab();
+  updateNotifs();
+}
+
+function openJobDetailModal(jobNum){
+  const j = jobNum ? jobs.find(x=>x.jobNum===jobNum) : activeJob;
+  if(!j) return;
+  const body = document.getElementById('modal-job-detail-body');
+  const stage = STAGES[j.stage-1]||STAGES[0];
+
+  let stageRows = STAGES.map((s,i)=>{
+    const done   = i < j.stage-1;
+    const active = i === j.stage-1;
+    const locked = i > j.stage-1;
+    const hist   = j.stageHistory?.[s.id];
+    return `
+    <div class="stage-row">
+      <div class="stage-line-col">
+        <div class="stage-icon ${done?'done':active?'active':'locked'}">${s.icon}</div>
+        ${i<STAGES.length-1?`<div class="stage-connector ${done?'done':''}"></div>`:''}
+      </div>
+      <div class="stage-body">
+        <div class="stage-title">${s.label}</div>
+        <div class="stage-status" style="color:${done?'var(--accent)':active?'var(--amber)':'var(--text3)'}">
+          ${done?`✓ Completed ${hist?new Date(hist.completedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):''}`:active?'In Progress':'Pending'}
+        </div>
+        ${active && session.role==='ops_head' ? renderManagerStageActions(j, s.id) : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)">${j.jobNum}</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text)">${j.customer}</div>
+      </div>
+      <button onclick="document.getElementById('modal-job-detail').classList.remove('open')" style="background:var(--surface2);border:1px solid var(--border2);border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;color:var(--text3);font-size:18px;border:none">×</button>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div><div style="color:var(--text3);font-family:var(--mono);font-size:10px">SITE</div><div style="color:var(--text)">${j.site}</div></div>
+      <div><div style="color:var(--text3);font-family:var(--mono);font-size:10px">TECHNICIAN</div><div style="color:var(--text)">${j.tech}</div></div>
+      <div><div style="color:var(--text3);font-family:var(--mono);font-size:10px">PO NUMBER</div><div style="color:var(--text)">${j.poNumber||'—'}</div></div>
+      <div><div style="color:var(--text3);font-family:var(--mono);font-size:10px">SR NUMBER</div><div style="color:var(--text)">${j.srNumber||'—'}</div></div>
+      ${j.contact?`<div style="grid-column:1/-1"><div style="color:var(--text3);font-family:var(--mono);font-size:10px">CONTACT</div><div style="color:var(--text)">${j.contact}</div></div>`:''}
+    </div>
+    ${j.mclItems?.length?`
+    <div class="section-hd">MCL — ${j.mclItems.length} Customer Instruments</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:14px;font-size:11px;color:var(--text2)">
+      ${j.mclItems.map(m=>`<div style="padding:4px 0;border-bottom:0.5px solid var(--border)">${m.tagNo||'—'} · ${m.description||'—'} · ${m.serial||'—'} · <span style="color:${m.result==='Pass'?'var(--accent)':'var(--text3)'}">${m.result||'—'}</span></div>`).join('')}
+    </div>`:''}
+    ${j.srPhotoData?`
+    <div class="section-hd">Service Report Photo</div>
+    <img src="${j.srPhotoData}" style="width:100%;border-radius:var(--r2);margin-bottom:14px;max-height:200px;object-fit:cover">`:''}
+    <div class="section-hd">Job Pipeline</div>
+    <div class="stage-list">${stageRows}</div>`;
+
+  document.getElementById('modal-job-detail').classList.add('open');
+}
+
+function renderManagerStageActions(j, stageId){
+  const rc = ROLE_CONFIG[session.role]||{};
+  if(!rc.canApprove) return `<div style="font-size:11px;color:var(--text3);font-style:italic;margin-top:4px">👁 View only — approval by Operations Head</div>`;
+  if(stageId===3) return `<button onclick="approveStage3Return('${j.jobNum}');document.getElementById('modal-job-detail').classList.remove('open')" class="stage-action-btn primary" style="margin-top:4px">✓ Approve Return → Certification</button>`;
+  if(stageId===4) return `<button onclick="openAssignCertModal('${j.jobNum}');document.getElementById('modal-job-detail').classList.remove('open')" class="stage-action-btn warn" style="margin-top:4px">Assign Certificate Work →</button>`;
+  if(stageId===5) return `<button onclick="document.getElementById('modal-job-detail').classList.remove('open');openDeliveryModal('${j.jobNum}')" class="stage-action-btn secondary" style="margin-top:4px">Record Delivery →</button>`;
+  if(stageId===6) return `<button onclick="document.getElementById('modal-job-detail').classList.remove('open');openBillingModal('${j.jobNum}')" class="stage-action-btn secondary" style="margin-top:4px">Process Billing →</button>`;
   return '';
 }
 
-// STAGE 1 - ISSUE OUT
-function stepIssue(job){
-  const items=job.masterInstruments||[];
-  return `<div>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:10px">Scan master instruments being taken to site</div>
-    <div class="scan-area" onclick="scanIssue()">
-      <div class="scan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></div>
-      <span style="font-size:13px;font-weight:600">Scan Instrument QR</span>
-      <span style="font-size:11px;color:var(--t3)">Camera stays open — scan multiple</span>
-    </div>
-    <div id="ii-list">${items.map((id,i)=>{const eq=eqMap[id]||{};return `<div class="mcl-item"><span class="mcl-n">${i+1}</span><div class="mcl-body"><div class="mcl-id">${id}</div><div class="mcl-desc">${eq.model||''}</div></div><button class="mcl-rm" onclick="rmIssue('${id}')">×</button></div>`;}).join('')}</div>
-    ${items.length?`<button class="sbtn" onclick="doneIssue()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>Confirm Issue Out (${items.length} items)</button>`:''}
-  </div>`;
-}
-function scanIssue(){
-  openCamera(r=>{
-    const job=jobs.find(j=>j.id===curJob);if(!job)return;
-    const id=r.trim().toUpperCase();
-    if(!job.masterInstruments)job.masterInstruments=[];
-    if(job.masterInstruments.includes(id)){toast(id+' already added');return;}
-    job.masterInstruments.push(id);
-    saveJobs();sbUpdate(job);toast('✓ Added '+id);openDetail(curJob);
-  },true);
-}
-function rmIssue(id){const job=jobs.find(j=>j.id===curJob);if(!job)return;job.masterInstruments=(job.masterInstruments||[]).filter(i=>i!==id);saveJobs();sbUpdate(job);openDetail(curJob);}
-function doneIssue(){
-  const job=jobs.find(j=>j.id===curJob);
-  if(!job||(job.masterInstruments||[]).length===0){toast('Scan at least one instrument');return;}
-  advance(job,'issue',{completedBy:user.name,completedAt:new Date().toISOString()});
-  whatsapp(job,'Issue Out Confirmed',`${job.masterInstruments.length} master instruments taken to site by ${user.name}`);
+// ── CERT ASSIGNMENT MODAL ──
+function openAssignCertModal(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const body = document.getElementById('modal-stage-body');
+  body.innerHTML = `
+    <div class="modal-title">Assign Certification</div>
+    <div class="modal-sub">${j.jobNum} · ${j.customer}</div>
+    <div class="field-label">Assign to Technician</div>
+    <input type="text" id="cert-assign-tech" class="field-input" placeholder="Technician name" value="${j.certAssigned||j.tech}">
+    <div class="field-label">Certificate Numbers (comma separated)</div>
+    <input type="text" id="cert-numbers" class="field-input mono" placeholder="CERT-2026-001, CERT-2026-002" value="${(j.certNumbers||[]).join(', ')}">
+    <div class="field-label">Instructions / Notes</div>
+    <textarea id="cert-notes" class="field-input" placeholder="Any specific instructions…"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="document.getElementById('modal-stage').classList.remove('open')">Cancel</button>
+      <button class="modal-btn primary" onclick="submitCertAssignment('${jobNum}')">Assign & Notify →</button>
+    </div>`;
+  document.getElementById('modal-stage').classList.add('open');
 }
 
-// STAGE 2 - ON SITE
-function stepOnSite(job){
-  const mcl=job.mclItems||[];
-  return `<div>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:10px">Add customer instruments to MCL (Master Calibration List)</div>
-    <div id="mcl-list">${mcl.map((it,i)=>`<div class="mcl-item"><span class="mcl-n">${i+1}</span><div class="mcl-body"><div class="mcl-id">${it.tag||'—'}</div><div class="mcl-desc">${it.desc||''} ${it.range?'· '+it.range:''}</div></div><button class="mcl-rm" onclick="rmMCL(${i})">×</button></div>`).join('')}</div>
-    <button onclick="addMCLModal()" style="width:100%;padding:10px;background:var(--s);border:1px dashed var(--b2);border-radius:var(--r);color:var(--t3);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:14px">+ Add to MCL</button>
-    <div class="fl">Service Report Number</div>
-    <input type="text" id="sr-no" value="${job.stages?.onsite?.serviceReportNo||''}" placeholder="e.g. SR-2026-0045" class="fi" style="font-family:var(--mono);font-size:13px;margin-bottom:12px">
-    ${mcl.length?`<button class="sbtn amber" onclick="doneOnSite()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Complete On Site (${mcl.length} items)</button>`:`<div style="font-size:11px;color:var(--t3)">Add at least one MCL item to proceed</div>`}
-  </div>`;
-}
-function addMCLModal(){
-  const modal=document.createElement('div');modal.className='modal-bg open';
-  modal.innerHTML=`<div class="modal"><button class="mclose" onclick="this.closest('.modal-bg').remove()">×</button><div class="modal-title">Add to MCL</div><div class="modal-sub">Customer instrument being calibrated</div>
-  <div class="fl">Tag / ID</div><input type="text" id="mt" placeholder="TAG-001" class="fi" style="font-family:var(--mono);font-size:14px;margin-bottom:10px">
-  <div class="fl">Description</div><input type="text" id="md" placeholder="Pressure Transmitter" class="fi" style="margin-bottom:10px">
-  <div class="fl">Range</div><input type="text" id="mr" placeholder="0–100 bar" class="fi" style="margin-bottom:10px">
-  <div class="fl">Serial Number</div><input type="text" id="ms" placeholder="SN123456" class="fi" style="font-family:var(--mono);font-size:14px;margin-bottom:10px">
-  <button class="sbtn" onclick="saveMCL(this.closest('.modal-bg'))">Add to List</button></div>`;
-  document.body.appendChild(modal);
-}
-function saveMCL(modal){
-  const tag=document.getElementById('mt').value.trim();if(!tag){toast('Enter tag/ID');return;}
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  if(!job.mclItems)job.mclItems=[];
-  job.mclItems.push({tag,desc:document.getElementById('md').value.trim(),range:document.getElementById('mr').value.trim(),serial:document.getElementById('ms').value.trim()});
-  saveJobs();sbUpdate(job);modal.remove();toast('✓ Added to MCL');openDetail(curJob);
-}
-function rmMCL(i){const job=jobs.find(j=>j.id===curJob);if(!job)return;job.mclItems.splice(i,1);saveJobs();sbUpdate(job);openDetail(curJob);}
-function doneOnSite(){
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  const sr=document.getElementById('sr-no')?.value.trim()||'';
-  advance(job,'onsite',{completedBy:user.name,completedAt:new Date().toISOString(),serviceReportNo:sr,mclCount:(job.mclItems||[]).length});
-  whatsapp(job,'On Site Complete',`${(job.mclItems||[]).length} instruments calibrated. SR: ${sr||'—'}. Returning to lab.`);
+async function submitCertAssignment(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const tech  = document.getElementById('cert-assign-tech').value.trim();
+  const certs = document.getElementById('cert-numbers').value.split(',').map(c=>c.trim()).filter(Boolean);
+  const notes = document.getElementById('cert-notes').value.trim();
+  j.certAssigned = tech;
+  j.certNumbers  = certs;
+  j.stageHistory = j.stageHistory||{};
+  j.stageHistory[4] = { assignedTo: tech, assignedAt: new Date().toISOString(), by: session.name, notes };
+  updateJob(j);
+  await syncJobToSupabase(j);
+  document.getElementById('modal-stage').classList.remove('open');
+  sendStageWhatsApp(j, 4, `Cert work assigned to ${tech}. Certs: ${certs.join(', ')||'TBD'}`);
+  showToast(`✓ Assigned to ${tech}`);
+  renderTasks();
+  updateNotifs();
 }
 
-// STAGE 3 - RETURN + SERVICE REPORT
-function stepReturn(job){
-  const hasPhoto=!!job.stages?.return?.serviceReportPhoto;
-  return `<div>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:12px">Return master instruments and upload the signed service report photo</div>
-    <div style="font-size:11px;background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2);border-radius:9px;padding:10px;margin-bottom:12px;color:var(--t2)">
-      ⚠️ <strong>Return cannot be completed without the signed service report photo.</strong><br>Both customer and technician signatures must be visible.
+function openCertCompleteModal(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const body = document.getElementById('modal-stage-body');
+  body.innerHTML = `
+    <div class="modal-title">Complete Certification</div>
+    <div class="modal-sub">${j.jobNum} · ${j.customer}</div>
+    <div class="field-label">Certificate Numbers Completed</div>
+    <input type="text" id="cert-done-nums" class="field-input mono" placeholder="CERT-2026-001, CERT-2026-002" value="${(j.certNumbers||[]).join(', ')}">
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="document.getElementById('modal-stage').classList.remove('open')">Cancel</button>
+      <button class="modal-btn primary" onclick="submitCertComplete('${jobNum}')">Mark Certs Done → Delivery</button>
+    </div>`;
+  document.getElementById('modal-stage').classList.add('open');
+}
+
+async function submitCertComplete(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const certs = document.getElementById('cert-done-nums').value.split(',').map(c=>c.trim()).filter(Boolean);
+  j.certNumbers = certs;
+  j.stage = 5;
+  j.stageHistory[4].completedAt = new Date().toISOString();
+  j.stageHistory[4].completedBy = session.name;
+  updateJob(j);
+  await syncJobToSupabase(j);
+  document.getElementById('modal-stage').classList.remove('open');
+  sendStageWhatsApp(j, 4, `Certification complete. Certs: ${certs.join(', ')}. Ready for delivery.`);
+  showToast('✓ Certification complete — moved to delivery');
+  renderTasks();
+  updateNotifs();
+}
+
+// ── DELIVERY MODAL ──
+function openDeliveryModal(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const body = document.getElementById('modal-stage-body');
+  body.innerHTML = `
+    <div class="modal-title">Record Delivery</div>
+    <div class="modal-sub">${j.jobNum} · ${j.customer} · 📍 ${j.site}</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+      <strong style="color:var(--text)">Deliver:</strong> Calibration certificates<br>
+      <strong style="color:var(--text)">To:</strong> ${j.contact||j.customer}<br>
+      ${j.certNumbers?.length?`<strong style="color:var(--text)">Certs:</strong> ${j.certNumbers.join(', ')}`:''}
     </div>
-    <div class="photo-area" onclick="takePhoto()" id="photo-area">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      <div style="font-size:13px;font-weight:600;color:${hasPhoto?'var(--green)':'var(--text)'}">${hasPhoto?'✓ Photo uploaded — tap to replace':'📸 Tap to photograph service report'}</div>
+    <div class="field-label">Delivered by</div>
+    <input type="text" id="del-by" class="field-input" value="${session.name}">
+    <div class="field-label">Customer Acknowledgement / Signature from</div>
+    <input type="text" id="del-ack" class="field-input" placeholder="Name of person who signed acknowledgement">
+    <div class="field-label">Delivery Date & Time</div>
+    <input type="text" id="del-date" class="field-input mono" value="${new Date().toLocaleString('en-GB')}">
+    <div class="field-label">Notes</div>
+    <textarea id="del-notes" class="field-input" placeholder="Any notes about the delivery…"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="document.getElementById('modal-stage').classList.remove('open')">Cancel</button>
+      <button class="modal-btn primary" onclick="submitDelivery('${jobNum}')">✓ Record Delivery → Billing</button>
+    </div>`;
+  document.getElementById('modal-stage').classList.add('open');
+}
+
+async function submitDelivery(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const ack   = document.getElementById('del-ack').value.trim();
+  const by    = document.getElementById('del-by').value.trim();
+  const notes = document.getElementById('del-notes').value.trim();
+  if(!ack){ showToast('Enter acknowledgement name'); return; }
+  j.deliveryAck = ack;
+  j.deliveryBy  = by;
+  j.stage = 6;
+  j.stageHistory = j.stageHistory||{};
+  j.stageHistory[5] = { completedAt: new Date().toISOString(), by, ack, notes };
+  updateJob(j);
+  await syncJobToSupabase(j);
+  document.getElementById('modal-stage').classList.remove('open');
+  sendStageWhatsApp(j, 5, `Certificates delivered to ${j.customer}. Ack by: ${ack}. Ready for billing.`);
+  showToast('✓ Delivery recorded — moved to billing');
+  renderDelivery();
+  renderTasks();
+  updateNotifs();
+}
+
+// ── BILLING MODAL ──
+function openBillingModal(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const body = document.getElementById('modal-stage-body');
+  body.innerHTML = `
+    <div class="modal-title">Process Billing</div>
+    <div class="modal-sub">${j.jobNum} · ${j.customer}</div>
+    <div class="field-label">Billing Type</div>
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <button id="bill-cash-btn" onclick="setBillingType('cash')" class="pf-btn ${j.billingType==='cash'?'pass sel':''}" style="flex:1;padding:11px;font-size:13px">💵 Cash</button>
+      <button id="bill-credit-btn" onclick="setBillingType('credit')" class="pf-btn ${j.billingType==='credit'?'pass sel':''}" style="flex:1;padding:11px;font-size:13px">🏦 Credit</button>
     </div>
-    <img id="ph-prev" class="ph-prev ${hasPhoto?'show':''}" src="${job.stages?.return?.serviceReportPhoto||''}">
-    <div class="fl" style="margin-top:8px">Condition Notes (optional)</div>
-    <input type="text" id="ret-notes" value="${job.stages?.return?.conditionNotes||''}" placeholder="Any damage or missing parts?" class="fi" style="margin-bottom:14px">
-    <button class="sbtn" onclick="doneReturn()" id="ret-btn" ${!hasPhoto?'disabled':''}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-      ${hasPhoto?'Confirm Return':'Upload service report photo first'}
+    <div id="billing-type-details" style="margin-top:12px">${renderBillingTypeDetails(j)}</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px;font-size:12px;color:var(--text2)">
+      <strong style="color:var(--text);display:block;margin-bottom:6px">Billing Documents Checklist:</strong>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="chk-sr"> Service Report</label>
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="chk-mcl"> Calibrated Instruments List (MCL)</label>
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="chk-cert"> Certificates</label>
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="chk-bill"> Billing Document</label>
+      </div>
+    </div>
+    <button onclick="sendBillingWhatsApp('${jobNum}')" style="width:100%;padding:13px;background:rgba(0,229,176,.12);border:1px solid var(--accent);border-radius:var(--r);color:var(--accent);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:7px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      Send Billing Summary to Accounts Team
     </button>
-  </div>`;
-}
-function takePhoto(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';
-  inp.onchange=e=>{
-    const f=e.target.files[0];if(!f)return;
-    const rd=new FileReader();
-    rd.onload=ev=>{
-      const job=jobs.find(j=>j.id===curJob);if(!job)return;
-      if(!job.stages)job.stages={};if(!job.stages.return)job.stages.return={};
-      job.stages.return.serviceReportPhoto=ev.target.result;
-      saveJobs();
-      const prev=document.getElementById('ph-prev');if(prev){prev.src=ev.target.result;prev.classList.add('show');}
-      const btn=document.getElementById('ret-btn');if(btn){btn.disabled=false;btn.textContent='Confirm Return';}
-      const area=document.getElementById('photo-area');if(area)area.querySelector('div').style.color='var(--green)';
-      toast('✓ Photo captured');
-    };rd.readAsDataURL(f);
-  };inp.click();
-}
-function doneReturn(){
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  if(!job.stages?.return?.serviceReportPhoto){toast('Upload signed service report photo first');return;}
-  const notes=document.getElementById('ret-notes')?.value.trim()||'';
-  if(!job.stages)job.stages={};if(!job.stages.return)job.stages.return={};
-  job.stages.return.conditionNotes=notes;
-  advance(job,'return',{completedBy:user.name,completedAt:new Date().toISOString(),conditionNotes:notes});
-  approvalWA(job,'return');
-}
-
-// STAGE 4 - CERTIFICATION
-function stepCert(job){
-  const isManager=user.role==='manager';
-  const assigned=job.assignedCertTech;
-  if(isManager&&!assigned){
-    const techs=[...new Set(jobs.map(j=>j.technician).filter(Boolean))];
-    return `<div>
-      <div style="font-size:11px;color:var(--t2);margin-bottom:10px">Assign certificate preparation to a technician</div>
-      <div class="fl">Assign To</div>
-      <select id="cert-sel" class="fi fi-sel" style="margin-bottom:14px">
-        <option value="">— Select —</option>
-        ${techs.map(t=>`<option value="${t}">${t}</option>`).join('')}
-        <option value="${user.name}">${user.name} (yourself)</option>
-      </select>
-      <button class="sbtn" onclick="assignCert()">Assign Certificate Work</button>
+    <div class="modal-actions" style="margin-top:8px">
+      <button class="modal-btn secondary" onclick="document.getElementById('modal-stage').classList.remove('open')">Cancel</button>
+      <button class="modal-btn primary" onclick="submitBilling('${jobNum}')">Mark Billed → Complete</button>
     </div>`;
-  }
-  if(assigned&&assigned!==user.name&&user.role!=='manager')
-    return `<div style="font-size:11px;color:var(--t3)">Assigned to: <strong style="color:var(--text)">${assigned}</strong></div>`;
-  return `<div>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:10px">Prepare calibration certificates for ${(job.mclItems||[]).length} items</div>
-    <div class="fl">Certificate Numbers</div>
-    <input type="text" id="cert-nos" value="${job.stages?.certificate?.certNumbers||''}" placeholder="CERT-001, CERT-002…" class="fi" style="font-family:var(--mono);font-size:13px;margin-bottom:10px">
-    <div class="fl">Certificate Date</div>
-    <input type="text" id="cert-dt" value="${job.stages?.certificate?.certDate||fdate(new Date().toISOString())}" class="fi" style="font-family:var(--mono);font-size:14px;margin-bottom:14px">
-    <button class="sbtn" onclick="doneCert()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Certificates Ready</button>
-  </div>`;
-}
-function assignCert(){
-  const job=jobs.find(j=>j.id===curJob);
-  const t=document.getElementById('cert-sel')?.value;if(!t){toast('Select technician');return;}
-  job.assignedCertTech=t;saveJobs();sbUpdate(job);toast(`Assigned to ${t}`);
-  whatsapp(job,'Certificate Work Assigned',`${t} please prepare certs for Job ${job.jobNum} (${job.customer})`);
-  openDetail(curJob);
-}
-function doneCert(){
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  const nos=document.getElementById('cert-nos')?.value.trim()||'';
-  const dt=document.getElementById('cert-dt')?.value.trim()||'';
-  if(!nos){toast('Enter certificate numbers');return;}
-  advance(job,'certificate',{completedBy:user.name,completedAt:new Date().toISOString(),certNumbers:nos,certDate:dt});
-  approvalWA(job,'certificate');
+  document.getElementById('modal-stage').classList.add('open');
 }
 
-// STAGE 5 - DELIVERY
-function stepDelivery(job){
-  const ok=user.role==='coordinator'||user.role==='manager';
-  if(!ok)return `<div style="font-size:11px;color:var(--t3)">Awaiting coordinator to deliver certificates</div>`;
-  return `<div>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:10px">Deliver certificates and get acknowledgement</div>
-    <div style="background:var(--s2);border:1px solid var(--b);border-radius:9px;padding:10px;margin-bottom:12px;font-size:11px;color:var(--t2);line-height:1.7">
-      📜 Certs: ${job.stages?.certificate?.certNumbers||'—'}<br>🏢 ${job.customer}<br>📍 ${job.site}${job.contactPerson?'<br>🤝 '+job.contactPerson:''}
-    </div>
-    <div class="fl">Delivered To</div>
-    <input type="text" id="del-to" value="${job.stages?.delivery?.deliveredTo||''}" placeholder="Person who received" class="fi" style="margin-bottom:10px">
-    <div class="fl">Acknowledgement / Reference</div>
-    <input type="text" id="del-ack" value="${job.stages?.delivery?.acknowledgement||''}" placeholder="ACK reference" class="fi" style="font-family:var(--mono);font-size:14px;margin-bottom:14px">
-    <button class="sbtn" onclick="doneDelivery()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Confirm Delivery</button>
-  </div>`;
-}
-function doneDelivery(){
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  const to=document.getElementById('del-to')?.value.trim()||'';
-  if(!to){toast('Enter who received certificates');return;}
-  const ack=document.getElementById('del-ack')?.value.trim()||'';
-  advance(job,'delivery',{completedBy:user.name,completedAt:new Date().toISOString(),deliveredTo:to,acknowledgement:ack});
-  whatsapp(job,'Certificates Delivered ✓',`Delivered to ${to}. ACK: ${ack||'—'}. Job ${job.jobNum} ready for billing.`);
-}
-
-// STAGE 6 - BILLING
-function stepBilling(job){
-  const ok=user.role==='accounts'||user.role==='manager';
-  if(!ok)return `<div style="font-size:11px;color:var(--t3)">Awaiting accounts team</div>`;
-  const mcl=job.mclItems||[];
-  return `<div>
-    <div style="font-size:11px;color:var(--t2);margin-bottom:12px">Process invoice for this job</div>
-    <div class="fl">Invoice Number</div>
-    <input type="text" id="inv-no" value="${job.stages?.billing?.invoiceNo||''}" placeholder="INV-2026-001" class="fi" style="font-family:var(--mono);font-size:14px;margin-bottom:10px">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div><div class="fl">PO Number</div><input type="text" id="inv-po" value="${job.poNumber||''}" placeholder="PO-XXXX" class="fi" style="font-family:var(--mono);font-size:13px"></div>
-      <div><div class="fl">Payment Type</div><select id="inv-pt" class="fi fi-sel"><option value="credit" ${(job.stages?.billing?.paymentType||'credit')==='credit'?'selected':''}>Credit</option><option value="cash" ${job.stages?.billing?.paymentType==='cash'?'selected':''}>Cash</option></select></div>
-    </div>
-    <div class="fl">${mcl.length} Instrument Line Items</div>
-    <div id="bill-items">${mcl.map((it,i)=>`<div class="inv-line"><div class="inv-info"><div class="inv-id">${it.tag||'Item '+(i+1)}</div><div class="inv-d">${it.desc||''}</div></div><div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--t3);font-family:var(--mono)">OMR</span><input type="number" class="rate-inp" id="r${i}" placeholder="0.000" step="0.001" min="0" value="${job.stages?.billing?.lineItems?.[i]?.rate||''}" oninput="calcBill()"></div></div>`).join('')}</div>
-    <div id="bill-fx"></div>
-    <button onclick="addBillFx()" style="width:100%;padding:9px;background:var(--s);border:1px dashed var(--b2);border-radius:var(--r);color:var(--t3);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:12px">+ Fixed Charge</button>
-    <div style="background:var(--s);border:1px solid var(--b2);border-radius:var(--r);padding:14px;margin-bottom:14px">
-      <div class="tot-row"><span>Subtotal</span><span id="b-sub" style="font-family:var(--mono)">OMR 0.000</span></div>
-      <div class="tot-row"><span>VAT 5%</span><span id="b-vat" style="font-family:var(--mono)">OMR 0.000</span></div>
-      <div class="tot-row grand"><span>TOTAL</span><span id="b-tot">OMR 0.000</span></div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="sendBillWA()" style="flex:1;padding:12px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);color:var(--t2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">📱 Send to Accounts</button>
-      <button class="sbtn" onclick="doneBilling()" style="flex:1;margin-top:0">✓ Mark Billed</button>
-    </div>
-  </div>`;
-}
-function addBillFx(){bFixed.push({desc:'',amount:0});renderBillFx();}
-function renderBillFx(){
-  const el=document.getElementById('bill-fx');if(!el)return;
-  el.innerHTML=bFixed.map((f,i)=>`<div class="inv-line" style="margin-bottom:7px">
-    <input type="text" placeholder="Description" value="${f.desc}" oninput="bFixed[${i}].desc=this.value" style="flex:1;padding:8px 10px;background:var(--s);border:1px solid var(--b);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;min-width:0">
-    <div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--t3);font-family:var(--mono)">OMR</span><input type="number" class="rate-inp" value="${f.amount||''}" placeholder="0.000" step="0.001" min="0" oninput="bFixed[${i}].amount=parseFloat(this.value)||0;calcBill()"></div>
-    <button onclick="bFixed.splice(${i},1);renderBillFx();calcBill()" style="background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;padding:0 4px">×</button>
-  </div>`).join('');calcBill();
-}
-function calcBill(){
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  let sub=0;
-  (job.mclItems||[]).forEach((_,i)=>{sub+=parseFloat(document.getElementById('r'+i)?.value||0);});
-  bFixed.forEach(f=>{sub+=f.amount||0;});
-  const vat=sub*0.05,tot=sub+vat;
-  const s=document.getElementById('b-sub'),v=document.getElementById('b-vat'),t=document.getElementById('b-tot');
-  if(s)s.textContent=omr(sub);if(v)v.textContent=omr(vat);if(t)t.textContent=omr(tot);
-}
-function doneBilling(){
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  const invNo=document.getElementById('inv-no')?.value.trim()||'';
-  if(!invNo){toast('Enter invoice number');return;}
-  const pt=document.getElementById('inv-pt')?.value||'credit';
-  const mcl=job.mclItems||[];
-  const li=mcl.map((_,i)=>({rate:parseFloat(document.getElementById('r'+i)?.value||0)}));
-  let sub=li.reduce((s,l)=>s+l.rate,0);bFixed.forEach(f=>{sub+=f.amount||0;});
-  const vat=sub*0.05,tot=sub+vat;
-  advance(job,'billing',{completedBy:user.name,completedAt:new Date().toISOString(),invoiceNo:invNo,paymentType:pt,lineItems:li,fixedCharges:[...bFixed],subtotal:sub,vat,total:tot});
-  bFixed=[];
-  whatsapp(job,'Job Complete & Billed ✓',`Invoice: ${invNo}\nTotal: ${omr(tot)}\nPayment: ${pt.toUpperCase()}`);
-}
-function sendBillWA(){
-  const job=jobs.find(j=>j.id===curJob);if(!job)return;
-  const invNo=document.getElementById('inv-no')?.value.trim()||'PENDING';
-  const pt=document.getElementById('inv-pt')?.value||'credit';
-  const mcl=job.mclItems||[];
-  let sub=0;
-  const lines=mcl.map((it,i)=>{const r=parseFloat(document.getElementById('r'+i)?.value||0);sub+=r;return `• ${it.tag||'Item '+(i+1)} — ${it.desc||''}: ${omr(r)}`;});
-  bFixed.forEach(f=>{sub+=f.amount||0;});const vat=sub*0.05;
-  let msg=`🧾 *BILLING — MSSI Cal Lab*
-━━━━━━━━━━━━━━━━━━
-📁 Job: ${job.jobNum}
-🏢 ${job.customer}
-📍 ${job.site}
-📄 Invoice: ${invNo}
-📄 PO: ${job.poNumber||'—'}
-📜 Certs: ${job.stages?.certificate?.certNumbers||'—'}
-📋 SR: ${job.stages?.onsite?.serviceReportNo||'—'}
-━━━━━━━━━━━━━━━━━━
-${lines.join('\n')}
-`;
-  bFixed.filter(f=>f.amount>0).forEach(f=>{msg+=`• ${f.desc||'Fixed'}: ${omr(f.amount)}\n`;});
-  msg+=`━━━━━━━━━━━━━━━━━━
-Subtotal: ${omr(sub)}
-VAT 5%: ${omr(vat)}
-*TOTAL: ${omr(sub+vat)}*
-💳 ${pt.toUpperCase()}
-`;
-  if(pt==='credit')msg+=`
-_Credit: Submit SR + MCL + billing doc to head office_`;
-  else msg+=`
-_Cash: Process in SAP_`;
-  msg+=`
-_MSSI Cal Lab_`;
-  window.location.href='https://wa.me/?text='+encodeURIComponent(msg);
-}
-
-// ADVANCE STAGE
-function advance(job,stageKey,data){
-  const s=STAGES.find(s=>s.key===stageKey);
-  if(!job.stages)job.stages={};
-  job.stages[stageKey]={...(job.stages[stageKey]||{}),...data};
-  const next=s.id<7?s.id+1:7;
-  job.stage=next;
-  if(next===7)job.completedAt=new Date().toISOString();
-  saveJobs();sbUpdate(job);openDetail(job.id);
-}
-
-// MY TASKS
-function renderTasks(m){
-  updBadges();
-  const tasks=getMyTasks();
-  m.innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:14px">My Tasks <span style="font-size:12px;font-weight:400;color:var(--t3)">${tasks.length} pending</span></div>
-  ${tasks.length?tasks.map(t=>`<div class="task-card" onclick="openDetail('${t.jid}')">
-    <div class="task-icon" style="background:rgba(0,229,176,.1)">${t.icon}</div>
-    <div class="task-body"><div class="task-job">${t.jobNum}</div><div class="task-title">${t.title}</div><div class="task-detail">${t.detail}</div></div>
-    <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(255,176,32,.12);color:var(--amber);margin-top:2px;white-space:nowrap">ACTION</span>
-  </div>`).join(''):`<div class="empty-st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>No pending tasks — you're all clear ✓</p></div>`}`;
-}
-function getMyTasks(){
-  const t=[];
-  jobs.filter(j=>j.stage<7).forEach(j=>{
-    const r=user.role,n=user.name;
-    if((r==='technician'||r==='manager')&&j.stage===1&&(j.technician===n||r==='manager'))
-      t.push({jid:j.id,jobNum:j.jobNum,icon:'📤',title:'Issue Out Instruments',detail:j.customer+' · '+j.site});
-    if((r==='technician'||r==='manager')&&j.stage===2&&(j.technician===n||r==='manager'))
-      t.push({jid:j.id,jobNum:j.jobNum,icon:'🔧',title:'Complete Calibration (MCL)',detail:(j.mclItems||[]).length+' items · '+j.customer});
-    if((r==='technician'||r==='manager')&&j.stage===3&&(j.technician===n||r==='manager'))
-      t.push({jid:j.id,jobNum:j.jobNum,icon:'📥',title:'Return + Upload Service Report',detail:j.customer+' · Signed report required'});
-    if((r==='technician'||r==='manager')&&j.stage===4&&(j.assignedCertTech===n||r==='manager'))
-      t.push({jid:j.id,jobNum:j.jobNum,icon:'📜',title:'Prepare Certificates',detail:(j.mclItems||[]).length+' items · '+j.customer});
-    if((r==='coordinator'||r==='manager')&&j.stage===5)
-      t.push({jid:j.id,jobNum:j.jobNum,icon:'🚗',title:'Deliver Certificates',detail:j.customer+' · '+j.site});
-    if((r==='accounts'||r==='manager')&&j.stage===6)
-      t.push({jid:j.id,jobNum:j.jobNum,icon:'💰',title:'Process Billing',detail:j.customer+' · '+(j.mclItems||[]).length+' items'});
+let activeBillingType = '';
+function setBillingType(type){
+  activeBillingType = type;
+  ['cash','credit'].forEach(t=>{
+    const btn = document.getElementById(`bill-${t}-btn`);
+    if(btn){ btn.classList.toggle('pass',t===type); btn.classList.toggle('sel',t===type); }
   });
-  return t;
-}
-function updBadges(){
-  const n=getMyTasks().length;
-  const b=document.getElementById('badge-tasks');
-  if(b){b.textContent=n;b.classList.toggle('show',n>0);}
+  const j = jobs.find(x=>x.jobNum===document.querySelector('#modal-stage-body .modal-sub')?.textContent?.split('·')[0]?.trim());
+  document.getElementById('billing-type-details').innerHTML = renderBillingTypeDetails({billingType:type});
 }
 
-// NEW JOB
-function renderNewJob(m){
-  const yr=new Date().getFullYear().toString().slice(-2);
-  const seq=(jobs.length+1).toString().padStart(4,'0');
-  m.innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:16px">Create New Job</div>
-  <div style="background:var(--s);border:1px solid var(--b2);border-radius:var(--r);padding:14px;margin-bottom:12px">
-    <div style="font-size:11px;color:var(--t3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">Job Information</div>
-    <div class="fl">Job Number</div>
-    <input type="text" id="nj-num" value="S${yr}-${seq}" class="fi" style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green);border-color:var(--green);margin-bottom:10px">
-    <div class="fl">Customer Name *</div>
-    <input type="text" id="nj-cus" placeholder="e.g. PDO, OQ, Shell Oman" class="fi" style="margin-bottom:10px" autocomplete="organization">
-    <div class="fl">Site / Location *</div>
-    <input type="text" id="nj-site" placeholder="e.g. Block 4 – Compressor Station" class="fi" style="margin-bottom:10px">
-    <div class="fl">PO Number</div>
-    <input type="text" id="nj-po" placeholder="PO-2026-001" class="fi" style="font-family:var(--mono);font-size:14px;margin-bottom:10px">
-    <div class="fl">Contact Person (Customer)</div>
-    <input type="text" id="nj-cp" placeholder="e.g. Ahmed Al-Rashidi" class="fi" style="margin-bottom:10px">
-    <div class="fl">Technician *</div>
-    <input type="text" id="nj-tech" value="${user.name}" class="fi" style="margin-bottom:10px">
-    <div class="fl">Work Description</div>
-    <input type="text" id="nj-desc" placeholder="e.g. Annual Calibration Survey" class="fi">
-  </div>
-  <button class="sbtn" onclick="createJob()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-    Create Job &amp; Start Pipeline
-  </button>`;
-}
-async function createJob(){
-  let jn=document.getElementById('nj-num')?.value.trim();
-  const cus=document.getElementById('nj-cus')?.value.trim();
-  const site=document.getElementById('nj-site')?.value.trim();
-  const po=document.getElementById('nj-po')?.value.trim();
-  const cp=document.getElementById('nj-cp')?.value.trim();
-  const tech=document.getElementById('nj-tech')?.value.trim();
-  const desc=document.getElementById('nj-desc')?.value.trim();
-  if(!cus){toast('Customer name required');return;}
-  if(!site){toast('Site required');return;}
-  if(!tech){toast('Technician required');return;}
-  if(jobs.find(j=>j.jobNum===jn)){toast('Job number already exists');return;}
-  if(SB_URL&&SB_KEY){const sn=await sbGetNum();if(sn)jn=sn;}
-  const job={id:gid(),jobNum:jn,customer:cus,site,poNumber:po,contactPerson:cp,technician:tech,description:desc,stage:1,createdAt:new Date().toISOString(),createdBy:user.name,masterInstruments:[],mclItems:[],stages:{}};
-  jobs.unshift(job);saveJobs();sbSave(job);
-  toast('✓ Job '+jn+' created');
-  whatsapp(job,'New Job Created',`${jn} for ${cus} at ${site}. Technician: ${tech}`);
-  switchTab('pipeline');setTimeout(()=>openDetail(job.id),100);
+function renderBillingTypeDetails(j){
+  const type = j.billingType || activeBillingType;
+  if(type==='cash') return `<div style="background:rgba(0,229,176,.06);border:1px solid rgba(0,229,176,.2);border-radius:var(--r2);padding:12px;font-size:12px;color:var(--text2)">Lab processes invoice directly in SAP.<br><div class="field-label" style="margin-top:10px">SAP Invoice Reference</div><input type="text" id="bill-ref" class="field-input mono" placeholder="SAP-XXXX" value="${j.billingRef||''}"></div>`;
+  if(type==='credit') return `<div style="background:rgba(56,139,253,.06);border:1px solid rgba(56,139,253,.2);border-radius:var(--r2);padding:12px;font-size:12px;color:var(--text2)">Submit billing papers to head office.<br><strong style="color:var(--text);display:block;margin-top:6px">Documents to submit to HO:</strong><ul style="margin:6px 0 0 16px;line-height:1.8;color:var(--text2)"><li>Service Report</li><li>MCL (Calibrated Instruments List)</li><li>Billing Document</li></ul><div class="field-label" style="margin-top:10px">HO Reference Number</div><input type="text" id="bill-ref" class="field-input mono" placeholder="HO-REF-XXXX" value="${j.billingRef||''}"></div>`;
+  return '';
 }
 
-// EQUIPMENT
-async function loadEquip(){
-  const url=localStorage.getItem(EK)||'https://raw.githubusercontent.com/selva20240720/msecaltrack/main/equipment.json';
-  try{const r=await fetch(url,{cache:'no-cache'});const d=await r.json();if(Array.isArray(d)){d.forEach(e=>{eqMap[e.id]=e;});}}catch(e){}
-}
-function renderEquipTab(m){
-  const items=Object.values(eqMap);
-  const now=new Date();
-  m.innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:14px">Equipment List <span style="font-size:12px;font-weight:400;color:var(--t3)">${items.length} instruments</span></div>
-  <input type="text" placeholder="Search…" oninput="filterEq(this.value)" class="fi" style="padding-left:36px;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%235a6478%22 stroke-width=%222%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cpath d=%22m21 21-4.35-4.35%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:12px center;margin-bottom:14px">
-  <div id="eq-list">${eqList(items,now)}</div>`;
-}
-function eqList(items,now){
-  if(!items.length)return '<div class="empty-st"><p>No instruments loaded</p></div>';
-  return items.slice(0,100).map(e=>{
-    const d=e.calDue?Math.ceil((new Date(e.calDue)-now)/86400000):999;
-    const cc=d<0?'var(--red)':d<90?'var(--amber)':'var(--green)';
-    return `<div style="background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:11px 13px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-        <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green)">${e.id}</span>
-        ${e.isMaster?'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(167,139,250,.15);color:#a78bfa">MASTER</span>':''}
-      </div>
-      <div style="font-size:12px;color:var(--text);margin-bottom:2px">${e.model||''}</div>
-      <div style="font-size:11px;color:var(--t2)">${e.make||''}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-        ${e.serial?`<span class="chip"><span class="chip-l">S/N</span><span class="chip-v">${e.serial}</span></span>`:''}
-        ${e.range?`<span class="chip"><span class="chip-l">Range</span><span class="chip-v">${e.range}</span></span>`:''}
-        ${e.calDue?`<span class="chip"><span class="chip-l">Cal Due</span><span class="chip-v" style="color:${cc}">${e.calDue}</span></span>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-function filterEq(q){document.getElementById('eq-list').innerHTML=eqList(Object.values(eqMap).filter(e=>!q||e.id.toLowerCase().includes(q.toLowerCase())||(e.model||'').toLowerCase().includes(q.toLowerCase())||(e.serial||'').toLowerCase().includes(q.toLowerCase())),new Date());}
-
-// BILLING TAB
-function renderBillingTab(m){
-  const pend=jobs.filter(j=>j.stage===6);
-  const done=jobs.filter(j=>j.stage===7&&j.stages?.billing?.invoiceNo);
-  m.innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:14px">Billing</div>
-  <div style="font-size:11px;font-weight:600;color:var(--amber);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Pending (${pend.length})</div>
-  ${pend.map(j=>`<div class="job-card" onclick="openDetail('${j.id}')"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px"><span class="job-num">${j.jobNum}</span><span class="stage-pill s6">💰 Billing</span></div><div class="job-customer">${j.customer}</div><div class="job-meta">${(j.mclItems||[]).length} items · Certs: ${j.stages?.certificate?.certNumbers||'—'}</div></div>`).join('')||'<div style="color:var(--t3);font-size:13px;text-align:center;padding:20px">No pending</div>'}
-  <div style="height:1px;background:var(--b);margin:16px 0"></div>
-  <div style="font-size:11px;font-weight:600;color:var(--green);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Completed (${done.length})</div>
-  ${done.slice(0,10).map(j=>`<div class="job-card" onclick="openDetail('${j.id}')"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px"><span class="job-num">${j.jobNum}</span><span class="stage-pill s7">✅ Complete</span></div><div class="job-customer">${j.customer}</div><div class="job-meta">Invoice: ${j.stages?.billing?.invoiceNo||'—'} · ${omr(j.stages?.billing?.total||0)}</div></div>`).join('')||'<div style="color:var(--t3);font-size:13px;text-align:center;padding:20px">No billed jobs yet</div>'}`;
+async function submitBilling(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const type = activeBillingType || j.billingType;
+  if(!type){ showToast('Select billing type'); return; }
+  const ref = document.getElementById('bill-ref')?.value.trim()||'';
+  j.billingType = type;
+  j.billingRef  = ref;
+  j.stage  = 7;
+  j.status = 'complete';
+  j.stageHistory = j.stageHistory||{};
+  j.stageHistory[6] = { completedAt: new Date().toISOString(), by: session.name, type, ref };
+  updateJob(j);
+  await syncJobToSupabase(j);
+  document.getElementById('modal-stage').classList.remove('open');
+  sendStageWhatsApp(j, 6, `Billing processed. Type: ${type}. Ref: ${ref||'—'}. Job COMPLETE.`);
+  showToast('✓ Job ' + jobNum + ' complete!');
+  renderBilling();
+  renderTasks();
+  updateNotifs();
 }
 
+function sendBillingWhatsApp(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  const type = activeBillingType || j.billingType;
+  let msg = `💰 *Billing — MSSI Cal Lab*\n━━━━━━━━━━━━━━━━━━\n`;
+  msg += `📋 Job: ${j.jobNum}\n🏢 Customer: ${j.customer}\n📍 Site: ${j.site}\n`;
+  if(j.poNumber) msg += `📄 PO: ${j.poNumber}\n`;
+  msg += `\n*Documents ready:*\n`;
+  msg += `${document.getElementById('chk-sr')?.checked?'✅':'⬜'} Service Report (SR: ${j.srNumber||'—'})\n`;
+  msg += `${document.getElementById('chk-mcl')?.checked?'✅':'⬜'} MCL (${(j.mclItems||[]).length} instruments)\n`;
+  msg += `${document.getElementById('chk-cert')?.checked?'✅':'⬜'} Certificates (${(j.certNumbers||[]).join(', ')||'—'})\n`;
+  msg += `${document.getElementById('chk-bill')?.checked?'✅':'⬜'} Billing Document\n`;
+  msg += `\n*Type:* ${type==='cash'?'💵 Cash (process in SAP)':'🏦 Credit (submit to Head Office)'}\n`;
+  if(j.deliveryAck) msg += `*Delivery ack:* ${j.deliveryAck}\n`;
+  msg += `\n_Please process. — MSSI Cal Lab Operations_`;
+  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+}
+
+// ════════════════════════════════════════════════════
+// STAGE 3 APPROVAL (Ops Head action)
+// ════════════════════════════════════════════════════
+async function approveStage3Return(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  if(!j.srPhotoData){ if(!confirm('No service report photo uploaded. Approve anyway?')) return; }
+  j.stage = 4;
+  j.stageHistory = j.stageHistory||{};
+  j.stageHistory[3] = j.stageHistory[3]||{};
+  j.stageHistory[3].approvedAt = new Date().toISOString();
+  j.stageHistory[3].approvedBy = session.name;
+  updateJob(j);
+  await syncJobToSupabase(j);
+  sendStageWhatsApp(j, 3, `Return approved by ${session.name}. Job moved to Certification stage.`);
+  showToast(`✓ ${jobNum} moved to Certification`);
+  renderTasks();
+  renderPipeline();
+  updateNotifs();
+}
+
+// ════════════════════════════════════════════════════
+// WHATSAPP STAGE NOTIFICATIONS
+// ════════════════════════════════════════════════════
+function sendStageWhatsApp(job, stage, details){
+  const stageInfo = STAGES[stage-1]||STAGES[0];
+  const ap = approvers[0];
+  if(!ap?.phone) return;
+  let msg = `📡 *CalTrack Stage Update*\n━━━━━━━━━━━━━━━━━━\n`;
+  msg += `${stageInfo.icon} *Stage ${stage}: ${stageInfo.label} — ${stage===7?'COMPLETE':'Done'}*\n\n`;
+  msg += `📋 Job: *${job.jobNum}*\n🏢 Customer: ${job.customer}\n📍 Site: ${job.site}\n👤 Tech: ${job.tech}\n`;
+  msg += `\n📝 ${details}\n`;
+  if(stage<7){
+    const next = STAGES[stage];
+    msg += `\n▶ Next: *Stage ${stage+1}: ${next.label}*\n`;
+    if(stage===2||stage===4) msg += `\n_Action required — open CalTrack to proceed_`;
+  } else {
+    msg += `\n✅ *Job fully complete!*`;
+  }
+  msg += `\n━━━━━━━━━━━━━━━━━━\n_MSSI Cal Lab CalTrack_`;
+  setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+}
+
+// ════════════════════════════════════════════════════
+// JOBS PANEL (all jobs list)
+// ════════════════════════════════════════════════════
+function renderJobsPanel(){
+  const filters = ['all','open','complete'];
+  document.getElementById('jobs-filter-row').innerHTML = filters.map(f=>`
+    <button onclick="setJobsFilter('${f}')" style="padding:6px 13px;border-radius:20px;border:1px solid ${jobsFilter===f?'var(--accent)':'var(--border2)'};background:${jobsFilter===f?'rgba(0,229,176,.12)':'var(--surface)'};color:${jobsFilter===f?'var(--accent)':'var(--text3)'};font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer">
+      ${f.charAt(0).toUpperCase()+f.slice(1)}
+    </button>`).join('');
+  let filtered = jobs;
+  if(jobsFilter==='open')    filtered=jobs.filter(j=>j.status!=='complete');
+  if(jobsFilter==='complete')filtered=jobs.filter(j=>j.status==='complete');
+  document.getElementById('jobs-list-panel').innerHTML = !filtered.length
+    ? `<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg><p>No jobs found</p></div>`
+    : filtered.map(j=>jobPipelineCard(j)).join('');
+}
+function setJobsFilter(f){ jobsFilter=f; renderJobsPanel(); }
+
+// ════════════════════════════════════════════════════
 // SETTINGS
-function renderSettings(m){
-  const sql=`-- Run in Supabase SQL Editor
-CREATE TABLE ct_jobs (id text primary key, data jsonb not null, updated_at timestamptz default now());
-ALTER TABLE ct_jobs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all" ON ct_jobs FOR ALL USING (true) WITH CHECK (true);
-
-CREATE TABLE ct_counter (id text primary key, value int default 0);
-INSERT INTO ct_counter VALUES ('job_seq',44) ON CONFLICT DO NOTHING;
-ALTER TABLE ct_counter ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all" ON ct_counter FOR ALL USING (true) WITH CHECK (true);
-
-CREATE OR REPLACE FUNCTION get_next_job_seq()
-RETURNS int LANGUAGE plpgsql AS $$
-DECLARE v int;
-BEGIN
-  UPDATE ct_counter SET value=value+1 WHERE id='job_seq' RETURNING value INTO v;
-  RETURN v;
-END; $$;`;
-  m.innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:20px">Settings</div>
-  <div style="background:var(--s);border:1px solid var(--b2);border-radius:var(--r);padding:14px;margin-bottom:14px">
-    <div style="font-size:11px;color:var(--t3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">🗄️ Supabase Database</div>
-    <div style="background:var(--s3);border:1px solid var(--b);border-radius:var(--r);padding:10px;font-family:var(--mono);font-size:10px;color:var(--t3);line-height:1.7;overflow-x:auto;white-space:pre;margin-bottom:10px" id="sql-blk">${sql}</div>
-    <button onclick="cpSQL()" style="width:100%;padding:9px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);color:var(--t2);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:12px">📋 Copy SQL</button>
-    <div class="fl">Supabase Project URL</div>
-    <input type="text" id="sb-u" value="${SB_URL}" placeholder="https://xxxx.supabase.co" class="fi" style="font-family:var(--mono);font-size:12px;margin-bottom:10px">
-    <div class="fl">Anon Key</div>
-    <input type="text" id="sb-k" value="${SB_KEY}" placeholder="eyJ..." class="fi" style="font-family:var(--mono);font-size:11px;margin-bottom:12px">
-    <button class="sbtn" onclick="saveSB()">💾 Save &amp; Connect</button>
-  </div>
-  <div style="background:var(--s);border:1px solid var(--b2);border-radius:var(--r);padding:14px;margin-bottom:14px">
-    <div style="font-size:11px;color:var(--t3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">👥 Approver WhatsApp Numbers</div>
-    ${[0,1,2].map(i=>`<div style="margin-bottom:10px">
-      <div class="fl">Approver ${i+1}</div>
-      <input type="text" id="an${i}" value="${approvers[i]?.name||''}" placeholder="Name" class="fi" style="margin-bottom:6px">
-      <input type="text" id="ap${i}" value="${approvers[i]?.phone||''}" placeholder="WhatsApp number with country code" class="fi" style="font-family:var(--mono);font-size:12px">
-    </div>`).join('')}
-    <button class="sbtn" onclick="saveAP()">💾 Save Approvers</button>
-  </div>
-  <div style="background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.2);border-radius:var(--r);padding:14px">
-    <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">⚠ Clear All Data</div>
-    <button onclick="clearAll()" style="padding:10px 16px;background:rgba(255,77,109,.15);border:1px solid rgba(255,77,109,.3);border-radius:var(--r);color:var(--red);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer">Clear This Phone</button>
-  </div>`;
-}
-function cpSQL(){navigator.clipboard.writeText(document.getElementById('sql-blk').textContent).then(()=>toast('✓ SQL copied')).catch(()=>toast('Copy manually'));}
-function saveSB(){
-  SB_URL=document.getElementById('sb-u').value.trim();
-  SB_KEY=document.getElementById('sb-k').value.trim();
-  localStorage.setItem(SK,SB_URL);localStorage.setItem(AK,SB_KEY);
-  toast('✓ Saved');syncSB();
-}
-function saveAP(){
-  approvers=[];
-  for(let i=0;i<3;i++){const n=document.getElementById('an'+i)?.value.trim(),p=document.getElementById('ap'+i)?.value.trim().replace(/\D/g,'');if(n&&p)approvers.push({name:n,phone:p});}
-  localStorage.setItem(APK,JSON.stringify(approvers));toast('✓ Approvers saved — '+approvers.length);
-}
-function clearAll(){if(!confirm('Clear ALL data?'))return;localStorage.clear();location.reload();}
-
-// SUPABASE
-async function sbSave(job){if(!SB_URL||!SB_KEY)return;try{await fetch(`${SB_URL}/rest/v1/ct_jobs`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal,resolution=merge-duplicates'},body:JSON.stringify({id:job.id,data:job,updated_at:new Date().toISOString()})});}catch(e){}}
-async function sbUpdate(job){if(!SB_URL||!SB_KEY)return;try{await fetch(`${SB_URL}/rest/v1/ct_jobs?id=eq.${job.id}`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data:job,updated_at:new Date().toISOString()})});}catch(e){}}
-async function syncSB(){
-  if(!SB_URL||!SB_KEY)return;
-  try{
-    const r=await fetch(`${SB_URL}/rest/v1/ct_jobs?order=updated_at.desc`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-    const rows=await r.json();if(!Array.isArray(rows))return;
-    let ch=false;
-    rows.forEach(row=>{const cj=row.data;const idx=jobs.findIndex(j=>j.id===cj.id);if(idx>=0){if(new Date(row.updated_at)>new Date(jobs[idx].updatedAt||jobs[idx].createdAt||0)){jobs[idx]=cj;ch=true;}}else{jobs.unshift(cj);ch=true;}});
-    if(ch){saveJobs();if(curTab)renderTab(curTab);}
-  }catch(e){}
-}
-async function sbGetNum(){
-  if(!SB_URL||!SB_KEY)return null;
-  try{const r=await fetch(`${SB_URL}/rest/v1/rpc/get_next_job_seq`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},body:'{}'});if(r.ok){const v=await r.json();if(typeof v==='number'){const yr=new Date().getFullYear().toString().slice(-2);return `S${yr}-${String(v).padStart(4,'0')}`;}}
-  }catch(e){}return null;
+// ════════════════════════════════════════════════════
+function renderSettings(){
+  document.getElementById('set-sb-url').value = SB_URL;
+  document.getElementById('set-sb-key').value = SB_KEY_VAL;
+  document.getElementById('set-eq-url').value = localStorage.getItem(KEY_EQ_URL)||DEFAULT_EQ_URL;
+  const aps = approvers;
+  for(let i=0;i<3;i++){
+    const a=aps[i]||{};
+    const ni=document.getElementById(`set-ap${i+1}-name`);
+    const pi=document.getElementById(`set-ap${i+1}-phone`);
+    if(ni) ni.value=a.name||'';
+    if(pi) pi.value=a.phone||'';
+  }
+  const status = document.getElementById('set-sb-status');
+  status.textContent = SB_URL ? '✓ Supabase configured' : 'Not configured';
+  status.style.color = SB_URL ? 'var(--accent)' : 'var(--text3)';
 }
 
-// CAMERA
-function openCamera(cb,keepOpen=false){
-  camCb=cb;
-  document.getElementById('cam-overlay').classList.add('open');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>{
-    camStream=s;const v=document.getElementById('cam-video');v.srcObject=s;
-    v.addEventListener('loadedmetadata',()=>{
-      const c=document.getElementById('cam-canvas'),ctx=c.getContext('2d');
-      scanIv=setInterval(()=>{
-        if(v.readyState!==v.HAVE_ENOUGH_DATA)return;
-        c.width=v.videoWidth;c.height=v.videoHeight;ctx.drawImage(v,0,0,c.width,c.height);
-        const code=jsQR(ctx.getImageData(0,0,c.width,c.height).data,c.width,c.height);
-        if(code&&code.data){if(!keepOpen)closeCamera();camCb(code.data);}
-      },300);
-    });
-  }).catch(()=>{toast('Camera denied');document.getElementById('cam-overlay').classList.remove('open');});
-}
-function closeCamera(){clearInterval(scanIv);if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}document.getElementById('cam-overlay').classList.remove('open');}
-
-// WHATSAPP
-function whatsapp(job,title,detail){
-  if(!approvers.length)return;
-  const msg=`📋 *CalTrack — ${title}*
-━━━━━━━━━━━━━━━━━━
-📁 ${job.jobNum}
-🏢 ${job.customer}
-📍 ${job.site}
-👤 ${user.name}
-
-${detail}
-━━━━━━━━━━━━━━━━━━
-_MSSI Cal Lab_`;
-  setTimeout(()=>{window.location.href=`https://wa.me/${approvers[0].phone}?text=${encodeURIComponent(msg)}`;},1000);
-}
-function approvalWA(job,stageKey){
-  if(!approvers.length)return;
-  const s=STAGES.find(s=>s.key===stageKey);
-  const url=window.location.href.split('?')[0];
-  const msg=`🔔 *Approval Required — MSSI Cal Lab*
-━━━━━━━━━━━━━━━━━━
-📁 Job: ${job.jobNum}
-🏢 ${job.customer}
-📍 ${job.site}
-👤 Submitted by: ${user.name}
-📋 Stage: ${s?.label}
-
-Open CalTrack to review and advance:
-${url}
-━━━━━━━━━━━━━━━━━━
-_MSSI Cal Lab_`;
-  setTimeout(()=>{window.location.href=`https://wa.me/${approvers[0].phone}?text=${encodeURIComponent(msg)}`;},1000);
+async function saveSupabaseSettings(){
+  SB_URL     = document.getElementById('set-sb-url').value.trim();
+  SB_KEY_VAL = document.getElementById('set-sb-key').value.trim();
+  localStorage.setItem(KEY_SB_URL, SB_URL);
+  localStorage.setItem(KEY_SB_KEY, SB_KEY_VAL);
+  const el = document.getElementById('set-sb-status');
+  el.textContent = 'Testing…';
+  const result = await sbSelect('ct2_jobs','limit=1');
+  el.textContent = result!==null ? '✓ Connected successfully' : '✗ Connection failed — check URL and key';
+  el.style.color = result!==null ? 'var(--accent)' : 'var(--red)';
+  if(result!==null) showToast('✓ Supabase connected');
 }
 
+function saveApproversSettings(){
+  approvers = [];
+  for(let i=1;i<=3;i++){
+    const name=document.getElementById(`set-ap${i}-name`)?.value.trim();
+    const phone=document.getElementById(`set-ap${i}-phone`)?.value.trim().replace(/\D/g,'');
+    if(name&&phone) approvers.push({name,phone});
+  }
+  localStorage.setItem(KEY_APPROVERS, JSON.stringify(approvers));
+  showToast(`✓ ${approvers.length} approvers saved`);
+}
+
+function saveEqUrl(){
+  const url = document.getElementById('set-eq-url').value.trim();
+  localStorage.setItem(KEY_EQ_URL, url);
+  loadEquipment().then(()=>showToast('✓ Equipment list synced'));
+}
+
+function clearAllLocal(){
+  if(!confirm('Clear all local data?')) return;
+  [KEY_SESSION,KEY_JOBS,KEY_EQ].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+// ════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════════
+function updateNotifs(){
+  const role = session?.role;
+  const rc   = ROLE_CONFIG[role]||{};
+  const tasksNotif = document.getElementById('notif-tasks');
+  if(tasksNotif){
+    let count = 0;
+    if(!rc.readOnly){
+      if(role==='technician')  count = jobs.filter(j=>j.tech===session.name&&j.stage>=1&&j.stage<=3).length;
+      if(role==='ops_head')    count = jobs.filter(j=>j.stage===3||j.stage===4||j.stage===5).length;
+      if(role==='coordinator') count = jobs.filter(j=>j.stage===5).length;
+      if(role==='accounts')    count = jobs.filter(j=>j.stage===6).length;
+    }
+    tasksNotif.classList.toggle('show', count>0);
+  }
+  const pipelineNotif = document.getElementById('notif-pipeline');
+  if(pipelineNotif){
+    const urgent = jobs.filter(j=>j.stage===3||j.stage===4).length;
+    pipelineNotif.classList.toggle('show', urgent>0);
+  }
+}
+
+// ════════════════════════════════════════════════════
+// APPROVAL URL HANDLER
+// ════════════════════════════════════════════════════
+function handleApprovalURL(){
+  const p = new URLSearchParams(window.location.search);
+  const action = p.get('action');
+  const jobNum = p.get('jobNum');
+  if(!action||!jobNum) return;
+  window.history.replaceState({},{},window.location.pathname);
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j){ showToast('Job not found — may be on another device'); return; }
+  if(action==='approve3'){ approveStage3Return(jobNum); }
+}
+
+// ════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════
+function updateJob(j){
+  const idx = jobs.findIndex(x=>x.jobNum===j.jobNum);
+  if(idx>=0) jobs[idx]=j; else jobs.unshift(j);
+  saveJobs();
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ════════════════════════════════════════════════════
+// PWA
+// ════════════════════════════════════════════════════
+(function(){
+  const manifest = {
+    name:'CalTrack — MSSI Cal Lab', short_name:'CalTrack',
+    start_url:'./', display:'standalone', orientation:'portrait',
+    background_color:'#080b10', theme_color:'#00e5b0',
+    icons:[{src:makeIcon(),sizes:'192x192',type:'image/png',purpose:'any maskable'}]
+  };
+  function makeIcon(){
+    const c=document.createElement('canvas'); c.width=c.height=192;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#080b10'; ctx.fillRect(0,0,192,192);
+    ctx.fillStyle='#00e5b0';
+    ctx.beginPath(); ctx.roundRect(20,20,152,152,28); ctx.fill();
+    ctx.fillStyle='#021a13';
+    ctx.font='bold 80px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('CT',96,96);
+    return c.toDataURL('image/png');
+  }
+  manifest.icons[0].src = makeIcon();
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  document.getElementById('pwa-manifest').href=URL.createObjectURL(blob);
+  if('serviceWorker' in navigator){
+    const sw=`const C='ct2-v1';self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['./','./index.html']).catch(()=>{})));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const cl=r.clone();caches.open(C).then(c=>c.put(e.request,cl));return r;}).catch(()=>caches.match(e.request)));});`;
+    const swBlob=new Blob([sw],{type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+  }
+  let deferred=null;
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const inApp=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  if(!inApp&&!isIOS){ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;}); }
+})();
+
+// ════════════════════════════════════════════════════
 // INIT
-setInterval(syncSB,120000);
-if(user)initApp();
-else document.getElementById('login-screen').style.display='flex';
+// ════════════════════════════════════════════════════
+if(session){
+  document.getElementById('login-view').style.display='none';
+  initApp();
+}
 </script>
 </body>
 </html>
