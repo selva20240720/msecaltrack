@@ -553,7 +553,18 @@ textarea.field-input { resize: none; height: 80px; }
       <!-- SALES tab -->
       <div class="tab-panel" id="panel-sales">
         <div class="kpi-grid" id="sales-kpis"></div>
-        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="sales-filters"></div>
+
+        <!-- Follow-up alerts strip -->
+        <div id="sales-followup-strip" style="margin-bottom:10px"></div>
+
+        <!-- My jobs toggle + filters -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <div style="display:flex;gap:6px;flex:1;flex-wrap:wrap" id="sales-filters"></div>
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer;flex-shrink:0;white-space:nowrap">
+            <input type="checkbox" id="sales-my-toggle" onchange="renderSalesPanel()" style="width:14px;height:14px;accent-color:var(--accent)">
+            My jobs only
+          </label>
+        </div>
         <div id="sales-list"></div>
       </div>
 
@@ -3908,46 +3919,105 @@ function setJobsFilter(f){ jobsFilter=f; renderJobsPanel(); }
 // ══════════════════════════════════════════════════
 let salesFilter = 'all';
 function renderSalesPanel(){
-  const all = jobs;
+  const myName = session?.name || '';
+  const myOnly = document.getElementById('sales-my-toggle')?.checked;
+  const all = myOnly ? jobs.filter(j=> j.salesPerson && j.salesPerson.toLowerCase().includes(myName.toLowerCase())) : jobs;
+
+  // ── KPIs ──
   const kpis = [
-    {label:'Total Jobs',   val:all.length,                                      color:'#1a56db'},
-    {label:'Needs PO',     val:all.filter(j=>!j.poNumber).length,               color:'#d97706'},
-    {label:'Sales Approved',val:all.filter(j=>j.salesApproved).length,          color:'#16a34a'},
-    {label:'Complete',     val:all.filter(j=>j.stage===8||j.stage===7).length,  color:'#16a34a'},
+    {label:'Total Jobs',    val:all.length,                                          color:'var(--blue)'},
+    {label:'Needs PO',      val:all.filter(j=>!j.poNumber&&j.status!=='draft').length, color:'var(--amber)'},
+    {label:'Cert Ready',    val:all.filter(j=>j.stage>=6&&!j.billingRef&&!j.billingType).length, color:'var(--purple)'},
+    {label:'Billed',        val:all.filter(j=>j.stage===7||(j.billingRef||j.billingType)).length, color:'var(--accent)'},
   ];
   document.getElementById('sales-kpis').innerHTML = kpis.map(k=>`
     <div class="kpi-card"><div class="kpi-val" style="color:${k.color}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
 
-  const fs=[{k:'all',l:'All'},{k:'nopo',l:'No PO'},{k:'billing',l:'Billing Review'},{k:'approved',l:'Approved'}];
+  // ── Follow-up strip ──
+  const strip = document.getElementById('sales-followup-strip');
+  const certNoPO   = all.filter(j=>j.stage>=6&&!j.poNumber&&j.status!=='draft');
+  const noPOlong   = all.filter(j=>!j.poNumber&&j.stage>=3&&j.status!=='draft');
+  const srPending  = all.filter(j=>!j.srNumber&&j.stage>=3&&j.status!=='draft');
+  const alerts = [];
+  if(certNoPO.length)  alerts.push(`<span style="background:rgba(124,58,237,.12);color:var(--purple);border:1px solid rgba(124,58,237,.2);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer" onclick="setSalesF('billing')">🎯 ${certNoPO.length} cert done — PO missing</span>`);
+  if(noPOlong.length)  alerts.push(`<span style="background:rgba(217,119,6,.1);color:var(--amber);border:1px solid rgba(217,119,6,.2);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer" onclick="setSalesF('nopo')">⚠ ${noPOlong.length} jobs need PO</span>`);
+  if(srPending.length) alerts.push(`<span style="background:rgba(220,38,38,.08);color:var(--red);border:1px solid rgba(220,38,38,.15);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer" onclick="setSalesF('nosr')">📄 ${srPending.length} SR pending</span>`);
+  strip.innerHTML = alerts.length
+    ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${alerts.join('')}</div>`
+    : '';
+
+  // ── Filters ──
+  const fs=[
+    {k:'all',l:'All'},
+    {k:'nopo',l:'No PO'},
+    {k:'nosr',l:'SR Pending'},
+    {k:'billing',l:'Cert Ready'},
+    {k:'approved',l:'Billed'},
+  ];
   document.getElementById('sales-filters').innerHTML=fs.map(f=>`
-    <button onclick="setSalesF('${f.k}')" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${salesFilter===f.k?'#16a34a':'#dde1ea'};background:${salesFilter===f.k?'#f0fdf4':'#fff'};color:${salesFilter===f.k?'#16a34a':'#8896ab'};font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">${f.l}</button>`).join('');
+    <button onclick="setSalesF('${f.k}')" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${salesFilter===f.k?'#16a34a':'var(--border2)'};background:${salesFilter===f.k?'rgba(22,163,74,.1)':'var(--surface)'};color:${salesFilter===f.k?'#16a34a':'var(--text3)'};font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">${f.l}</button>`).join('');
 
-  let filtered=all;
-  if(salesFilter==='nopo')    filtered=all.filter(j=>!j.poNumber);
-  if(salesFilter==='billing') filtered=all.filter(j=>j.stage===6||j.stage===7);
-  if(salesFilter==='approved')filtered=all.filter(j=>j.salesApproved);
+  // ── Filter jobs ──
+  let filtered = all;
+  if(salesFilter==='nopo')     filtered = all.filter(j=>!j.poNumber&&j.status!=='draft');
+  if(salesFilter==='nosr')     filtered = all.filter(j=>!j.srNumber&&j.stage>=3&&j.status!=='draft');
+  if(salesFilter==='billing')  filtered = all.filter(j=>j.stage>=6&&!j.billingRef&&!j.billingType);
+  if(salesFilter==='approved') filtered = all.filter(j=>j.stage===7||(j.billingRef||j.billingType));
 
-  document.getElementById('sales-list').innerHTML=!filtered.length
-    ?`<div class="empty"><p>No jobs</p></div>`
-    :filtered.map(j=>salesJobCard(j)).join('');
+  document.getElementById('sales-list').innerHTML = !filtered.length
+    ? `<div class="empty"><p>No jobs</p></div>`
+    : filtered.map(j=>salesJobCard(j)).join('');
 }
 
 function setSalesF(f){ salesFilter=f; renderSalesPanel(); }
 
 function salesJobCard(j){
-  const s=STAGES[j.stage-1]||STAGES[0];
-  const needsBilling = j.stage===6||j.stage===7;
-  return `<div class="job-card" onclick="openSalesJobModal('${j.jobNum}')">
-    <div class="job-card-top">
-      <div class="job-num">${j.jobNum}</div>
-      <div class="stage-badge" style="background:${s.bg};color:${s.color}">${s.icon} ${s.label}</div>
+  const s = STAGES[j.stage-1]||STAGES[0];
+  const noPO     = !j.poNumber;
+  const noSR     = !j.srNumber && j.stage>=3;
+  const certDone = j.stage>=6;
+  const billed   = !!(j.billingRef||j.billingType);
+
+  const tags = [];
+  if(noPO)     tags.push(`<span style="font-size:10px;background:rgba(217,119,6,.1);color:var(--amber);padding:2px 7px;border-radius:20px;font-weight:600">No PO</span>`);
+  if(noSR)     tags.push(`<span style="font-size:10px;background:rgba(220,38,38,.08);color:var(--red);padding:2px 7px;border-radius:20px;font-weight:600">SR Pending</span>`);
+  if(certDone&&!billed) tags.push(`<span style="font-size:10px;background:rgba(124,58,237,.1);color:var(--purple);padding:2px 7px;border-radius:20px;font-weight:600">Cert Done ✓</span>`);
+  if(billed)   tags.push(`<span style="font-size:10px;background:rgba(0,229,176,.1);color:var(--accent);padding:2px 7px;border-radius:20px;font-weight:600">Billed ✓</span>`);
+
+  return `<div class="job-card">
+    <div onclick="openSalesJobModal('${j.jobNum}')">
+      <div class="job-card-top">
+        <div class="job-num">${j.jobNum}</div>
+        <div class="stage-badge" style="background:${s.bg};color:${s.color}">${s.icon} ${s.label}</div>
+      </div>
+      <div class="job-customer">${j.customer||'—'}</div>
+      <div class="job-meta">📍 ${j.site||'—'} · 👷 ${j.tech||'—'}${j.salesPerson?' · 🌟 '+j.salesPerson:''}</div>
+      ${tags.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${tags.join('')}</div>`:''}
     </div>
-    <div class="job-customer">${j.customer||'—'}</div>
-    <div class="job-meta">📍 ${j.site}${j.poNumber?' · PO: '+j.poNumber:' · ⚠ No PO'}</div>
-    ${j.salesApproved?`<div style="font-size:10px;color:#16a34a;font-weight:600;margin-top:5px">✅ Sales Approved</div>`:''}
-    ${needsBilling&&!j.salesApproved?`<div style="font-size:10px;color:#d97706;font-weight:600;margin-top:5px">⚠ Awaiting Sales Approval</div>`:''}
-    ${j.salesComment?`<div style="font-size:11px;color:#8896ab;margin-top:4px;font-style:italic">"${j.salesComment.slice(0,60)}${j.salesComment.length>60?'…':''}"</div>`:''}
+    <div style="display:flex;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+      <button onclick="openSalesJobModal('${j.jobNum}')" style="flex:1;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);font-size:11px;font-weight:600;color:var(--text2);cursor:pointer">📝 Details</button>
+      <button onclick="sendJobCompletionWA('${j.jobNum}')" style="flex:1;padding:8px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);border-radius:var(--r2);font-size:11px;font-weight:700;color:#16a34a;cursor:pointer">📲 Notify Customer</button>
+    </div>
   </div>`;
+}
+
+function sendJobCompletionWA(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum); if(!j) return;
+  const stage = STAGES[j.stage-1]?.label || `Stage ${j.stage}`;
+  const certInfo = j.certNumbers?.length ? `\n📜 *Certificate No:* ${j.certNumbers.join(', ')}` : '';
+  const srInfo   = j.srNumber ? `\n📋 *SR No:* ${j.srNumber}` : '';
+  const poInfo   = j.poNumber ? `\n🧾 *PO Ref:* ${j.poNumber}` : '\n⚠ *PO:* Awaiting';
+
+  let statusLine = '';
+  if(j.stage>=7)      statusLine = '✅ Job completed and billed.';
+  else if(j.stage>=6) statusLine = '🎯 Calibration certificates are ready.';
+  else if(j.stage>=5) statusLine = '🚗 Delivery in progress.';
+  else if(j.srNumber) statusLine = '✅ Calibration complete — processing certificates.';
+  else                statusLine = `🔄 Job currently at: ${stage}`;
+
+  const msg = `Dear ${j.customer},\n\nGreetings from *Mustafa Sultan Science & Industry — Calibration Laboratory*.\n\n${statusLine}${certInfo}${srInfo}${poInfo}\n\n*Job Ref:* ${j.jobNum}\n📍 *Site:* ${j.site||'—'}\n\nPlease don't hesitate to reach out for any queries.\n\n_Mustafa Sultan Science & Industry Co. LLC_\n_Calibration Laboratory, Muscat_`;
+
+  showWAPrompt('', msg, `Notify ${j.customer.slice(0,25)}…`);
 }
 
 function openSalesJobModal(num){
