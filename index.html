@@ -1225,9 +1225,9 @@ const ROLE_CONFIG = {
   technician:  { label:'Cal. Engineer',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['find-master','new-job','tasks','jobs','history'],                         canApprove:false, readOnly:false },
   ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['qc','find-master','pipeline','new-job','tasks','jobs','history','settings'], canApprove:true,  readOnly:false },
   coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['find-master','tasks','delivery','coord-upload','billing','jobs','history'], canApprove:false, readOnly:false },
-  sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['find-master','pipeline','sales','jobs','history'],                          canApprove:false, readOnly:false, isSales:true },
-  quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['qc','find-master','pipeline','jobs','history','settings'],                  canApprove:false, readOnly:false },
-  lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['pipeline','jobs','history'],                                               canApprove:false, readOnly:true  },
+  sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['find-master','tasks','pipeline','sales','jobs','history'],                          canApprove:false, readOnly:false, isSales:true },
+  quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['qc','find-master','pipeline','jobs','history'],                  canApprove:false, readOnly:false },
+  lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['qc','find-master','pipeline','jobs','history'],                          canApprove:false, readOnly:false, isLabHead:true },
 };
 
 const TAB_CONFIG = {
@@ -2276,7 +2276,8 @@ function renderStage1UI(el){
       <button onclick="manualAddEquip()" style="padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Add</button>
     </div>
     <div id="s1-batch"></div>
-    <button onclick="submitStage1()" style="width:100%;padding:14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;margin-top:12px" id="s1-submit">Issue Out ${batchQueue.length} Instruments</button>`;
+    <button onclick="submitStage1()" style="width:100%;padding:14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;margin-top:12px" id="s1-submit">Issue Out ${batchQueue.length} Instruments</button>
+    <button onclick="openEditJobModal()" style="width:100%;padding:11px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;margin-top:8px">✏️ Edit Job Details (Customer / Site / PO)</button>`;
   renderBatchInEl('s1-batch');
   // Populate locked instruments list
   setTimeout(()=>{
@@ -3241,15 +3242,16 @@ function renderTasks(){
     const s3 = jobs.filter(j=>j.stage===3);
     const s4 = jobs.filter(j=>j.stage===4&&!j.certAssigned);
     const s5 = jobs.filter(j=>j.stage===5&&!j.deliveryAck);
+    const s6 = jobs.filter(j=>j.stage===6&&!j.billingRef&&!j.billingType);
     const allOpen = jobs.filter(j=>j.status==='open'&&j.stage<7);
-    // Always show summary dashboard, then pending actions below
+    const needAction = s1.length+s3.length+s4.length+s6.length;
     let summaryHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       <div class="kpi-card"><div class="kpi-val" style="color:var(--blue)">${jobs.length}</div><div class="kpi-label">Total Jobs</div></div>
       <div class="kpi-card"><div class="kpi-val" style="color:var(--amber)">${allOpen.length}</div><div class="kpi-label">Open</div></div>
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${s1.length+s3.length+s4.length}</div><div class="kpi-label">Need Action</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${needAction}</div><div class="kpi-label">Need Action</div></div>
       <div class="kpi-card"><div class="kpi-val" style="color:var(--accent)">${jobs.filter(j=>j.stage===7).length}</div><div class="kpi-label">Complete</div></div>
     </div>`;
-    if(!s1.length&&!s3.length&&!s4.length&&!s5.length){
+    if(!s1.length&&!s3.length&&!s4.length&&!s5.length&&!s6.length){
       el.innerHTML = summaryHtml + `<div style="background:rgba(0,229,176,.06);border:1px solid rgba(0,229,176,.15);border-radius:var(--r);padding:16px;text-align:center">
         <div style="font-size:28px;margin-bottom:6px">✅</div>
         <div style="font-size:13px;font-weight:600;color:var(--accent)">All clear — no pending approvals</div>
@@ -3259,31 +3261,43 @@ function renderTasks(){
     }
     el.innerHTML = summaryHtml;
     const tempEl = document.createElement('div');
-    renderManagerTasks(tempEl, s1, s3, s4, s5);
+    renderManagerTasks(tempEl, s1, s3, s4, s5, s6);
     el.appendChild(tempEl);
   } else if(role==='sales'){
-    const needApproval=jobs.filter(j=>j.stage===6&&!j.salesApproved);
-    const noPO=jobs.filter(j=>!j.poNumber&&j.stage>1);
+    const myName = session?.name || '';
+    const myJobs = jobs.filter(j=> j.salesPerson && j.salesPerson.toLowerCase().includes(myName.toLowerCase()));
+    const allSalesJobs = myJobs.length ? myJobs : jobs;
+    const needApproval = allSalesJobs.filter(j=>j.stage===6&&!j.salesApproved&&!j.billingRef&&!j.billingType);
+    const certReadyNoPO = allSalesJobs.filter(j=>j.stage>=6&&!j.poNumber&&j.status!=='draft');
+    const noPO = allSalesJobs.filter(j=>!j.poNumber&&j.stage>1&&j.stage<6&&j.status!=='draft');
     let html='';
     if(needApproval.length){
-      html+=`<div class="sh" style="color:#d97706">⏳ Billing Needs Your Approval (${needApproval.length})</div>`;
+      html+=`<div class="section-hd" style="color:var(--amber)">⏳ Billing Needs Your Approval (${needApproval.length})</div>`;
       html+=needApproval.map(j=>`<div class="task-card" onclick="openSalesJobModal('${j.jobNum}');switchTab('sales')">
-        <div class="task-num">${j.jobNum}</div><div class="task-customer">${j.customer}</div>
-        <div class="task-meta">PO: ${j.poNumber||'⚠ No PO'} · Ack: ${j.deliveryAck||'—'}</div>
-        <div class="task-badge" style="background:#fffbeb;color:#d97706">⏳ Tap to Approve Billing</div>
+        <div class="task-card-num">${j.jobNum}</div><div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">PO: ${j.poNumber||'⚠ No PO'} · ${j.site||'—'}</div>
+        <div class="task-badge" style="background:rgba(217,119,6,.1);color:var(--amber)">⏳ Tap to Approve Billing</div>
+      </div>`).join('');
+    }
+    if(certReadyNoPO.length){
+      html+=`<div class="section-hd" style="color:var(--purple)">🎯 Cert Done — Chase PO (${certReadyNoPO.length})</div>`;
+      html+=certReadyNoPO.map(j=>`<div class="task-card" onclick="openSalesJobModal('${j.jobNum}');switchTab('sales')">
+        <div class="task-card-num">${j.jobNum}</div><div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">📍 ${j.site||'—'} · Cert ready but no PO</div>
+        <div class="task-badge" style="background:rgba(124,58,237,.1);color:var(--purple)">🎯 Get PO from customer</div>
       </div>`).join('');
     }
     if(noPO.length){
-      html+=`<div class="sh">📄 Jobs Without PO (${noPO.length})</div>`;
+      html+=`<div class="section-hd">📄 Jobs Without PO (${noPO.length})</div>`;
       html+=noPO.map(j=>`<div class="task-card" onclick="openSalesJobModal('${j.jobNum}');switchTab('sales')">
-        <div class="task-num">${j.jobNum}</div><div class="task-customer">${j.customer}</div>
-        <div class="task-meta">📍 ${j.site}</div>
-        <div class="task-badge" style="background:#fef2f2;color:#dc2626">⚠ Add PO Number</div>
+        <div class="task-card-num">${j.jobNum}</div><div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">📍 ${j.site||'—'} · Stage ${j.stage}</div>
+        <div class="task-badge" style="background:rgba(220,38,38,.08);color:var(--red)">⚠ Add PO Number</div>
       </div>`).join('');
     }
-    el.innerHTML=html||`<div class="empty"><p>All billing approved ✓</p></div>`;
+    el.innerHTML=html||`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>All tasks clear! ✓</p></div>`;
   } else if(role==='coordinator'){
-    renderCoordinatorTasks(el, jobs.filter(j=>j.stage===5));
+    renderCoordinatorTasks(el, jobs);
   } else if(role==='accounts'){
     renderAccountsTasks(el, jobs.filter(j=>j.stage===6));
   }
@@ -3302,7 +3316,7 @@ function renderTechnicianTasks(el, taskJobs){
   }).join('');
 }
 
-function renderManagerTasks(el, s1, s3, s4, s5){
+function renderManagerTasks(el, s1, s3, s4, s5, s6){
   let html = '';
   if(s1&&s1.length){
     html += `<div class="section-hd" style="color:#d97706">🔔 Issue Out Approval Needed (${s1.length})</div>`;
@@ -3339,7 +3353,7 @@ function renderManagerTasks(el, s1, s3, s4, s5){
       <div class="task-badge" style="background:rgba(248,81,73,.1);color:var(--red)">Cert not assigned</div>
     </div>`).join('');
   }
-  if(s5.length){
+  if(s5&&s5.length){
     html += `<div class="section-hd">🚗 Delivery Pending Ack (${s5.length})</div>`;
     html += s5.map(j=>`<div class="task-card" onclick="openJobDetailModal('${j.jobNum}')">
       <div class="task-card-num">${j.jobNum}</div>
@@ -3348,19 +3362,68 @@ function renderManagerTasks(el, s1, s3, s4, s5){
       <div class="task-badge" style="background:rgba(0,180,216,.1);color:var(--s5)">Awaiting acknowledgement</div>
     </div>`).join('');
   }
+  if(s6&&s6.length){
+    html += `<div class="section-hd" style="color:var(--purple)">💰 Billing Review Pending (${s6.length})</div>`;
+    html += s6.map(j=>`<div class="task-card" onclick="openBillingModal('${j.jobNum}')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">📍 ${j.site}${j.salesPerson?' · 🌟 '+j.salesPerson:''}</div>
+      <div class="task-badge" style="background:rgba(124,58,237,.1);color:var(--purple)">⏳ Awaiting billing entry</div>
+    </div>`).join('');
+  }
   if(!html) html=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>No pending tasks — all clear!</p></div>`;
   el.innerHTML = html;
 }
 
 function renderCoordinatorTasks(el, taskJobs){
-  if(!taskJobs.length){ el.innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/></svg><p>No deliveries pending</p></div>`; return; }
-  el.innerHTML = taskJobs.map(j=>`
-    <div class="task-card" onclick="openDeliveryModal('${j.jobNum}')">
+  const noPO   = jobs.filter(j=>j.status!=='draft'&&j.stage>=2&&!(j.poDocData||j.poDocUrl||j.poNumber));
+  const noDO   = jobs.filter(j=>j.stage>=5&&!(j.doPhotoData||j.doPhotoUrl));
+  const deliver = jobs.filter(j=>j.stage===5&&!j.deliveryAck);
+
+  let html = '';
+
+  if(deliver.length){
+    html += `<div class="section-hd" style="color:var(--s5)">🚗 Certificates to Deliver (${deliver.length})</div>`;
+    html += deliver.map(j=>`<div class="task-card">
+      <div onclick="openDeliveryModal('${j.jobNum}')">
+        <div class="task-card-num">${j.jobNum}</div>
+        <div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">📍 ${j.site||'—'}${j.contact?' · 👤 '+j.contact:''}</div>
+        <div class="task-badge" style="background:rgba(0,180,216,.1);color:var(--s5)">Tap to record delivery</div>
+      </div>
+      <button onclick="sendCoordWA('${j.jobNum}')" style="margin-top:8px;width:100%;padding:8px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);border-radius:var(--r2);font-size:11px;font-weight:700;color:#16a34a;cursor:pointer">📲 Notify Customer — Cert Ready for Collection</button>
+    </div>`).join('');
+  }
+
+  if(noPO.length){
+    html += `<div class="section-hd" style="color:var(--amber)">📄 PO Document Missing (${noPO.length})</div>`;
+    html += noPO.map(j=>`<div class="task-card" onclick="switchTab('coord-upload')">
       <div class="task-card-num">${j.jobNum}</div>
       <div class="task-card-customer">${j.customer}</div>
-      <div class="task-card-meta">📍 ${j.site} · 👤 ${j.contact||'—'}</div>
-      <div class="task-badge" style="background:rgba(0,180,216,.1);color:var(--s5)">🚗 Deliver Certificates</div>
+      <div class="task-card-meta">📍 ${j.site||'—'} · Stage ${j.stage}</div>
+      <div class="task-badge" style="background:rgba(217,119,6,.1);color:var(--amber)">⚠ Upload PO document</div>
     </div>`).join('');
+  }
+
+  if(noDO.length){
+    html += `<div class="section-hd" style="color:var(--red)">📷 D.O Photo Missing (${noDO.length})</div>`;
+    html += noDO.map(j=>`<div class="task-card" onclick="switchTab('coord-upload')">
+      <div class="task-card-num">${j.jobNum}</div>
+      <div class="task-card-customer">${j.customer}</div>
+      <div class="task-card-meta">📍 ${j.site||'—'} · Stage ${j.stage}</div>
+      <div class="task-badge" style="background:rgba(220,38,38,.08);color:var(--red)">⚠ Upload D.O photo</div>
+    </div>`).join('');
+  }
+
+  if(!html) html=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>All tasks complete!</p></div>`;
+  el.innerHTML = html;
+}
+
+function sendCoordWA(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum); if(!j) return;
+  const certInfo = j.certNumbers?.length ? `\n📜 *Certificate No:* ${j.certNumbers.join(', ')}` : '';
+  const msg = `Dear ${j.customer},\n\nGreetings from *Mustafa Sultan Science & Industry — Calibration Laboratory*.\n\nYour calibration certificates are ready for collection / delivery.\n\n*Job Ref:* ${j.jobNum}\n📍 *Site:* ${j.site||'—'}${certInfo}\n\nKindly arrange to collect at your earliest convenience or confirm delivery details.\n\n_Mustafa Sultan Science & Industry Co. LLC_\n_Calibration Laboratory, Muscat_`;
+  showWAPrompt('', msg, `Cert ready — ${j.customer.slice(0,25)}`);
 }
 
 function renderAccountsTasks(el, taskJobs){
@@ -3451,6 +3514,50 @@ function selectCustomer(code, name, city, contact, phone){
 function hideCustomerDrop(){
   const drop = document.getElementById('customer-drop');
   if(drop) drop.style.display = 'none';
+}
+
+function openEditJobModal(){
+  if(!activeJob || activeJob.stage !== 1 || activeJob.stage1Pending){ showToast('Can only edit at Stage 1 before submission'); return; }
+  // Reuse the new-job modal but prefill with current job values
+  document.getElementById('modal-new-job').classList.add('open');
+  document.getElementById('new-job-num-display').textContent = activeJob.jobNum + ' (editing)';
+  document.getElementById('nj-customer').value = activeJob.customer || '';
+  document.getElementById('nj-site').value      = activeJob.site || '';
+  document.getElementById('nj-desc').value      = activeJob.desc || '';
+  document.getElementById('nj-po').value        = activeJob.poNumber || '';
+  document.getElementById('nj-contact').value   = activeJob.contact || '';
+  const sel = document.getElementById('nj-salesperson');
+  if(sel){
+    sel.innerHTML = `<option value="">— Select sales person —</option>` +
+      salesStaff.map(n=>`<option value="${n}" ${activeJob.salesPerson===n?'selected':''}>${n}</option>`).join('');
+  }
+  const codeEl = document.getElementById('nj-customer-code');
+  if(codeEl){ codeEl.style.display='none'; }
+  // Swap confirm button to edit mode
+  const btn = document.querySelector('#modal-new-job .modal-btn.primary');
+  if(btn){ btn.textContent = 'Save Changes'; btn.onclick = confirmEditJob; }
+}
+
+async function confirmEditJob(){
+  if(!activeJob){ showToast('No active job'); return; }
+  const customer = document.getElementById('nj-customer').value.trim();
+  const site     = document.getElementById('nj-site').value.trim();
+  if(!customer){ showToast('Customer name required'); return; }
+  if(!site){ showToast('Site / location required'); return; }
+  activeJob.customer    = customer;
+  activeJob.site        = site;
+  activeJob.desc        = document.getElementById('nj-desc').value.trim();
+  activeJob.poNumber    = document.getElementById('nj-po').value.trim();
+  activeJob.contact     = document.getElementById('nj-contact').value.trim();
+  activeJob.salesPerson = document.getElementById('nj-salesperson')?.value || activeJob.salesPerson || '';
+  updateJob(activeJob);
+  await syncJobToSupabase(activeJob);
+  document.getElementById('modal-new-job').classList.remove('open');
+  // Reset confirm button back to normal
+  const btn = document.querySelector('#modal-new-job .modal-btn.primary');
+  if(btn){ btn.textContent = 'Start Job →'; btn.onclick = confirmNewJob; }
+  renderActivJobBanner();
+  showToast('✓ Job details updated');
 }
 
 function openNewJobModal(){
@@ -3553,7 +3660,7 @@ function openJobDetailModal(jobNum){
         <div class="stage-status" style="color:${done?'var(--accent)':active?'var(--amber)':'var(--text3)'}">
           ${done?`✓ Completed ${hist?new Date(hist.completedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):''}`:active?'In Progress':'Pending'}
         </div>
-        ${active && session.role==='ops_head' ? renderManagerStageActions(j, s.id) : ''}
+        ${(active && session.role==='ops_head') || (active && session.role==='lab_head' && s.id===4) ? renderManagerStageActions(j, s.id) : ''}
       </div>
     </div>`;
   }).join('');
@@ -4527,8 +4634,12 @@ function updateNotifs(){
     if(!rc.readOnly){
       if(role==='technician')  count = jobs.filter(j=>j.tech===session.name&&j.stage>=1&&j.stage<=3).length;
       if(role==='ops_head')    count = jobs.filter(j=>(j.stage===1&&j.stage1Pending)||j.stage===3||j.stage===4||j.stage===5).length;
-      if(role==='coordinator') count = jobs.filter(j=>j.stage===5).length;
-      if(role==='accounts')    count = jobs.filter(j=>j.stage===6).length;
+      if(role==='coordinator') count = jobs.filter(j=>j.stage===5).length + jobs.filter(j=>j.status!=='draft'&&j.stage>=2&&!(j.poDocData||j.poDocUrl||j.poNumber)).length + jobs.filter(j=>j.stage>=5&&!(j.doPhotoData||j.doPhotoUrl)).length;
+      if(role==='sales'){
+        const myName = session?.name||'';
+        const myJ = myName ? jobs.filter(j=>j.salesPerson&&j.salesPerson.toLowerCase().includes(myName.toLowerCase())) : jobs;
+        count = myJ.filter(j=>!j.poNumber&&j.stage>1).length + myJ.filter(j=>j.stage===6&&!j.billingRef&&!j.billingType).length;
+      }
     }
     tasksNotif.classList.toggle('show', count>0);
   }
@@ -4827,7 +4938,7 @@ function getStatusInfo(statusKey){
 // ── RENDER QC PANEL ──
 function renderQCPanel(){
   // Security guard — only Quality Manager and Ops Head can access QC
-  if(session?.role !== 'quality' && session?.role !== 'ops_head'){
+  if(session?.role !== 'quality' && session?.role !== 'ops_head' && session?.role !== 'lab_head'){
     const el = document.getElementById('panel-qc');
     if(el) el.innerHTML = '<div style="text-align:center;padding:48px 20px;color:#8896ab"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:14px;font-weight:600">Access Restricted</div><div style="font-size:12px;margin-top:4px">QC module is available to Quality Manager and Operations Head only</div></div>';
     return;
@@ -4935,7 +5046,7 @@ function renderQCPanel(){
     const days = calDue&&calDue!=='—' ? Math.ceil((new Date(calDue)-new Date())/86400000) : null;
     const certNo = qcData[instr.id]?.certNo || instr.certNo || '—';
     const notes  = qcData[instr.id]?.notes || '';
-    const canEdit = session?.role==='quality'||session?.role==='ops_head';
+    const canEdit = session?.role==='quality'||session?.role==='ops_head'||session?.role==='lab_head';
     return `
     <div style="background:#fff;border:1px solid ${days!==null&&days<0?'rgba(220,38,38,.3)':days!==null&&days<=30?'rgba(217,119,6,.3)':'#dde1ea'};border-radius:var(--r);padding:13px;margin-bottom:8px;cursor:pointer" onclick="openQCDetail('${instr.id}')">
       <div style="display:flex;align-items:flex-start;gap:10px">
@@ -4972,7 +5083,7 @@ function setQCFilter(f){ qcFilter=f; renderQCPanel(); }
 
 // ── QC DETAIL MODAL (edit per instrument) ──
 function openQCDetail(instrId){
-  const canEdit = session?.role==='quality'||session?.role==='ops_head';
+  const canEdit = session?.role==='quality'||session?.role==='ops_head'||session?.role==='lab_head';
   const instr = equipMap[instrId]||{id:instrId};
   const qc    = qcData[instrId]||{};
   const st    = getStatusInfo(getInstrumentStatus(instr));
@@ -5024,7 +5135,7 @@ function openQCDetail(instrId){
 }
 
 function saveQCDetail(instrId){
-  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  if(session?.role !== 'quality' && session?.role !== 'ops_head' && session?.role !== 'lab_head'){ showToast('🔒 Access restricted'); return; }
   const calDue = document.getElementById('qcd-caldue')?.value.trim();
   const certNo = document.getElementById('qcd-certno')?.value.trim();
   const calLab = document.getElementById('qcd-lab')?.value.trim();
@@ -5051,7 +5162,7 @@ function saveQCDetail(instrId){
 
 // ── EXCEL/CSV UPLOAD ──
 function openQCUploadModal(){
-  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  if(session?.role !== 'quality' && session?.role !== 'ops_head' && session?.role !== 'lab_head'){ showToast('🔒 Access restricted'); return; }
   document.getElementById('qc-upload-preview').style.display='none';
   document.getElementById('qc-file-input').value='';
   document.getElementById('modal-qc-upload').classList.add('open');
@@ -5151,7 +5262,7 @@ function processQCRows(rows, headers){
 }
 
 function confirmQCUpload(){
-  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  if(session?.role !== 'quality' && session?.role !== 'ops_head' && session?.role !== 'lab_head'){ showToast('🔒 Access restricted'); return; }
   if(!qcUploadBuffer.length){ showToast('No data to import'); return; }
   let updated=0, added=0;
   qcUploadBuffer.forEach(row=>{
@@ -5189,7 +5300,7 @@ function confirmQCUpload(){
 
 // ── EXPORT ──
 function exportQCExcel(){
-  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  if(session?.role !== 'quality' && session?.role !== 'ops_head' && session?.role !== 'lab_head'){ showToast('🔒 Access restricted'); return; }
   const rows = equipDB.map(instr=>{
     const qc = qcData[instr.id]||{};
     const st = getStatusInfo(getInstrumentStatus(instr));
@@ -6208,7 +6319,7 @@ async function coordUploadPO(e, jobNum){
 // QC — SINGLE INSTRUMENT EDIT
 // ════════════════════════════════════════════════════
 function openQCEdit(instrId){
-  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Quality Manager only'); return; }
+  if(session?.role !== 'quality' && session?.role !== 'ops_head' && session?.role !== 'lab_head'){ showToast('🔒 Quality Manager only'); return; }
   const instr = equipMap[instrId]||{id:instrId};
   const qc    = qcData[instrId]||{};
   document.getElementById('qce-title').textContent = instrId;
