@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#1a56db">
 <title>CalTrack — Mustafa Sultan Cal Lab</title>
 <link rel="manifest" id="pwa-manifest">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" defer></script>
 <style>
 :root {
@@ -52,8 +52,6 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 
 /* ── APP SHELL ── */
 #app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; background: var(--bg); position: relative; overflow: hidden; }
-#app > *:not(#login-view) { pointer-events: none; }
-#login-view ~ * { pointer-events: none; }
 
 /* ── HEADER ── */
 .header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.06); position: relative; z-index: 50; flex-shrink: 0; }
@@ -67,8 +65,9 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 .role-name { font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--mono); }
 
 /* ── VIEWS ── */
-#login-view, #app-view { position: absolute; inset: 0; }
-#login-view { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; background: var(--bg); z-index: 9999; overflow-y: auto; -webkit-overflow-scrolling: touch; pointer-events: auto; }
+#app-view { position: absolute; inset: 0; }
+#login-view { position: fixed; inset: 0; }
+#login-view { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; background: var(--bg); z-index: 9999; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 #app-view { flex-direction: column; z-index: 10; }
 
 /* ── LOGIN ── */
@@ -147,7 +146,7 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
 .mcl-item-remove { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; line-height: 1; padding: 0 2px; }
 
 /* ── MODALS ── */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: flex-end; justify-content: center; z-index: 200; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: flex-end; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
 .modal-overlay.open { display: flex; }
 .modal-sheet { background: var(--bg2); border-radius: 20px 20px 0 0; border: 1px solid var(--border2); border-bottom: none; width: 100%; max-width: 480px; max-height: 90dvh; overflow-y: auto; padding: 20px 16px 32px; animation: sheet-up .25s cubic-bezier(.34,1.2,.64,1); }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -1073,7 +1072,7 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
 </div>
 
 <!-- Find Master Guest Modal (login screen shortcut) -->
-<div id="modal-find-master-guest" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;flex-direction:column;align-items:center;justify-content:flex-end">
+<div id="modal-find-master-guest" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;flex-direction:column;align-items:center;justify-content:flex-end;backdrop-filter:blur(4px)">
   <div style="background:var(--bg2);border-radius:20px 20px 0 0;border:1px solid var(--border2);border-bottom:none;width:100%;max-width:480px;padding:20px 16px 40px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
@@ -1256,7 +1255,6 @@ let session     = JSON.parse(localStorage.getItem(KEY_SESSION) || 'null');
 let jobs        = JSON.parse(localStorage.getItem(KEY_JOBS) || '[]');
 let equipDB     = JSON.parse(localStorage.getItem(KEY_EQ) || '[]');
 let equipMap    = {};
-// Supabase credentials — hardcoded for centralized use
 localStorage.setItem(KEY_SB_URL, 'https://cotuzmcqvrhigquvgald.supabase.co');
 localStorage.setItem(KEY_SB_KEY, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvdHV6bWNxdnJoaWdxdXZnYWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTYzNDcsImV4cCI6MjA5NDkzMjM0N30.2MvJ2YcAas3XNRmMT6K4xb7KaK3QQrCJaFt2RNlXpFA');
 let SB_URL      = 'https://cotuzmcqvrhigquvgald.supabase.co';
@@ -1875,10 +1873,7 @@ function renderHistory(){
 // APP INIT
 // ════════════════════════════════════════════════════
 function initApp(){
-  const lv = document.getElementById('login-view');
-  lv.style.display = 'none';
-  lv.style.pointerEvents = 'none';
-  document.getElementById('app-view').style.pointerEvents = 'all';
+  document.getElementById('login-view').style.display = 'none';
   document.getElementById('app-view').style.display = 'flex';
 
   const rc = ROLE_CONFIG[session.role] || ROLE_CONFIG.technician;
@@ -6418,12 +6413,10 @@ function downloadQCTemplate(){
 // ════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function() {
-  if(session){
-    document.getElementById('login-view').style.display='none';
-    initApp();
-  }
-});
+if(session){
+  document.getElementById('login-view').style.display='none';
+  initApp();
+}
 </script>
 </body>
 </html>
