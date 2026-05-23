@@ -1537,6 +1537,11 @@ function initApp(){
   document.getElementById('header-role-name').textContent = session.name;
 
   buildTabBar(rc.tabs);
+
+  // Enforce approvers card visibility at login — only ops_head can see it
+  const apCard = document.getElementById('approvers-settings-card');
+  if(apCard) apCard.style.display = (session?.role === 'ops_head') ? 'block' : 'none';
+
   loadEquipment();
   loadCentralJobs();
   loadBranchTransfers();
@@ -3858,9 +3863,11 @@ function savePINSettings(){
 }
 
 function renderSettings(){
-  // Show approvers card for ops_head only
+  // Show approvers card for ops_head only — hide for ALL other roles
   const apCard = document.getElementById('approvers-settings-card');
   if(apCard) apCard.style.display = (session?.role==='ops_head') ? 'block' : 'none';
+  // Also hide from quality manager and any other non-ops_head
+  if(session?.role !== 'ops_head' && apCard) apCard.style.display = 'none';
   // Show BM settings card for ops_head
   const bmCard = document.getElementById('bm-settings-card');
   if(bmCard) bmCard.style.display = (session?.role==='ops_head') ? 'block' : 'none';
