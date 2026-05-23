@@ -482,7 +482,16 @@ textarea.field-input { resize: none; height: 80px; }
       <!-- FIND MASTER tab -->
       <div class="tab-panel" id="panel-find-master">
         <div class="section-hd" style="margin-bottom:4px">Find Master Instrument</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Search instrument ID, model or description to see live location status.</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Search by ID, model, serial, site or technician.</div>
+
+        <!-- Branch location filter pills -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="branch-filter-pills">
+          <button onclick="setBranchFilter('all')" id="bf-all" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--accent);background:rgba(0,229,176,.1);color:var(--accent);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">All Locations</button>
+          <button onclick="setBranchFilter('hq')" id="bf-hq" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">🏛️ Muscat HQ</button>
+          <button onclick="setBranchFilter('sohar')" id="bf-sohar" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">🏭 Sohar</button>
+          <button onclick="setBranchFilter('salalah')" id="bf-salalah" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">🌴 Salalah</button>
+        </div>
+
         <div style="display:flex;gap:8px;margin-bottom:16px">
           <input type="text" id="find-master-query" class="field-input" placeholder="e.g. MSSI-001, Fluke 726, pressure gauge…" oninput="renderFindMaster()" style="flex:1">
           <button onclick="renderFindMaster()" style="padding:11px 14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">Search</button>
@@ -636,6 +645,31 @@ textarea.field-input { resize: none; height: 80px; }
   </div>
 </div>
 
+<!-- Branch Transfer Modal -->
+<div class="modal-overlay" id="modal-transfer" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet">
+    <div class="modal-title">📦 Transfer Master Instrument</div>
+    <div class="modal-sub" id="transfer-instr-name" style="font-family:var(--mono);color:var(--accent);font-size:15px;font-weight:700"></div>
+    <div class="field-label">Current Location</div>
+    <div id="transfer-current-loc" style="font-size:13px;color:var(--text);padding:8px 12px;background:var(--surface2);border-radius:var(--r2);margin-bottom:4px"></div>
+    <div class="field-label" style="margin-top:14px">Transfer To</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px" id="transfer-branch-grid"></div>
+    <div class="field-label" style="margin-top:14px">Reason / Notes</div>
+    <textarea id="transfer-note" class="field-input" placeholder="e.g. Sent for annual job at Sohar client, expected return 15 Jun" style="height:70px"></textarea>
+    <div class="field-label">Sent By</div>
+    <input type="text" id="transfer-by" class="field-input" placeholder="Your name">
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="document.getElementById('modal-transfer').classList.remove('open')">Cancel</button>
+      <button class="modal-btn primary" id="transfer-confirm-btn" onclick="confirmTransfer()">Confirm Transfer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer History Modal -->
+<div class="modal-overlay" id="modal-transfer-history" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet" id="modal-transfer-history-body"></div>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -656,6 +690,7 @@ const KEY_SB_URL    = 'ct2-sb-url';
 const KEY_SB_KEY    = 'ct2-sb-key';
 const KEY_APPROVERS = 'ct2-approvers';
 const KEY_JOB_SEQ   = 'ct2-job-seq';
+const KEY_TRANSFERS = 'ct2-transfers';
 
 const DEFAULT_EQ_URL = 'https://raw.githubusercontent.com/selva20240720/msecaltrack/main/equipment.json';
 
@@ -709,6 +744,14 @@ let salesStaff   = JSON.parse(localStorage.getItem(KEY_SALES)||'[]');
 let pins        = JSON.parse(localStorage.getItem(KEY_PINS)||'{"technician":"0000","ops_head":"0000","coordinator":"0000","sales":"0000","quality":"0000","lab_head":"0000"}');
 let techPins    = JSON.parse(localStorage.getItem(KEY_TECH_PINS)||'{}');
 let salesPins   = JSON.parse(localStorage.getItem(KEY_SALES_PINS)||'{}');
+let transfers   = JSON.parse(localStorage.getItem(KEY_TRANSFERS)||'{}'); // instrId → {branch, by, at, note}
+
+const BRANCHES = [
+  { id:'hq',     label:'Muscat HQ',       icon:'🏛️', color:'#1a56db' },
+  { id:'sohar',  label:'Sohar Branch',    icon:'🏭', color:'#d97706' },
+  { id:'salalah',label:'Salalah Branch',  icon:'🌴', color:'#16a34a' },
+];
+function saveBranchTransfers(){ localStorage.setItem(KEY_TRANSFERS, JSON.stringify(transfers)); }
 let activeJob   = null;
 let batchQueue  = [];
 let cameraStream = null;
@@ -931,39 +974,30 @@ function renderLoginFindMaster(){
   const el = document.getElementById('login-find-results');
   if(!el) return;
   const q = (document.getElementById('login-find-query')?.value||'').trim().toLowerCase();
-  if(!q){ el.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">Type instrument ID, model or site to search</div>'; return; }
-  // reuse renderGuestFindMaster logic but output to login-find-results
-  const instrMap = {};
-  jobs.forEach(j=>{
-    (j.masterItems||[]).forEach(id=>{
-      const existing = instrMap[id];
-      const isActive = j.stage>=1 && j.stage<=3 && j.status!=='complete';
-      if(!existing || isActive) instrMap[id] = { id, job:j.jobNum, customer:j.customer, site:j.site, stage:j.stage, tech:j.tech, isActive };
-    });
-  });
+  if(!q){ el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:12px">Type instrument ID, model, serial or site to search</div>'; return; }
+
+  const instrMap = buildInstrMap();
   const allIds = new Set([...Object.keys(instrMap), ...equipDB.map(e=>e.id)]);
   const results = [...allIds].filter(id=>{
     const info = instrMap[id]; const eq = equipMap[id]||{};
-    return id.toLowerCase().includes(q)||(eq.model||'').toLowerCase().includes(q)||(eq.make||'').toLowerCase().includes(q)||(info?.customer||'').toLowerCase().includes(q)||(info?.site||'').toLowerCase().includes(q)||(info?.tech||'').toLowerCase().includes(q);
+    return id.toLowerCase().includes(q)
+      || (eq.model||'').toLowerCase().includes(q)
+      || (eq.make||'').toLowerCase().includes(q)
+      || (eq.serial||'').toLowerCase().includes(q)
+      || (eq.description||'').toLowerCase().includes(q)
+      || (info?.customer||'').toLowerCase().includes(q)
+      || (info?.site||'').toLowerCase().includes(q)
+      || (info?.tech||'').toLowerCase().includes(q)
+      || (info?.job||'').toLowerCase().includes(q);
   });
-  if(!results.length){ el.innerHTML=`<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">No results for "<strong>${q}</strong>"</div>`; return; }
-  el.innerHTML = results.slice(0,8).map(id=>{
-    const info = instrMap[id]; const eq = equipMap[id]||{};
-    const model = eq.model||'Unknown'; const make = eq.make||'';
-    let badge, detail;
-    if(!info){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">IN LAB</span>`; detail='Not on any active job'; }
-    else if(info.isActive && info.stage===1){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(240,165,0,.15);color:var(--amber);font-family:var(--mono)">ISSUED OUT</span>`; detail=`Job ${info.job} · ${info.customer} · 👤 ${info.tech}`; }
-    else if(info.isActive && info.stage===2){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(59,130,246,.15);color:var(--blue);font-family:var(--mono)">ON SITE</span>`; detail=`${info.site} · Job ${info.job} · 👤 ${info.tech}`; }
-    else if(info.isActive && info.stage===3){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(124,58,237,.15);color:var(--purple);font-family:var(--mono)">RETURNING</span>`; detail=`Job ${info.job} · 👤 ${info.tech} returning`; }
-    else{ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">IN LAB</span>`; detail=`Last: Job ${info.job}`; }
-    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:9px 11px;margin-bottom:7px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px">
-        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text)">${id}</div>${badge}
-      </div>
-      <div style="font-size:11px;color:var(--text2)">${make?make+' · ':''}${model}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px">${detail}</div>
-    </div>`;
-  }).join('') + (results.length>8?`<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px">${results.length-8} more — refine your search</div>`:'');
+
+  if(!results.length){ el.innerHTML=`<div style="text-align:center;padding:14px;color:var(--text3);font-size:12px">No results for "<strong>${q}</strong>"<br><span style="font-size:11px">Try ID, model, serial, or technician name</span></div>`; return; }
+
+  results.sort((a,b)=>{ const ia=instrMap[a],ib=instrMap[b]; return (ia?.isActive&&!ib?.isActive)?-1:(!ia?.isActive&&ib?.isActive)?1:0; });
+
+  el.innerHTML = `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">${results.length} result${results.length!==1?'s':''} — active first</div>` +
+    results.slice(0,8).map(id => buildFindResult(id, instrMap)).join('') +
+    (results.length>8?`<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px">${results.length-8} more — log in to see all</div>`:'');
 }
 
 function closeFindMasterGuest(){
@@ -975,36 +1009,19 @@ function renderGuestFindMaster(){
   if(!el) return;
   const q = (document.getElementById('guest-find-query')?.value||'').trim().toLowerCase();
   if(!q){ el.innerHTML=''; return; }
-  // Reuse same logic as renderFindMaster but render into guest div
-  const instrMap = {};
-  jobs.forEach(j=>{
-    (j.masterItems||[]).forEach(id=>{
-      const existing = instrMap[id];
-      const isActive = j.stage>=1 && j.stage<=3 && j.status!=='complete';
-      if(!existing || isActive) instrMap[id] = { id, job:j.jobNum, customer:j.customer, site:j.site, stage:j.stage, tech:j.tech, status:j.status, stageLabel:STAGES[j.stage-1]?.label||'Unknown', stageColor:STAGES[j.stage-1]?.color||'var(--text3)', isActive };
-    });
-  });
+
+  const instrMap = buildInstrMap();
   const allIds = new Set([...Object.keys(instrMap), ...equipDB.map(e=>e.id)]);
   const results = [...allIds].filter(id=>{
     const info = instrMap[id]; const eq = equipMap[id]||{};
-    return id.toLowerCase().includes(q)||(eq.model||'').toLowerCase().includes(q)||(eq.make||'').toLowerCase().includes(q)||(eq.description||'').toLowerCase().includes(q)||(info?.customer||'').toLowerCase().includes(q)||(info?.site||'').toLowerCase().includes(q)||(info?.tech||'').toLowerCase().includes(q);
+    return id.toLowerCase().includes(q)||(eq.model||'').toLowerCase().includes(q)||(eq.make||'').toLowerCase().includes(q)||(eq.serial||'').toLowerCase().includes(q)||(info?.customer||'').toLowerCase().includes(q)||(info?.site||'').toLowerCase().includes(q)||(info?.tech||'').toLowerCase().includes(q)||(info?.job||'').toLowerCase().includes(q);
   });
+
   if(!results.length){ el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">No instruments found for "<strong>${q}</strong>"</div>`; return; }
-  el.innerHTML = results.slice(0,10).map(id=>{
-    const info = instrMap[id]; const eq = equipMap[id]||{};
-    const model = eq.model||eq.description||'Unknown'; const make = eq.make||'';
-    let badge, detail;
-    if(!info){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">🏛 IN LAB</span>`; detail=`<div style="font-size:11px;color:var(--text3);margin-top:4px">Not on any active job</div>`; }
-    else if(info.isActive && info.stage===1){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(240,165,0,.15);color:var(--amber);font-family:var(--mono)">⚙ ISSUED OUT</span>`; detail=`<div style="font-size:11px;color:var(--text2);margin-top:4px">Job ${info.job} · ${info.customer} · 👤 ${info.tech}</div>`; }
-    else if(info.isActive && info.stage===2){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(59,130,246,.15);color:var(--blue);font-family:var(--mono)">📍 ON SITE</span>`; detail=`<div style="font-size:11px;color:var(--text2);margin-top:4px">Job ${info.job} · ${info.customer} · <strong>${info.site}</strong> · 👤 ${info.tech}</div>`; }
-    else if(info.isActive && info.stage===3){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(124,58,237,.15);color:var(--purple);font-family:var(--mono)">🔄 RETURNING</span>`; detail=`<div style="font-size:11px;color:var(--text2);margin-top:4px">Job ${info.job} · ${info.tech} returning to lab</div>`; }
-    else{ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">🏛 IN LAB</span>`; detail=`<div style="font-size:11px;color:var(--text3);margin-top:4px">Last: Job ${info.job}</div>`; }
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:8px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-        <div><div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text)">${id}</div><div style="font-size:11px;color:var(--text2)">${make?make+' · ':''}${model}</div></div>
-        ${badge}
-      </div>${detail}</div>`;
-  }).join('') + (results.length>10 ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:8px">${results.length-10} more results — refine your search</div>` : '');
+  results.sort((a,b)=>{ const ia=instrMap[a],ib=instrMap[b]; return (ia?.isActive&&!ib?.isActive)?-1:(!ia?.isActive&&ib?.isActive)?1:0; });
+  el.innerHTML = results.slice(0,10).map(id => buildFindResult(id, instrMap)).join('') +
+    (results.length>10 ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:8px">${results.length-10} more results — refine your search</div>` : '');
+}
 }
 
 // ════════════════════════════════════════════════════
@@ -1021,6 +1038,7 @@ function initApp(){
   buildTabBar(rc.tabs);
   loadEquipment();
   loadCentralJobs();
+  loadBranchTransfers();
   handleApprovalURL();
 
   const firstTab = rc.tabs[0];
@@ -1156,6 +1174,25 @@ async function loadCentralJobs(){
   });
   saveJobs();
   if(currentTab) switchTab(currentTab);
+}
+
+async function loadBranchTransfers(){
+  const rows = await sbSelect('ct2_transfers', 'order=transferred_at.desc');
+  if(!rows || !Array.isArray(rows)) return;
+  rows.forEach(r=>{
+    const id = r.instr_id;
+    if(!id) return;
+    if(!transfers[id] || new Date(r.transferred_at) > new Date(transfers[id]?.at||0)){
+      if(!transfers[id]) transfers[id] = {};
+      transfers[id].branch = r.branch || 'hq';
+      transfers[id].by     = r.transferred_by || '';
+      transfers[id].at     = r.transferred_at || '';
+      transfers[id].note   = r.note || '';
+    }
+    // Build history from all rows
+    if(!transfers[id].history) transfers[id].history = [];
+  });
+  saveBranchTransfers();
 }
 
 async function syncJobToSupabase(job){
@@ -1594,111 +1631,314 @@ async function submitStage3(){
 }
 
 // ════════════════════════════════════════════════════
+// BRANCH TRANSFER SYSTEM
+// ════════════════════════════════════════════════════
+let branchFilter = 'all';
+let transferTarget = null; // {instrId, selectedBranch}
+
+function setBranchFilter(f){
+  branchFilter = f;
+  // Update pill styles
+  ['all','hq','sohar','salalah'].forEach(k=>{
+    const btn = document.getElementById('bf-'+k);
+    if(!btn) return;
+    const active = k===f;
+    const br = BRANCHES.find(b=>b.id===k)||{color:'var(--accent)'};
+    const col = k==='all'?'var(--accent)':br.color;
+    btn.style.borderColor = active ? col : 'var(--border2)';
+    btn.style.background  = active ? col+'22' : 'var(--surface)';
+    btn.style.color       = active ? col : 'var(--text3)';
+  });
+  renderFindMaster();
+}
+
+function getInstrBranch(id){
+  // Returns current branch: hq by default, or whatever was last transferred
+  const t = transfers[id];
+  return t ? t.branch : 'hq';
+}
+
+function openTransferModal(instrId){
+  const eq = equipMap[instrId]||{};
+  const currentBranch = getInstrBranch(instrId);
+  const br = BRANCHES.find(b=>b.id===currentBranch)||BRANCHES[0];
+  transferTarget = { instrId, selectedBranch: currentBranch };
+
+  document.getElementById('transfer-instr-name').textContent = instrId + (eq.model ? ' — ' + eq.model : '');
+  document.getElementById('transfer-current-loc').innerHTML = `${br.icon} Currently at <strong>${br.label}</strong>${transfers[instrId] ? ' · Sent by '+transfers[instrId].by+' · '+fmtRelTime(transfers[instrId].at) : ' (Home base)'}`;
+  document.getElementById('transfer-note').value = '';
+  document.getElementById('transfer-by').value = session?.name||'';
+
+  // Build branch selection grid
+  const grid = document.getElementById('transfer-branch-grid');
+  grid.innerHTML = BRANCHES.map(b=>`
+    <button onclick="selectTransferBranch('${b.id}')" id="tbr-${b.id}"
+      style="padding:12px 8px;border-radius:var(--r2);border:2px solid ${b.id===currentBranch?b.color:'var(--border2)'};background:${b.id===currentBranch?b.color+'18':'var(--surface2)'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .15s">
+      <span style="font-size:22px">${b.icon}</span>
+      <span style="font-size:11px;font-weight:700;color:${b.id===currentBranch?b.color:'var(--text3)'};font-family:var(--mono);text-align:center;line-height:1.2">${b.label}</span>
+      ${b.id===currentBranch?`<span style="font-size:9px;color:${b.color};font-family:var(--mono)">CURRENT</span>`:''}
+    </button>`).join('');
+
+  document.getElementById('modal-transfer').classList.add('open');
+}
+
+function selectTransferBranch(branchId){
+  if(!transferTarget) return;
+  transferTarget.selectedBranch = branchId;
+  BRANCHES.forEach(b=>{
+    const btn = document.getElementById('tbr-'+b.id);
+    if(!btn) return;
+    const active = b.id===branchId;
+    btn.style.borderColor = active ? b.color : 'var(--border2)';
+    btn.style.background  = active ? b.color+'18' : 'var(--surface2)';
+    btn.querySelector('span:nth-child(2)').style.color = active ? b.color : 'var(--text3)';
+  });
+}
+
+function confirmTransfer(){
+  if(!transferTarget) return;
+  const { instrId, selectedBranch } = transferTarget;
+  const note = document.getElementById('transfer-note').value.trim();
+  const by   = document.getElementById('transfer-by').value.trim() || session?.name || 'Unknown';
+  const currentBranch = getInstrBranch(instrId);
+
+  if(selectedBranch === currentBranch){ showToast('Select a different location to transfer'); return; }
+
+  const br = BRANCHES.find(b=>b.id===selectedBranch);
+
+  // Save transfer record
+  if(!transfers[instrId]) transfers[instrId] = {};
+  transfers[instrId] = {
+    branch: selectedBranch,
+    by,
+    at: new Date().toISOString(),
+    note,
+    history: [...(transfers[instrId]?.history||[]), {
+      from: currentBranch, to: selectedBranch, by, at: new Date().toISOString(), note
+    }]
+  };
+  saveBranchTransfers();
+
+  // Sync to Supabase if available
+  if(SB_URL && SB_KEY_VAL){
+    fetch(`${SB_URL}/rest/v1/ct2_transfers`, {
+      method:'POST',
+      headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify({ instr_id:instrId, branch:selectedBranch, transferred_by:by, note, transferred_at:new Date().toISOString() })
+    }).catch(()=>{});
+  }
+
+  document.getElementById('modal-transfer').classList.remove('open');
+  showToast(`✓ ${instrId} transferred to ${br?.label}`);
+  renderFindMaster();
+}
+
+function openTransferHistory(instrId){
+  const eq = equipMap[instrId]||{};
+  const t = transfers[instrId];
+  const body = document.getElementById('modal-transfer-history-body');
+  const history = t?.history||[];
+  const currentBr = BRANCHES.find(b=>b.id===(t?.branch||'hq'))||BRANCHES[0];
+
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent)">${instrId}</div>
+        <div style="font-size:12px;color:var(--text2)">${eq.model||''}</div>
+      </div>
+      <button onclick="document.getElementById('modal-transfer-history').classList.remove('open')" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div style="background:${currentBr.color}18;border:1.5px solid ${currentBr.color}40;border-radius:var(--r2);padding:10px 13px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">${currentBr.icon}</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:${currentBr.color}">${currentBr.label}</div>
+        <div style="font-size:11px;color:var(--text3)">Current location${t ? ' · Updated '+fmtRelTime(t.at) : ' (Home base)'}</div>
+      </div>
+    </div>
+    <div class="section-hd">Transfer History (${history.length} moves)</div>
+    ${!history.length ? `<div style="color:var(--text3);font-size:12px;text-align:center;padding:16px">No transfers recorded — instrument has always been at Muscat HQ</div>` :
+      [...history].reverse().map((h,i)=>{
+        const fromBr = BRANCHES.find(b=>b.id===h.from)||BRANCHES[0];
+        const toBr   = BRANCHES.find(b=>b.id===h.to)||BRANCHES[0];
+        return `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+            <span style="font-size:14px">${fromBr.icon}</span>
+            <span style="font-size:11px;color:var(--text3)">${fromBr.label}</span>
+            <span style="color:var(--text3)">→</span>
+            <span style="font-size:14px">${toBr.icon}</span>
+            <span style="font-size:11px;font-weight:700;color:${toBr.color}">${toBr.label}</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--text3);font-family:var(--mono)">${fmtRelTime(h.at)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2)">By: <strong>${h.by}</strong></div>
+          ${h.note?`<div style="font-size:11px;color:var(--text3);margin-top:3px;font-style:italic">"${h.note}"</div>`:''}
+        </div>`;
+      }).join('')
+    }`;
+
+  document.getElementById('modal-transfer-history').classList.add('open');
+}
+
+// ════════════════════════════════════════════════════
 // FIND MASTER INSTRUMENT (live location tracker)
 // ════════════════════════════════════════════════════
-function renderFindMaster(){
-  const el = document.getElementById('find-master-results');
-  if(!el) return;
-  const q = (document.getElementById('find-master-query')?.value||'').trim().toLowerCase();
-
-  // Build a map: instrument ID → {job, stage, tech, status}
-  const instrMap = {}; // id → latest job info
+function buildInstrMap(){
+  const instrMap = {};
   jobs.forEach(j=>{
     (j.masterItems||[]).forEach(id=>{
       const existing = instrMap[id];
       const isActive = j.stage>=1 && j.stage<=3 && j.status!=='complete';
+      const sh = j.stageHistory||{};
+      const lastUpdate = sh[j.stage]?.completedAt || sh[j.stage-1]?.completedAt || j.updatedAt || j.createdAt;
       if(!existing || isActive){
         instrMap[id] = {
           id, job:j.jobNum, customer:j.customer, site:j.site,
-          stage:j.stage, tech:j.tech, status:j.status,
-          stageLabel: STAGES[j.stage-1]?.label||'Unknown',
-          stageColor: STAGES[j.stage-1]?.color||'var(--text3)',
-          isActive
+          stage:j.stage, tech:j.tech, status:j.status, isActive, lastUpdate
         };
       }
     });
   });
+  return instrMap;
+}
 
-  // Also include equipDB items
-  const allIds = new Set([...Object.keys(instrMap), ...equipDB.map(e=>e.id)]);
+function fmtRelTime(iso){
+  if(!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff/60000), h = Math.floor(m/60), d = Math.floor(h/24);
+  if(m<2) return 'just now';
+  if(m<60) return `${m}m ago`;
+  if(h<24) return `${h}h ago`;
+  return `${d}d ago`;
+}
 
-  // Filter
+function buildFindResult(id, instrMap, showTransferBtn=true){
+  const info = instrMap[id];
+  const eq = equipMap[id]||{};
+  const model  = eq.model||eq.description||'Unknown Model';
+  const make   = eq.make||'';
+  const serial = eq.serial||'';
+  const range  = eq.range||'';
+  const calDue = eq.calDue||'';
+  const daysLeft = calDue ? Math.ceil((new Date(calDue)-new Date())/86400000) : null;
+  const calColor = daysLeft!==null ? (daysLeft<0?'var(--red)':daysLeft<60?'var(--amber)':'var(--accent)') : 'var(--text3)';
+  const lastSeen = info?.lastUpdate ? `<span style="font-size:10px;color:var(--text3)">Updated ${fmtRelTime(info.lastUpdate)}</span>` : '';
+
+  // Branch status
+  const branchId = getInstrBranch(id);
+  const br = BRANCHES.find(b=>b.id===branchId)||BRANCHES[0];
+  const branchBadge = branchId!=='hq'
+    ? `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:${br.color}18;color:${br.color};font-family:var(--mono);border:1px solid ${br.color}30">${br.icon} ${br.label.toUpperCase()}</span>`
+    : '';
+
+  let locationBadge, locationDetail;
+  if(!info){
+    locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--green);font-family:var(--mono)">🏛 IN LAB</span>`;
+    locationDetail = `<div style="font-size:12px;color:var(--text3);margin-top:5px">Available${branchId==='hq'?' in Muscat HQ lab':' at '+br.label+' — not on any active job'}</div>`;
+  } else if(info.isActive && info.stage===1){
+    locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(240,165,0,.15);color:var(--amber);font-family:var(--mono)">⚙ ISSUED OUT</span>`;
+    locationDetail = `<div style="font-size:12px;color:var(--text2);margin-top:5px">
+      Job <strong style="color:var(--accent)">${info.job}</strong> · ${info.customer}<br>
+      📍 ${info.site} · 👤 ${info.tech}<br>
+      <span style="font-size:11px;color:var(--text3)">Issued from ${br.label} — travelling to site</span>
+    </div>`;
+  } else if(info.isActive && info.stage===2){
+    locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(59,130,246,.15);color:var(--blue);font-family:var(--mono)">📍 ON SITE</span>`;
+    locationDetail = `<div style="font-size:12px;color:var(--text2);margin-top:5px">
+      Job <strong style="color:var(--accent)">${info.job}</strong> · ${info.customer}<br>
+      📍 <strong>${info.site}</strong> · 👤 ${info.tech}<br>
+      <span style="font-size:11px;color:var(--text3)">Currently on site — calibration in progress</span>
+    </div>`;
+  } else if(info.isActive && info.stage===3){
+    locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(124,58,237,.15);color:var(--purple);font-family:var(--mono)">🔄 RETURNING</span>`;
+    locationDetail = `<div style="font-size:12px;color:var(--text2);margin-top:5px">
+      Job <strong style="color:var(--accent)">${info.job}</strong> · ${info.customer}<br>
+      👤 ${info.tech} returning to ${br.label} from ${info.site}<br>
+      <span style="font-size:11px;color:var(--text3)">On return journey — back soon</span>
+    </div>`;
+  } else {
+    locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">🏛 IN LAB</span>`;
+    locationDetail = `<div style="font-size:12px;color:var(--text3);margin-top:5px">Back in ${br.label} — last job: <strong>${info.job}</strong> · ${info.customer}</div>`;
+  }
+
+  const metaRow = [make&&`<span>${make}</span>`, serial&&`<span style="font-family:var(--mono)">S/N: ${serial}</span>`, range&&`<span>${range}</span>`].filter(Boolean).join('<span style="color:var(--border2);margin:0 4px">·</span>');
+
+  const canTransfer = showTransferBtn && session && session.role==='ops_head';
+  const transferBtns = canTransfer ? `
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button onclick="openTransferModal('${id}')" style="flex:1;padding:7px 10px;background:rgba(26,86,219,.1);border:1px solid rgba(26,86,219,.25);border-radius:var(--r2);color:var(--blue);font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer">📦 Transfer</button>
+      <button onclick="openTransferHistory('${id}')" style="flex:1;padding:7px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer">📋 History</button>
+    </div>` : (transfers[id]?.history?.length ? `<button onclick="openTransferHistory('${id}')" style="width:100%;margin-top:8px;padding:6px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text3);font-size:11px;font-weight:600;cursor:pointer">📋 View Transfer History</button>` : '');
+
+  return `
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
+      <div>
+        <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)">${id}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:1px">${model}</div>
+        ${metaRow?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${metaRow}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        ${branchBadge}
+        ${locationBadge}
+        ${lastSeen}
+      </div>
+    </div>
+    ${locationDetail}
+    ${calDue?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:${calColor};font-family:var(--mono)">📅 Cal Due: ${calDue}${daysLeft!==null&&daysLeft<0?' — ⚠ OVERDUE':daysLeft!==null&&daysLeft<60?' — ⚠ Expiring soon':' — ✓ Valid'}</div>`:''}
+    ${transferBtns}
+  </div>`;
+}
+}
+
+function renderFindMaster(){
+  const el = document.getElementById('find-master-results');
+  if(!el) return;
+  const q = (document.getElementById('find-master-query')?.value||'').trim().toLowerCase();
+  const instrMap = buildInstrMap();
+  let allIds = new Set([...Object.keys(instrMap), ...equipDB.map(e=>e.id)]);
+
+  // Apply branch filter
+  if(branchFilter!=='all'){
+    allIds = new Set([...allIds].filter(id => getInstrBranch(id)===branchFilter));
+  }
+
+  if(!q && branchFilter==='all'){
+    el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">🔍</div><div style="font-size:13px">Type instrument ID, model, serial or site to search<br><span style="font-size:11px">or filter by branch above</span></div></div>`;
+    return;
+  }
+
   let results = [...allIds].filter(id=>{
     if(!q) return true;
-    const info = instrMap[id];
-    const eq = equipMap[id]||{};
+    const info = instrMap[id]; const eq = equipMap[id]||{};
     return id.toLowerCase().includes(q)
       || (eq.model||'').toLowerCase().includes(q)
       || (eq.make||'').toLowerCase().includes(q)
       || (eq.description||'').toLowerCase().includes(q)
+      || (eq.serial||'').toLowerCase().includes(q)
+      || (eq.range||'').toLowerCase().includes(q)
       || (info?.customer||'').toLowerCase().includes(q)
       || (info?.site||'').toLowerCase().includes(q)
-      || (info?.tech||'').toLowerCase().includes(q);
+      || (info?.tech||'').toLowerCase().includes(q)
+      || (info?.job||'').toLowerCase().includes(q);
   });
 
-  if(!q){
-    el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">🔍</div><div style="font-size:13px">Type instrument ID, model or name above to search</div></div>`;
-    return;
-  }
-
   if(!results.length){
-    el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">😕</div><div style="font-size:13px">No instruments found for "<strong>${q}</strong>"</div></div>`;
+    const brName = branchFilter!=='all' ? ` at ${BRANCHES.find(b=>b.id===branchFilter)?.label}` : '';
+    el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">😕</div><div style="font-size:13px">No instruments found${q?' for "'+q+'"':''}${brName}<br><span style="font-size:11px">Try instrument ID, model name, serial, or technician name</span></div></div>`;
     return;
   }
 
-  el.innerHTML = `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">${results.length} result${results.length!==1?'s':''} found</div>` +
-  results.map(id=>{
-    const info = instrMap[id];
-    const eq = equipMap[id]||{};
-    const model = eq.model||eq.description||'Unknown Model';
-    const make  = eq.make||'';
-    const calDue = eq.calDue||'';
-    const daysLeft = calDue ? Math.ceil((new Date(calDue)-new Date())/86400000) : null;
-    const calColor = daysLeft!==null ? (daysLeft<0?'var(--red)':daysLeft<60?'var(--amber)':'var(--accent)') : 'var(--text3)';
+  // Sort: active jobs first, then by branch
+  results.sort((a,b)=>{
+    const ia=instrMap[a], ib=instrMap[b];
+    if(ia?.isActive && !ib?.isActive) return -1;
+    if(!ia?.isActive && ib?.isActive) return 1;
+    return 0;
+  });
 
-    let locationBadge, locationDetail;
-    if(!info){
-      locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--green);font-family:var(--mono)">🏛 IN LAB</span>`;
-      locationDetail = `<div style="font-size:12px;color:var(--text3);margin-top:6px">Not currently assigned to any active job</div>`;
-    } else if(info.isActive && info.stage===1){
-      locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(240,165,0,.15);color:var(--amber);font-family:var(--mono)">⚙ ISSUED OUT</span>`;
-      locationDetail = `<div style="font-size:12px;color:var(--text2);margin-top:6px">
-        Job <strong style="color:var(--accent)">${info.job}</strong> · ${info.customer}<br>
-        📍 ${info.site} · 👤 ${info.tech}<br>
-        <span style="font-size:11px;color:var(--text3)">Stage 1: Instruments issued, not yet on site</span>
-      </div>`;
-    } else if(info.isActive && info.stage===2){
-      locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(59,130,246,.15);color:var(--blue);font-family:var(--mono)">📍 ON SITE</span>`;
-      locationDetail = `<div style="font-size:12px;color:var(--text2);margin-top:6px">
-        Job <strong style="color:var(--accent)">${info.job}</strong> · ${info.customer}<br>
-        📍 <strong>${info.site}</strong> · 👤 ${info.tech}<br>
-        <span style="font-size:11px;color:var(--text3)">Stage 2: Currently on site calibrating</span>
-      </div>`;
-    } else if(info.isActive && info.stage===3){
-      locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(124,58,237,.15);color:var(--purple);font-family:var(--mono)">🔄 RETURNING</span>`;
-      locationDetail = `<div style="font-size:12px;color:var(--text2);margin-top:6px">
-        Job <strong style="color:var(--accent)">${info.job}</strong> · ${info.customer}<br>
-        👤 ${info.tech} returning to lab<br>
-        <span style="font-size:11px;color:var(--text3)">Stage 3: On return journey to lab</span>
-      </div>`;
-    } else {
-      locationBadge = `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">🏛 IN LAB</span>`;
-      locationDetail = `<div style="font-size:12px;color:var(--text3);margin-top:6px">Last job: <strong>${info.job}</strong> · ${info.customer} (Stage ${info.stage})</div>`;
-    }
-
-    return `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
-        <div>
-          <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)">${id}</div>
-          <div style="font-size:12px;color:var(--text2)">${make?make+' · ':''}${model}</div>
-        </div>
-        ${locationBadge}
-      </div>
-      ${locationDetail}
-      ${calDue?`<div style="margin-top:8px;font-size:11px;color:${calColor};font-family:var(--mono)">Cal Due: ${calDue}${daysLeft!==null&&daysLeft<0?' ⚠ OVERDUE':daysLeft!==null&&daysLeft<60?' ⚠ Expiring soon':''}</div>`:''}
-    </div>`;
-  }).join('');
+  const brLabel = branchFilter!=='all' ? ` at ${BRANCHES.find(b=>b.id===branchFilter)?.label}` : '';
+  el.innerHTML = `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">${results.length} result${results.length!==1?'s':''}${brLabel} — active jobs first</div>` +
+    results.map(id => buildFindResult(id, instrMap, true)).join('');
 }
 
 // ════════════════════════════════════════════════════
