@@ -2783,23 +2783,34 @@ function renderTasks(){
   if(rc.readOnly){
     const pending = jobs.filter(j=>j.stage<7);
     const urgent  = jobs.filter(j=>j.stage===3||j.stage===4);
+    const byStage = STAGES.map(s=>({ ...s, count: jobs.filter(j=>j.stage===s.id).length }));
     el.innerHTML = `
-      <div style="background:rgba(188,140,255,.06);border:1px solid rgba(188,140,255,.2);border-radius:var(--r);padding:14px;margin-bottom:16px">
-        <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:10px">📊 Lab Overview</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-          <div><span style="font-size:20px;font-weight:700;color:var(--text);display:block">${jobs.length}</span><span style="color:var(--text3)">Total Jobs</span></div>
-          <div><span style="font-size:20px;font-weight:700;color:var(--amber);display:block">${pending.length}</span><span style="color:var(--text3)">In Progress</span></div>
-          <div><span style="font-size:20px;font-weight:700;color:var(--red);display:block">${urgent.length}</span><span style="color:var(--text3)">Need Attention</span></div>
-          <div><span style="font-size:20px;font-weight:700;color:var(--accent);display:block">${jobs.filter(j=>j.stage===7).length}</span><span style="color:var(--text3)">Complete</span></div>
-        </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--blue)">${jobs.length}</div><div class="kpi-label">Total Jobs</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--amber)">${pending.length}</div><div class="kpi-label">In Progress</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${urgent.length}</div><div class="kpi-label">Urgent</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:var(--accent)">${jobs.filter(j=>j.stage===7).length}</div><div class="kpi-label">Complete</div></div>
       </div>
-      ${urgent.length ? `
-      <div class="section-hd" style="color:var(--amber)">⚠ Jobs Needing Attention</div>
-      ${urgent.map(j=>`<div class="task-card" onclick="openJobDetailModal('${j.jobNum}')">
-        <div class="task-card-num">${j.jobNum}</div>
-        <div class="task-card-customer">${j.customer}</div>
-        <div class="task-card-meta">Stage ${j.stage} — ${STAGES[j.stage-1]?.label}</div>
-      </div>`).join('')}` : `<div class="empty-state"><p>All jobs on track</p></div>`}`;
+      <div class="section-hd" style="margin-top:0">Stage Breakdown</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px">
+        ${byStage.map((s,i)=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 13px;${i>0?'border-top:1px solid var(--border)':''}">
+            <span style="font-size:15px;flex-shrink:0">${s.icon}</span>
+            <span style="flex:1;font-size:12px;font-weight:500;color:var(--text)">${s.label}</span>
+            <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:${s.count>0?s.color:'var(--text3)'}">${s.count}</span>
+          </div>`).join('')}
+      </div>
+      <div class="section-hd">Recent Activity</div>
+      ${jobs.filter(j=>j.status==='open').slice(0,5).map(j=>{
+        const st=STAGES[j.stage-1]||STAGES[0];
+        return `<div class="task-card" onclick="openJobDetailModal('${j.jobNum}')">
+          <div class="task-card-num">${j.jobNum}</div>
+          <div class="task-card-customer">${j.customer}</div>
+          <div class="task-card-meta">📍 ${j.site} · 👤 ${j.tech}</div>
+          <span class="task-badge" style="background:rgba(0,0,0,.25);color:${st.color}">${st.icon} ${st.label}</span>
+        </div>`;
+      }).join('') || '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">No open jobs</div>'}
+    `;
     return;
   }
 
@@ -2811,7 +2822,26 @@ function renderTasks(){
     const s3 = jobs.filter(j=>j.stage===3);
     const s4 = jobs.filter(j=>j.stage===4&&!j.certAssigned);
     const s5 = jobs.filter(j=>j.stage===5&&!j.deliveryAck);
-    renderManagerTasks(el, s1, s3, s4, s5);
+    const allOpen = jobs.filter(j=>j.status==='open'&&j.stage<7);
+    // Always show summary dashboard, then pending actions below
+    let summaryHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--blue)">${jobs.length}</div><div class="kpi-label">Total Jobs</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--amber)">${allOpen.length}</div><div class="kpi-label">Open</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${s1.length+s3.length+s4.length}</div><div class="kpi-label">Need Action</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--accent)">${jobs.filter(j=>j.stage===7).length}</div><div class="kpi-label">Complete</div></div>
+    </div>`;
+    if(!s1.length&&!s3.length&&!s4.length&&!s5.length){
+      el.innerHTML = summaryHtml + `<div style="background:rgba(0,229,176,.06);border:1px solid rgba(0,229,176,.15);border-radius:var(--r);padding:16px;text-align:center">
+        <div style="font-size:28px;margin-bottom:6px">✅</div>
+        <div style="font-size:13px;font-weight:600;color:var(--accent)">All clear — no pending approvals</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Switch to Pipeline tab to see all jobs</div>
+      </div>`;
+      return;
+    }
+    el.innerHTML = summaryHtml;
+    const tempEl = document.createElement('div');
+    renderManagerTasks(tempEl, s1, s3, s4, s5);
+    el.appendChild(tempEl);
   } else if(role==='sales'){
     const needApproval=jobs.filter(j=>j.stage===6&&!j.salesApproved);
     const noPO=jobs.filter(j=>!j.poNumber&&j.stage>1);
