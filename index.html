@@ -1232,10 +1232,49 @@ let scanInterval = null;
 let pendingJobNum = null;
 let currentTab  = '';
 let jobsFilter  = 'all';
+// Dirty flag — set true whenever jobs data changes, cleared after a render
+let _tabsDirty  = true;
+function markDirty(){ _tabsDirty = true; }
 
-function saveJobs(){ localStorage.setItem(KEY_JOBS, JSON.stringify(jobs)); }
+// ── Photo storage helpers ──
+// Photos are stored separately under 'ct2-photo:<jobNum>:<type>'
+// so the main jobs array stays lean for fast serialisation.
+const KEY_PHOTO_PREFIX = 'ct2-photo:';
+function savePhoto(jobNum, type, dataUrl){
+  try{ localStorage.setItem(KEY_PHOTO_PREFIX+jobNum+':'+type, dataUrl); }catch(e){}
+}
+function loadPhoto(jobNum, type){
+  return localStorage.getItem(KEY_PHOTO_PREFIX+jobNum+':'+type)||'';
+}
+function removePhoto(jobNum, type){
+  localStorage.removeItem(KEY_PHOTO_PREFIX+jobNum+':'+type);
+}
+
+// Strip base64 blobs before writing the jobs array.
+// URL strings (http…) are kept — they're tiny and needed for display.
+function saveJobs(){
+  const slim = jobs.map(j=>{
+    const s = Object.assign({}, j);
+    ['srPhotoData','doPhotoData','poDocData','mclPhotoData'].forEach(k=>{
+      if(s[k] && !s[k].startsWith('http')) delete s[k];
+    });
+    return s;
+  });
+  localStorage.setItem(KEY_JOBS, JSON.stringify(slim));
+}
+
+// Rehydrate photos from their separate keys back onto a job object.
+function rehydratePhotos(j){
+  if(!j.srPhotoData  || !j.srPhotoData.startsWith('http'))  j.srPhotoData  = loadPhoto(j.jobNum,'sr')  || j.srPhotoData  || '';
+  if(!j.doPhotoData  || !j.doPhotoData.startsWith('http'))  j.doPhotoData  = loadPhoto(j.jobNum,'do')  || j.doPhotoData  || '';
+  if(!j.poDocData    || !j.poDocData.startsWith('http'))    j.poDocData    = loadPhoto(j.jobNum,'po')  || j.poDocData    || '';
+  if(!j.mclPhotoData || !j.mclPhotoData.startsWith('http')) j.mclPhotoData = loadPhoto(j.jobNum,'mcl') || j.mclPhotoData || '';
+  return j;
+}
 function buildEquipMap(){ equipMap = {}; equipDB.forEach(e=>{ equipMap[e.id]=e; }); }
 buildEquipMap();
+// Rehydrate photos from their separate localStorage keys back into the jobs array
+jobs = jobs.map(j=>rehydratePhotos(j));
 
 // ════════════════════════════════════════════════════
 // LOGIN
@@ -1538,17 +1577,20 @@ function initApp(){
 
   buildTabBar(rc.tabs);
 
-  // Enforce approvers card visibility at login — only ops_head can see it
+  // Enforce approvers card visibility — only ops_head can see it
   const apCard = document.getElementById('approvers-settings-card');
   if(apCard) apCard.style.display = (session?.role === 'ops_head') ? 'block' : 'none';
 
-  loadEquipment();
-  loadCentralJobs();
-  loadBranchTransfers();
-  handleApprovalURL();
-
+  // Render immediately from local data
   const firstTab = rc.tabs[0];
   switchTab(firstTab);
+
+  // Load all remote data in parallel; do ONE combined re-render when done
+  Promise.all([loadEquipment(), loadCentralJobs(), loadBranchTransfers()])
+    .then(()=>{ if(_tabsDirty) switchTab(currentTab, true); })
+    .catch(()=>{});
+
+  handleApprovalURL();
 }
 
 function buildTabBar(tabs){
@@ -1564,33 +1606,36 @@ function buildTabBar(tabs){
   }).join('');
 }
 
-function switchTab(tab){
-  // Dismiss any WA prompt bar when switching tabs
-  // 'log' is alias for 'new-job'
+function switchTab(tab, fromSync){
+  // fromSync=true means called by Supabase background load — skip render if nothing changed
   const panelKey = (tab==='log') ? 'new-job' : tab;
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  const btn = document.getElementById('tab-btn-'+tab);
-  if(btn) btn.classList.add('active');
-  const panel = document.getElementById('panel-'+panelKey);
-  if(panel) panel.classList.add('active');
-  currentTab = tab;
-
-  if(tab==='pipeline')   renderPipeline();
-  if(tab==='tasks')      renderTasks();
-  if(tab==='new-job'||tab==='log') renderNewJobTab();
-  if(tab==='delivery')   renderDelivery();
-  if(tab==='coord-upload') renderCoordUpload();
-  if(tab==='billing')    renderBilling();
-  if(tab==='jobs')       renderJobsPanel();
-  if(tab==='find-master'){
-    renderFindMaster();
-    const btn = document.getElementById('btn-new-transfer');
-    if(btn) btn.style.display = session?.role==='ops_head' ? 'inline-flex' : 'none';
+  if(!fromSync || _tabsDirty){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    const btn = document.getElementById('tab-btn-'+tab);
+    if(btn) btn.classList.add('active');
+    const panel = document.getElementById('panel-'+panelKey);
+    if(panel) panel.classList.add('active');
   }
-  if(tab==='settings')   renderSettings();
-  if(tab==='qc')        renderQCPanel();
-  updateNotifs();
+  currentTab = tab;
+  if(!fromSync || _tabsDirty){
+    if(tab==='pipeline')   renderPipeline();
+    if(tab==='tasks')      renderTasks();
+    if(tab==='new-job'||tab==='log') renderNewJobTab();
+    if(tab==='delivery')   renderDelivery();
+    if(tab==='coord-upload') renderCoordUpload();
+    if(tab==='billing')    renderBilling();
+    if(tab==='jobs')       renderJobsPanel();
+    if(tab==='find-master'){
+      renderFindMaster();
+      const btn = document.getElementById('btn-new-transfer');
+      if(btn) btn.style.display = session?.role==='ops_head' ? 'inline-flex' : 'none';
+    }
+    if(tab==='settings')   renderSettings();
+    if(tab==='qc')        renderQCPanel();
+    updateNotifs();
+    _tabsDirty = false;
+  }
 }
 
 // ════════════════════════════════════════════════════
@@ -1658,6 +1703,7 @@ async function getNextJobNumber(){
 async function loadCentralJobs(){
   const rows = await sbSelect('ct2_jobs', 'order=created_at.desc');
   if(!rows || !Array.isArray(rows)) return;
+  let changed = false;
   rows.forEach(r=>{
     const j = {
       jobNum:      r.job_num,
@@ -1683,11 +1729,22 @@ async function loadCentralJobs(){
       createdAt:   r.created_at,
       updatedAt:   r.updated_at,
     };
+    // Rehydrate local photos onto cloud job record
+    rehydratePhotos(j);
     const idx = jobs.findIndex(x=>x.jobNum===r.job_num);
-    if(idx>=0) jobs[idx]=j; else jobs.unshift(j);
+    if(idx>=0){
+      // Only mark dirty if something actually changed
+      if(jobs[idx].updatedAt !== j.updatedAt) changed = true;
+      jobs[idx]=j;
+    } else {
+      jobs.unshift(j); changed = true;
+    }
   });
-  saveJobs();
-  if(currentTab) switchTab(currentTab);
+  if(changed){
+    markDirty();
+    saveJobs();
+    if(currentTab) switchTab(currentTab, true);
+  }
 }
 
 async function loadBranchTransfers(){
@@ -1752,16 +1809,23 @@ async function syncJobToSupabase(job){
 // ════════════════════════════════════════════════════
 async function loadEquipment(){
   const url = localStorage.getItem(KEY_EQ_URL) || DEFAULT_EQ_URL;
+  // Only re-fetch if cached data is older than 1 hour
+  const lastFetch = parseInt(localStorage.getItem('ct2-eq-fetched')||'0');
+  const cached    = localStorage.getItem(KEY_EQ);
+  const stale     = Date.now() - lastFetch > 3600000;
+  if(cached && !stale){
+    equipDB = JSON.parse(cached); buildEquipMap(); return;
+  }
   try{
-    const r = await fetch(url,{cache:'no-cache'});
+    const r = await fetch(url);
     const data = await r.json();
     if(Array.isArray(data)){
       equipDB = data;
       localStorage.setItem(KEY_EQ, JSON.stringify(data));
+      localStorage.setItem('ct2-eq-fetched', Date.now().toString());
       buildEquipMap();
     }
   }catch(e){
-    const cached = localStorage.getItem(KEY_EQ);
     if(cached){ equipDB = JSON.parse(cached); buildEquipMap(); }
   }
 }
@@ -3863,11 +3927,9 @@ function savePINSettings(){
 }
 
 function renderSettings(){
-  // Show approvers card for ops_head only — hide for ALL other roles
+  // Show approvers card for ops_head only
   const apCard = document.getElementById('approvers-settings-card');
   if(apCard) apCard.style.display = (session?.role==='ops_head') ? 'block' : 'none';
-  // Also hide from quality manager and any other non-ops_head
-  if(session?.role !== 'ops_head' && apCard) apCard.style.display = 'none';
   // Show BM settings card for ops_head
   const bmCard = document.getElementById('bm-settings-card');
   if(bmCard) bmCard.style.display = (session?.role==='ops_head') ? 'block' : 'none';
@@ -3957,6 +4019,7 @@ function saveApproversSettings(){
 function saveEqUrl(){
   const url = document.getElementById('set-eq-url').value.trim();
   localStorage.setItem(KEY_EQ_URL, url);
+  localStorage.removeItem('ct2-eq-fetched'); // force fresh fetch on URL change
   loadEquipment().then(()=>showToast('✓ Equipment list synced'));
 }
 
@@ -4935,12 +4998,18 @@ function cancelStage1Submission(){
 // HELPERS
 // ════════════════════════════════════════════════════
 function updateJob(j){
+  // Save any base64 photos to separate keys so the jobs array stays lean
+  if(j.srPhotoData  && !j.srPhotoData.startsWith('http'))  savePhoto(j.jobNum,'sr',  j.srPhotoData);
+  if(j.doPhotoData  && !j.doPhotoData.startsWith('http'))  savePhoto(j.jobNum,'do',  j.doPhotoData);
+  if(j.poDocData    && !j.poDocData.startsWith('http'))    savePhoto(j.jobNum,'po',  j.poDocData);
+  if(j.mclPhotoData && !j.mclPhotoData.startsWith('http')) savePhoto(j.jobNum,'mcl', j.mclPhotoData);
   const idx = jobs.findIndex(x=>x.jobNum===j.jobNum);
   if(idx>=0) jobs[idx]=j; else jobs.unshift(j);
+  markDirty();
   saveJobs();
 }
 
-let toastTimer;
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
