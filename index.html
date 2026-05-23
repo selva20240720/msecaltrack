@@ -268,7 +268,8 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
 .ib-purple { background: #f5f3ff;         border: 1px solid rgba(124,58,237,.2); color: #7c3aed; }
 
 /* ── BRANCH MANAGER PORTAL ── */
-#bm-portal { position:fixed; inset:0; background:var(--bg); z-index:500; display:none; flex-direction:column; overflow:hidden; }
+#bm-portal { position:fixed; inset:0; background:var(--bg); z-index:500; display:none; flex-direction:column; overflow:hidden; pointer-events:none; }
+#bm-portal.open { pointer-events:all; }
 #bm-portal.open { display:flex; }
 .bm-header { background:linear-gradient(135deg,#1e40af 0%,#1a56db 60%,#3b82f6 100%); padding:16px 16px 12px; flex-shrink:0; }
 .bm-header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
@@ -287,7 +288,7 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
 .transfer-item { background:var(--surface2); border:1px solid var(--border); border-radius:var(--r2); padding:10px 12px; margin-bottom:7px; display:flex; align-items:center; gap:10px; }
 .transfer-item-icon { width:32px; height:32px; border-radius:8px; background:rgba(26,86,219,.12); border:1px solid rgba(26,86,219,.2); display:grid; place-items:center; font-size:14px; flex-shrink:0; }
 /* BM Login */
-#bm-login { position:absolute; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; z-index:10; }
+#bm-login { position:absolute; inset:0; background:var(--bg); display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; z-index:10; }
 .bm-login-icon { width:72px; height:72px; border-radius:20px; background:rgba(26,86,219,.15); border:2px solid rgba(26,86,219,.3); display:grid; place-items:center; margin:0 auto 14px; font-size:34px; }
 /* Live pulse */
 @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.3} }
