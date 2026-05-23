@@ -1031,6 +1031,13 @@ textarea.field-input { resize: none; height: 80px; }
     <input type="text" id="nj-po" class="field-input mono" placeholder="PO-XXXX">
     <div class="field-label">Contact Person</div>
     <input type="text" id="nj-contact" class="field-input" placeholder="Customer contact name">
+    <div class="field-label">Sales Person</div>
+    <div style="position:relative">
+      <select id="nj-salesperson" class="field-input" style="appearance:none;-webkit-appearance:none;cursor:pointer">
+        <option value="">— Select sales person —</option>
+      </select>
+      <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text3);font-size:12px">▾</div>
+    </div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="document.getElementById('modal-new-job').classList.remove('open')">Cancel</button>
       <button class="modal-btn primary" onclick="confirmNewJob()">Start Job →</button>
@@ -2011,6 +2018,7 @@ async function loadCentralJobs(){
       poNumber:    r.po_number,
       contact:     r.contact_person,
       tech:        r.technician,
+      salesPerson: r.sales_person || '',
       stage:       r.stage || 1,
       status:      r.status || 'open',
       masterItems: JSON.parse(r.master_items||'[]'),
@@ -2073,6 +2081,7 @@ async function syncJobToSupabase(job){
     po_number:      job.poNumber||'',
     contact_person: job.contact||'',
     technician:     job.tech||'',
+    sales_person:   job.salesPerson||'',
     stage:          job.stage||1,
     stage1_pending: job.stage1Pending||false,
     stage1_rejected:job.stage1Rejected||false,
@@ -3455,6 +3464,13 @@ function openNewJobModal(){
   const codeEl = document.getElementById('nj-customer-code');
   if(codeEl){ codeEl.style.display='none'; codeEl.textContent=''; }
   hideCustomerDrop();
+  // Populate sales person dropdown from salesStaff register
+  const sel = document.getElementById('nj-salesperson');
+  if(sel){
+    const names = salesStaff.length ? salesStaff : [];
+    sel.innerHTML = `<option value="">— Select sales person —</option>` +
+      names.map(n=>`<option value="${n}">${n}</option>`).join('');
+  }
   // Fetch number async
   getNextJobNumber().then(num=>{
     pendingJobNum = num;
@@ -3475,6 +3491,7 @@ async function confirmNewJob(){
     desc:        document.getElementById('nj-desc').value.trim(),
     poNumber:    document.getElementById('nj-po').value.trim(),
     contact:     document.getElementById('nj-contact').value.trim(),
+    salesPerson: document.getElementById('nj-salesperson')?.value || '',
     tech:        session.name,
     stage:       1,
     status:      'open',
@@ -3501,6 +3518,17 @@ async function confirmNewJob(){
   showToast(`✓ Job ${pendingJobNum} created`);
   renderNewJobTab();
   updateNotifs();
+}
+
+async function saveJobSalesPerson(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum); if(!j) return;
+  const sel = document.getElementById('detail-salesperson-'+jobNum);
+  if(!sel) return;
+  j.salesPerson = sel.value;
+  updateJob(j);
+  await syncJobToSupabase(j);
+  showToast(`✓ Sales person set to ${j.salesPerson||'none'}`);
+  markDirty();
 }
 
 function openJobDetailModal(jobNum){
@@ -3551,6 +3579,17 @@ function openJobDetailModal(jobNum){
       <div><div style="color:var(--text3);font-family:var(--mono);font-size:10px">PO NUMBER</div><div style="color:var(--text)">${j.poNumber||'—'}</div></div>
       <div><div style="color:var(--text3);font-family:var(--mono);font-size:10px">SR NUMBER</div><div style="color:var(--text)">${j.srNumber||'—'}</div></div>
       ${j.contact?`<div style="grid-column:1/-1"><div style="color:var(--text3);font-family:var(--mono);font-size:10px">CONTACT</div><div style="color:var(--text)">${j.contact}</div></div>`:''}
+      <div style="grid-column:1/-1">
+        <div style="color:var(--text3);font-family:var(--mono);font-size:10px;margin-bottom:4px">SALES PERSON</div>
+        ${session.role==='ops_head' ? `
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="detail-salesperson-${j.jobNum}" style="flex:1;padding:7px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--sans);font-size:12px;appearance:none;-webkit-appearance:none;cursor:pointer">
+            <option value="">— Not assigned —</option>
+            ${salesStaff.map(n=>`<option value="${n}" ${j.salesPerson===n?'selected':''}>${n}</option>`).join('')}
+          </select>
+          <button onclick="saveJobSalesPerson('${j.jobNum}')" style="padding:7px 12px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r2);font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">Save</button>
+        </div>` : `<div style="color:var(--text)">${j.salesPerson||'—'}</div>`}
+      </div>
     </div>
     ${j.mclItems?.length?`
     <div class="section-hd">MCL — ${j.mclItems.length} Customer Instruments</div>
@@ -4037,6 +4076,7 @@ function openSalesJobModal(num){
         <div><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">TECHNICIAN</div><div>${j.tech}</div></div>
         <div><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">STAGE</div><div style="color:${STAGES[j.stage-1]?.color}">${STAGES[j.stage-1]?.label}</div></div>
         <div><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">CREATED</div><div>${j.createdAt?new Date(j.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—'}</div></div>
+        <div style="grid-column:1/-1"><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">SALES PERSON</div><div style="color:${j.salesPerson?'#16a34a':'#8896ab'}">${j.salesPerson||'— Not assigned'}</div></div>
       </div>
     </div>
 
