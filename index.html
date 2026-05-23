@@ -1042,7 +1042,6 @@ function renderGuestFindMaster(){
   el.innerHTML = results.slice(0,10).map(id => buildFindResult(id, instrMap)).join('') +
     (results.length>10 ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:8px">${results.length-10} more results — refine your search</div>` : '');
 }
-}
 
 // ════════════════════════════════════════════════════
 // APP INIT
@@ -1976,7 +1975,6 @@ function buildFindResult(id, instrMap, showTransferBtn=true){
     ${calDue?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:${calColor};font-family:var(--mono)">📅 Cal Due: ${calDue}${daysLeft!==null&&daysLeft<0?' — ⚠ OVERDUE':daysLeft!==null&&daysLeft<60?' — ⚠ Expiring soon':' — ✓ Valid'}</div>`:''}
     ${transferBtns}
   </div>`;
-}
 }
 
 function renderFindMaster(){
