@@ -2224,37 +2224,41 @@ async function handlePhotoUpload(e){
   const file = e.target.files[0];
   if(!file) return;
 
-  showToast('Uploading…');
+  showToast('Processing…');
 
-  // Try Supabase Storage first
-  if(SB_URL && SB_KEY_VAL){
-    const ext = file.name.split('.').pop()||'jpg';
-    const path = `sr-photos/${activeJob.jobNum}_${Date.now()}.${ext}`;
-    const url = await sbStorageUpload('caltrack-docs', path, file);
-    if(url){
-      activeJob.srPhotoData = url;   // store URL not base64
-      activeJob.srPhotoUrl  = url;
-      updateJob(activeJob);
-      await syncJobToSupabase(activeJob);
-      renderStageActionArea();
-      showToast('✓ Service report uploaded to cloud');
-      return;
-    }
-  }
-
-  // Fallback: compress then store locally
+  // Always compress first — gallery photos can be 4–8MB raw.
+  // Compress to a small JPEG before doing anything else.
+  let compressedBlob = null;
   try{
-    const dataUrl = await compressImage(file, 900, 0.60);
+    const dataUrl = await compressImage(file, 1200, 0.75); // slightly higher quality for SR text legibility
+    // Convert dataUrl → Blob for Supabase upload
+    const res = await fetch(dataUrl);
+    compressedBlob = await res.blob();
+    // Store compressed dataUrl locally on activeJob immediately so UI updates fast
     activeJob.srPhotoData = dataUrl;
     updateJob(activeJob);
     renderStageActionArea();
     const kb = Math.round(dataUrl.length * 0.75 / 1024);
     showToast('✓ SR photo saved (' + kb + 'KB)');
-    warnIfStorageFull();
-  }catch(e){
+  }catch(err){
+    // If compression fails, fall back to raw FileReader
     const reader = new FileReader();
-    reader.onload = ev=>{ activeJob.srPhotoData = ev.target.result; updateJob(activeJob); renderStageActionArea(); };
+    reader.onload = ev=>{ activeJob.srPhotoData = ev.target.result; updateJob(activeJob); renderStageActionArea(); showToast('✓ SR photo saved'); };
     reader.readAsDataURL(file);
+    return;
+  }
+
+  // Upload the already-compressed blob to Supabase in the background
+  if(SB_URL && SB_KEY_VAL && compressedBlob){
+    const path = `sr-photos/${activeJob.jobNum}_${Date.now()}.jpg`;
+    const url = await sbStorageUpload('caltrack-docs', path, compressedBlob);
+    if(url){
+      activeJob.srPhotoData = url;
+      activeJob.srPhotoUrl  = url;
+      updateJob(activeJob);
+      await syncJobToSupabase(activeJob);
+      showToast('✓ SR photo synced to cloud');
+    }
   }
 }
 
