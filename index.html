@@ -591,10 +591,16 @@ textarea.field-input { resize: none; height: 80px; }
             <div style="font-size:16px;font-weight:700;color:var(--text)">QC — Master Instruments</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px">Quality Manager maintains this list</div>
           </div>
-          <button onclick="openQCUploadModal()" style="padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload List
-          </button>
+          <div style="display:flex;gap:6px">
+            <button onclick="downloadQCTemplate()" style="padding:8px 12px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--r2);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Template
+            </button>
+            <button onclick="openQCUploadModal()" style="padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload List
+            </button>
+          </div>
         </div>
 
         <!-- Alert summary -->
@@ -603,6 +609,13 @@ textarea.field-input { resize: none; height: 80px; }
         <!-- KPI row -->
         <div style="display:flex;gap:8px;margin-bottom:14px" id="qc-kpis"></div>
 
+        <!-- How-to guide -->
+        <div id="qc-howto" style="background:rgba(26,86,219,.06);border:1px solid rgba(26,86,219,.15);border-radius:var(--r2);padding:11px 13px;margin-bottom:12px;font-size:11px;color:var(--text2);line-height:1.6">
+          <div style="font-weight:700;color:var(--blue);margin-bottom:4px">📋 How to update master instrument list:</div>
+          <b>Option 1 — Upload Excel/CSV:</b> Tap <b>Upload List</b> → select your Excel file → confirm. Columns needed: <span style="font-family:var(--mono);font-size:10px">ID, Cal Due Date, Cert No</span> (other columns optional)<br>
+          <b>Option 2 — Edit one instrument:</b> Tap any instrument card → tap ✏️ Edit → update dates directly<br>
+          <b>Template:</b> Tap <b>Template</b> to download a pre-filled Excel with all current instruments
+        </div>
         <!-- Filter tabs -->
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="qc-filters"></div>
 
@@ -653,6 +666,34 @@ textarea.field-input { resize: none; height: 80px; }
       <!-- QC Instrument Detail Modal -->
       <div class="modal-overlay" id="modal-qc-detail" onclick="if(event.target===this)this.classList.remove('open')">
         <div class="modal-sheet" id="modal-qc-detail-body"></div>
+      </div>
+
+      <!-- QC Instrument Quick-Edit Modal -->
+      <div class="modal-overlay" id="modal-qc-edit" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal-sheet">
+          <div class="modal-title" id="qce-title">Update Instrument</div>
+          <div class="modal-sub" id="qce-sub"></div>
+          <div class="field-label">Cal Due Date</div>
+          <input type="date" id="qce-cal-due" class="field-input mono">
+          <div class="field-label">Certificate No</div>
+          <input type="text" id="qce-cert-no" class="field-input mono" placeholder="e.g. MSSI/2025/001">
+          <div class="field-label">Cal Lab / Calibrated By</div>
+          <input type="text" id="qce-cal-lab" class="field-input" placeholder="e.g. MSSI Cal Lab">
+          <div class="field-label">Status</div>
+          <select id="qce-status" class="field-input" style="appearance:none;-webkit-appearance:none">
+            <option value="ok">✅ OK — In Service</option>
+            <option value="calibrating">🔵 Sent for Calibration</option>
+            <option value="faulty">⛔ Faulty / Under Repair</option>
+            <option value="retired">⬛ Retired</option>
+          </select>
+          <div class="field-label">Notes</div>
+          <textarea id="qce-notes" class="field-input" placeholder="Any notes…" style="height:60px"></textarea>
+          <input type="hidden" id="qce-instr-id">
+          <div class="modal-actions">
+            <button class="modal-btn secondary" onclick="document.getElementById('modal-qc-edit').classList.remove('open')">Cancel</button>
+            <button class="modal-btn primary" onclick="saveQCEdit()">✓ Save Update</button>
+          </div>
+        </div>
       </div>
 
       <!-- SETTINGS tab -->
@@ -1138,7 +1179,7 @@ const STAGES = [
 
 const ROLE_CONFIG = {
   technician:  { label:'Technician',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['find-master','new-job','tasks','jobs'],                         canApprove:false, readOnly:false },
-  ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['qc','find-master','pipeline','tasks','jobs','settings'],          canApprove:true,  readOnly:false },
+  ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['qc','find-master','pipeline','new-job','tasks','jobs','settings'], canApprove:true,  readOnly:false },
   coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['find-master','tasks','delivery','coord-upload','billing','jobs'], canApprove:false, readOnly:false },
   sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['find-master','pipeline','sales','jobs'],                          canApprove:false, readOnly:false, isSales:true },
   quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['qc','pipeline','jobs'],                                           canApprove:false, readOnly:true  },
@@ -1157,6 +1198,8 @@ const TAB_CONFIG = {
   'find-master':  { label:'Find Master',icon:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/>' },
   'coord-upload': { label:'Uploads',    icon:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>' },
   'settings':     { label:'Setup',      icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
+  'qc':           { label:'QC',         icon:'<path d="M9 11l3 3L22 4"/><circle cx="12" cy="12" r="10"/>' },
+  'qc':           { label:'QC',         icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
 };
 
 // ════════════════════════════════════════════════════
@@ -1508,6 +1551,7 @@ function buildTabBar(tabs){
   const bar = document.getElementById('tab-bar');
   bar.innerHTML = tabs.map(t=>{
     const tc = TAB_CONFIG[t];
+    if(!tc){ console.warn('Missing TAB_CONFIG for tab:', t); return ''; }
     return `<button class="tab-btn" id="tab-btn-${t}" onclick="switchTab('${t}')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${tc.icon}</svg>
       ${tc.label}
@@ -4442,7 +4486,7 @@ function renderQCPanel(){
           </div>
           ${notes?`<div style="font-size:11px;color:#7c3aed;margin-top:5px;font-style:italic">📝 ${notes}</div>`:''}
         </div>
-        ${canEdit?`<div style="font-size:10px;color:#1a56db;font-weight:600;flex-shrink:0">Edit →</div>`:''}
+        ${canEdit?`<button onclick="event.stopPropagation();openQCEdit('${instr.id}')" style="background:rgba(26,86,219,.1);border:1.5px solid rgba(26,86,219,.25);border-radius:8px;padding:7px 11px;color:#1a56db;font-size:11px;font-weight:700;font-family:var(--sans);cursor:pointer;flex-shrink:0">Edit</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -5627,6 +5671,89 @@ async function coordUploadPO(e, jobNum){
 }
 
 // Update notifs to include coord tab
+
+// ════════════════════════════════════════════════════
+// QC — SINGLE INSTRUMENT EDIT
+// ════════════════════════════════════════════════════
+function openQCEdit(instrId){
+  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Quality Manager only'); return; }
+  const instr = equipMap[instrId]||{id:instrId};
+  const qc    = qcData[instrId]||{};
+  document.getElementById('qce-title').textContent = instrId;
+  document.getElementById('qce-sub').textContent   = [instr.model, instr.make, instr.serial].filter(Boolean).join(' · ') || 'Master Instrument';
+  document.getElementById('qce-instr-id').value    = instrId;
+  // Pre-fill fields
+  const calDue = qc.calDue||instr.calDue||'';
+  if(calDue){
+    // Normalise to YYYY-MM-DD for date input
+    try{
+      const d = new Date(calDue);
+      if(!isNaN(d)) document.getElementById('qce-cal-due').value = d.toISOString().slice(0,10);
+      else document.getElementById('qce-cal-due').value = calDue;
+    }catch(e){ document.getElementById('qce-cal-due').value = ''; }
+  } else {
+    document.getElementById('qce-cal-due').value = '';
+  }
+  document.getElementById('qce-cert-no').value  = qc.certNo||instr.certNo||'';
+  document.getElementById('qce-cal-lab').value  = qc.calLab||'MSSI Cal Lab';
+  document.getElementById('qce-status').value   = qc.status&&qc.status!=='ok'&&qc.status!=='due_soon'&&qc.status!=='overdue' ? qc.status : 'ok';
+  document.getElementById('qce-notes').value    = qc.notes||'';
+  document.getElementById('modal-qc-edit').classList.add('open');
+}
+
+function saveQCEdit(){
+  const id      = document.getElementById('qce-instr-id').value;
+  const calDue  = document.getElementById('qce-cal-due').value;
+  const certNo  = document.getElementById('qce-cert-no').value.trim();
+  const calLab  = document.getElementById('qce-cal-lab').value.trim();
+  const status  = document.getElementById('qce-status').value;
+  const notes   = document.getElementById('qce-notes').value.trim();
+  if(!id){ showToast('Error — no instrument selected'); return; }
+  // Save to qcData
+  qcData[id] = {
+    ...(qcData[id]||{}),
+    ...(calDue  ? {calDue}  : {}),
+    ...(certNo  ? {certNo}  : {}),
+    ...(calLab  ? {calLab}  : {}),
+    ...(notes   ? {notes}   : {}),
+    status: status||'ok',
+    lastUpdated: new Date().toISOString(),
+    updatedBy: session?.name||'QC',
+  };
+  // Also update equipMap calDue
+  if(equipMap[id] && calDue) equipMap[id].calDue = calDue;
+  saveQCData();
+  document.getElementById('modal-qc-edit').classList.remove('open');
+  renderQCPanel();
+  showToast('✓ ' + id + ' updated');
+}
+
+// ── DOWNLOAD TEMPLATE ──
+function downloadQCTemplate(){
+  // Generate a CSV template pre-filled with all current instruments
+  const BOM = '﻿';
+  const headers = ['Instrument ID','Model','Make / Brand','Serial No','Range','Cal Due Date (DD/MM/YYYY)','Certificate No','Cal Lab','Status','Notes'];
+  const rows = equipDB.map(instr=>{
+    const qc = qcData[instr.id]||{};
+    const calDue = qc.calDue||instr.calDue||'';
+    let dueFmt = '';
+    if(calDue){ try{ const d=new Date(calDue); if(!isNaN(d)) dueFmt=d.toLocaleDateString('en-GB'); else dueFmt=calDue; }catch(e){ dueFmt=calDue; } }
+    return [
+      instr.id, instr.model||'', instr.make||'', instr.serial||'', instr.range||'',
+      dueFmt, qc.certNo||instr.certNo||'', qc.calLab||'MSSI Cal Lab', 'ok', qc.notes||''
+    ].map(v=>'"'+String(v||'').replace(/"/g,'""')+'"');
+  });
+  const csv = BOM + [headers.map(h=>'"'+h+'"').join(','), ...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'MSCL_Master_Instruments_Template_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Template downloaded — fill in Cal Due Date & Cert No, then upload');
+}
+
 // ════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════
