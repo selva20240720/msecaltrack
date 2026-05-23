@@ -11,8 +11,8 @@
 <meta name="theme-color" content="#1a56db">
 <title>CalTrack — Mustafa Sultan Cal Lab</title>
 <link rel="manifest" id="pwa-manifest">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" defer></script>
 <style>
 :root {
   --bg:       #080b10;
@@ -6418,10 +6418,12 @@ function downloadQCTemplate(){
 // ════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════
-if(session){
-  document.getElementById('login-view').style.display='none';
-  initApp();
-}
+document.addEventListener('DOMContentLoaded', function() {
+  if(session){
+    document.getElementById('login-view').style.display='none';
+    initApp();
+  }
+});
 </script>
 </body>
 </html>
