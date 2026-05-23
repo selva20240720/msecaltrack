@@ -1097,7 +1097,7 @@ function switchTab(tab){
   if(tab==='find-master'){
     renderFindMaster();
     const btn = document.getElementById('btn-new-transfer');
-    if(btn) btn.style.display = session?.role==='ops_head' ? 'block' : 'none';
+    if(btn) btn.style.display = session?.role==='ops_head' ? 'inline-flex' : 'none';
   }
   if(tab==='settings')   renderSettings();
   updateNotifs();
@@ -1982,6 +1982,9 @@ function buildFindResult(id, instrMap, showTransferBtn=true){
 function renderFindMaster(){
   const el = document.getElementById('find-master-results');
   if(!el) return;
+  // Show/hide transfer button for ops_head
+  const btn = document.getElementById('btn-new-transfer');
+  if(btn) btn.style.display = session?.role==='ops_head' ? 'inline-flex' : 'none';
   const q = (document.getElementById('find-master-query')?.value||'').trim().toLowerCase();
   const instrMap = buildInstrMap();
   let allIds = new Set([...Object.keys(instrMap), ...equipDB.map(e=>e.id)]);
