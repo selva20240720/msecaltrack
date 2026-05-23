@@ -1517,6 +1517,9 @@ function buildTabBar(tabs){
 }
 
 function switchTab(tab){
+  // Dismiss any WA prompt bar when switching tabs
+  const oldBar = document.getElementById('wa-prompt-bar');
+  if(oldBar){ oldBar.remove(); if(_waPendingTimer){ clearTimeout(_waPendingTimer); _waPendingTimer=null; } }
   // 'log' is alias for 'new-job'
   const panelKey = (tab==='log') ? 'new-job' : tab;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -3156,6 +3159,7 @@ function openAssignCertModal(jobNum){
       <button class="modal-btn primary" onclick="submitCertAssignment('${jobNum}')">Assign & Notify →</button>
     </div>`;
   document.getElementById('modal-stage').classList.add('open');
+  const wb=document.getElementById('wa-prompt-bar'); if(wb) wb.remove();
 }
 
 async function submitCertAssignment(jobNum){
@@ -3602,7 +3606,6 @@ async function approveBillingSales(num){
     msg+=`✅ Billing approved by Sales (${session.name})\n`;
     if(comment) msg+=`💬 Comment: ${comment}\n`;
     msg+=`\n▶ Ready for Coordinator to process billing\n_Mustafa Sultan Cal Lab CalTrack_`;
-    showWAPrompt(ap.phone, msg, 'Send WhatsApp');
   }
   showToast('✓ Billing approved — coordinator notified');
   renderSalesPanel();
@@ -5434,7 +5437,7 @@ function showWAPrompt(phone, msg, label){
   `;
   document.body.appendChild(bar);
   // Auto-dismiss after 12 seconds
-  _waPendingTimer = setTimeout(()=>{ bar.remove(); _waPendingTimer=null; }, 12000);
+  _waPendingTimer = setTimeout(()=>{ bar.remove(); _waPendingTimer=null; }, 6000);
 }
 
 
