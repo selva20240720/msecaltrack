@@ -3710,6 +3710,17 @@ function openJobDetailModal(jobNum){
         style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(26,86,219,.1);color:var(--blue);text-decoration:none;font-family:var(--mono)">⬇ Download SR</a>
     </div>
     <img src="${j.srPhotoUrl||j.srPhotoData}" style="width:100%;border-radius:var(--r2);margin-bottom:14px;max-height:200px;object-fit:cover">`:''}
+    ${(j.doPhotoData||j.doPhotoUrl)?`
+    <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between">
+      Delivery Order (D.O) Copy
+      <a href="${j.doPhotoUrl||j.doPhotoData}" download="DO_${j.jobNum}.jpg" target="_blank"
+        style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(0,180,216,.1);color:#0891b2;text-decoration:none;font-family:var(--mono)">⬇ Download D.O</a>
+    </div>
+    <img src="${j.doPhotoUrl||j.doPhotoData}" style="width:100%;border-radius:var(--r2);margin-bottom:14px;max-height:220px;object-fit:cover">
+    ${j.deliveryAck?`<div style="font-size:11px;background:rgba(0,229,176,.06);border:1px solid rgba(0,229,176,.15);border-radius:var(--r2);padding:8px 12px;margin-bottom:14px;color:var(--accent)">
+      ✓ Delivered to: <strong>${j.deliveryAck}</strong>${j.deliveryBy?' · by '+j.deliveryBy:''}
+    </div>`:''}`:
+    (j.stage>=5 ? `<div style="background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.15);border-radius:var(--r2);padding:8px 12px;margin-bottom:14px;font-size:11px;color:var(--red)">⚠ D.O photo not uploaded yet</div>` : '')}
     <div class="section-hd">Job Pipeline</div>
     <div class="stage-list">${stageRows}</div>`;
 
