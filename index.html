@@ -52,6 +52,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 
 /* ── APP SHELL ── */
 #app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; background: var(--bg); position: relative; overflow: hidden; }
+#app > *:not(#login-view) { pointer-events: none; }
+#login-view ~ * { pointer-events: none; }
 
 /* ── HEADER ── */
 .header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.06); position: relative; z-index: 50; flex-shrink: 0; }
@@ -66,7 +68,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 
 /* ── VIEWS ── */
 #login-view, #app-view { position: absolute; inset: 0; }
-#login-view { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; background: var(--bg); z-index: 100; overflow-y: auto; -webkit-overflow-scrolling: touch; will-change: transform; }
+#login-view { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; background: var(--bg); z-index: 9999; overflow-y: auto; -webkit-overflow-scrolling: touch; pointer-events: auto; }
 #app-view { flex-direction: column; z-index: 10; }
 
 /* ── LOGIN ── */
@@ -1873,7 +1875,10 @@ function renderHistory(){
 // APP INIT
 // ════════════════════════════════════════════════════
 function initApp(){
-  document.getElementById('login-view').style.display = 'none';
+  const lv = document.getElementById('login-view');
+  lv.style.display = 'none';
+  lv.style.pointerEvents = 'none';
+  document.getElementById('app-view').style.pointerEvents = 'all';
   document.getElementById('app-view').style.display = 'flex';
 
   const rc = ROLE_CONFIG[session.role] || ROLE_CONFIG.technician;
