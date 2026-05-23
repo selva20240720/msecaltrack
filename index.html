@@ -2752,6 +2752,7 @@ function renderFindMaster(){
 // ════════════════════════════════════════════════════
 let pipelineFilter = 'all';
 function renderPipeline(){
+  const _wb = document.getElementById("wa-prompt-bar"); if(_wb) _wb.remove();
   const rc = ROLE_CONFIG[session.role]||{};
   const allJobs = jobs;
 
