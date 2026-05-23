@@ -432,6 +432,13 @@ textarea.field-input { resize: none; height: 80px; }
         <div id="jobs-list-panel"></div>
       </div>
 
+      <!-- SALES tab -->
+      <div class="tab-panel" id="panel-sales">
+        <div class="kpi-grid" id="sales-kpis"></div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="sales-filters"></div>
+        <div id="sales-list"></div>
+      </div>
+
       <!-- SETTINGS tab -->
       <div class="tab-panel" id="panel-settings">
         <div class="settings-card">
@@ -576,6 +583,7 @@ const TAB_CONFIG = {
   'delivery':  { label:'Delivery', icon:'<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>' },
   'billing':   { label:'Billing',  icon:'<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>' },
   'jobs':      { label:'Jobs',     icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>' },
+  'sales':     { label:'Sales',    icon:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' },
   'settings':  { label:'Setup',    icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
 };
 
@@ -589,7 +597,7 @@ let equipMap    = {};
 let SB_URL      = localStorage.getItem(KEY_SB_URL) || '';
 let SB_KEY_VAL  = localStorage.getItem(KEY_SB_KEY) || '';
 let approvers   = JSON.parse(localStorage.getItem(KEY_APPROVERS) || '[]');
-let pins        = JSON.parse(localStorage.getItem(KEY_PINS)||'{"technician":"0000","ops_head":"0000","coordinator":"0000","accounts":"0000","quality":"0000","lab_head":"0000"}');
+let pins        = JSON.parse(localStorage.getItem(KEY_PINS)||'{"technician":"0000","ops_head":"0000","coordinator":"0000","sales":"0000","quality":"0000","lab_head":"0000"}');
 let activeJob   = null;
 let batchQueue  = [];
 let cameraStream = null;
@@ -619,7 +627,7 @@ function goToPIN(){
   if(!name){ showToast('Enter your name'); return; }
   if(!selectedRole){ showToast('Select your role'); return; }
   const rc = ROLE_CONFIG[selectedRole]||{};
-  document.getElementById('pin-role-icon').textContent = {technician:'🔧',ops_head:'👔',coordinator:'🚗',accounts:'💼',quality:'🎯',lab_head:'🏛️'}[selectedRole]||'👤';
+  document.getElementById('pin-role-icon').textContent = {technician:'🔧',ops_head:'👔',coordinator:'🚗',sales:'🌟',quality:'🎯',lab_head:'🏛️'}[selectedRole]||'👤';
   document.getElementById('pin-role-label').textContent = rc.label||selectedRole;
   const isDefault = (pins[selectedRole]||'0000')==='0000';
   document.getElementById('pin-hint').textContent = isDefault ? 'Default PIN: 0000 (change in Settings)' : 'Contact your admin for the PIN';
@@ -1334,6 +1342,27 @@ function renderTasks(){
     const s4 = jobs.filter(j=>j.stage===4&&!j.certAssigned);
     const s5 = jobs.filter(j=>j.stage===5&&!j.deliveryAck);
     renderManagerTasks(el, s3, s4, s5);
+  } else if(role==='sales'){
+    const needApproval=jobs.filter(j=>j.stage===6&&!j.salesApproved);
+    const noPO=jobs.filter(j=>!j.poNumber&&j.stage>1);
+    let html='';
+    if(needApproval.length){
+      html+=`<div class="sh" style="color:#d97706">⏳ Billing Needs Your Approval (${needApproval.length})</div>`;
+      html+=needApproval.map(j=>`<div class="task-card" onclick="openSalesJobModal('${j.jobNum}');switchTab('sales')">
+        <div class="task-num">${j.jobNum}</div><div class="task-customer">${j.customer}</div>
+        <div class="task-meta">PO: ${j.poNumber||'⚠ No PO'} · Ack: ${j.deliveryAck||'—'}</div>
+        <div class="task-badge" style="background:#fffbeb;color:#d97706">⏳ Tap to Approve Billing</div>
+      </div>`).join('');
+    }
+    if(noPO.length){
+      html+=`<div class="sh">📄 Jobs Without PO (${noPO.length})</div>`;
+      html+=noPO.map(j=>`<div class="task-card" onclick="openSalesJobModal('${j.jobNum}');switchTab('sales')">
+        <div class="task-num">${j.jobNum}</div><div class="task-customer">${j.customer}</div>
+        <div class="task-meta">📍 ${j.site}</div>
+        <div class="task-badge" style="background:#fef2f2;color:#dc2626">⚠ Add PO Number</div>
+      </div>`).join('');
+    }
+    el.innerHTML=html||`<div class="empty"><p>All billing approved ✓</p></div>`;
   } else if(role==='coordinator'){
     renderCoordinatorTasks(el, jobs.filter(j=>j.stage===5));
   } else if(role==='accounts'){
@@ -1841,12 +1870,167 @@ function setJobsFilter(f){ jobsFilter=f; renderJobsPanel(); }
 // ════════════════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// SALES PANEL
+// ══════════════════════════════════════════════════
+let salesFilter = 'all';
+function renderSalesPanel(){
+  const all = jobs;
+  const kpis = [
+    {label:'Total Jobs',   val:all.length,                                      color:'#1a56db'},
+    {label:'Needs PO',     val:all.filter(j=>!j.poNumber).length,               color:'#d97706'},
+    {label:'Sales Approved',val:all.filter(j=>j.salesApproved).length,          color:'#16a34a'},
+    {label:'Complete',     val:all.filter(j=>j.stage===8||j.stage===7).length,  color:'#16a34a'},
+  ];
+  document.getElementById('sales-kpis').innerHTML = kpis.map(k=>`
+    <div class="kpi-card"><div class="kpi-val" style="color:${k.color}">${k.val}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+
+  const fs=[{k:'all',l:'All'},{k:'nopo',l:'No PO'},{k:'billing',l:'Billing Review'},{k:'approved',l:'Approved'}];
+  document.getElementById('sales-filters').innerHTML=fs.map(f=>`
+    <button onclick="setSalesF('${f.k}')" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${salesFilter===f.k?'#16a34a':'#dde1ea'};background:${salesFilter===f.k?'#f0fdf4':'#fff'};color:${salesFilter===f.k?'#16a34a':'#8896ab'};font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">${f.l}</button>`).join('');
+
+  let filtered=all;
+  if(salesFilter==='nopo')    filtered=all.filter(j=>!j.poNumber);
+  if(salesFilter==='billing') filtered=all.filter(j=>j.stage===6||j.stage===7);
+  if(salesFilter==='approved')filtered=all.filter(j=>j.salesApproved);
+
+  document.getElementById('sales-list').innerHTML=!filtered.length
+    ?`<div class="empty"><p>No jobs</p></div>`
+    :filtered.map(j=>salesJobCard(j)).join('');
+}
+
+function setSalesF(f){ salesFilter=f; renderSalesPanel(); }
+
+function salesJobCard(j){
+  const s=STAGES[j.stage-1]||STAGES[0];
+  const needsBilling = j.stage===6||j.stage===7;
+  return `<div class="job-card" onclick="openSalesJobModal('${j.jobNum}')">
+    <div class="job-card-top">
+      <div class="job-num">${j.jobNum}</div>
+      <div class="stage-badge" style="background:${s.bg};color:${s.color}">${s.icon} ${s.label}</div>
+    </div>
+    <div class="job-customer">${j.customer||'—'}</div>
+    <div class="job-meta">📍 ${j.site}${j.poNumber?' · PO: '+j.poNumber:' · ⚠ No PO'}</div>
+    ${j.salesApproved?`<div style="font-size:10px;color:#16a34a;font-weight:600;margin-top:5px">✅ Sales Approved</div>`:''}
+    ${needsBilling&&!j.salesApproved?`<div style="font-size:10px;color:#d97706;font-weight:600;margin-top:5px">⚠ Awaiting Sales Approval</div>`:''}
+    ${j.salesComment?`<div style="font-size:11px;color:#8896ab;margin-top:4px;font-style:italic">"${j.salesComment.slice(0,60)}${j.salesComment.length>60?'…':''}"</div>`:''}
+  </div>`;
+}
+
+function openSalesJobModal(num){
+  const j=jobs.find(x=>x.jobNum===num); if(!j) return;
+  const body=document.getElementById('ov-stage-body');
+  body.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:#1a56db">${j.jobNum}</div>
+        <div style="font-size:14px;font-weight:700;color:#1a2035">${j.customer}</div>
+      </div>
+      <button onclick="document.getElementById('ov-stage').classList.remove('open')" style="background:#f5f7fa;border:1px solid #dde1ea;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;font-size:18px;color:#8896ab">×</button>
+    </div>
+    <div style="background:#f5f7fa;border:1px solid #dde1ea;border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">SITE</div><div>${j.site}</div></div>
+        <div><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">TECHNICIAN</div><div>${j.tech}</div></div>
+        <div><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">STAGE</div><div style="color:${STAGES[j.stage-1]?.color}">${STAGES[j.stage-1]?.label}</div></div>
+        <div><div style="color:#8896ab;font-family:var(--mono);font-size:10px;margin-bottom:2px">CREATED</div><div>${j.createdAt?new Date(j.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—'}</div></div>
+      </div>
+    </div>
+
+    <div style="font-size:10px;font-weight:700;color:#8896ab;text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin-bottom:8px">PO Number</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input type="text" id="sales-po" class="fi mono" placeholder="PO-XXXX" value="${j.poNumber||''}" style="flex:1">
+      <button onclick="saveSalesPO('${num}')" style="padding:10px 14px;background:#1a56db;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Save</button>
+    </div>
+
+    <div style="font-size:10px;font-weight:700;color:#8896ab;text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin-bottom:8px">Billing Comments</div>
+    <textarea id="sales-comment" class="fi" placeholder="Add your comments on billing terms, rates, credit terms…" style="margin-bottom:12px">${j.salesComment||''}</textarea>
+
+    ${j.stage>=6?`
+    <div style="background:${j.salesApproved?'#f0fdf4':'#fffbeb'};border:1px solid ${j.salesApproved?'rgba(22,163,74,.2)':'rgba(217,119,6,.2)'};border-radius:12px;padding:13px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;color:${j.salesApproved?'#16a34a':'#d97706'};margin-bottom:4px">
+        ${j.salesApproved?'✅ Billing Approved by Sales':'⏳ Billing Awaiting Sales Approval'}
+      </div>
+      ${j.salesApprovedBy?`<div style="font-size:11px;color:#8896ab">Approved by: ${j.salesApprovedBy}</div>`:''}
+      ${j.salesApprovalNote?`<div style="font-size:11px;color:#8896ab;margin-top:2px">Note: ${j.salesApprovalNote}</div>`:''}
+    </div>
+    <div style="display:flex;gap:8px">
+      ${!j.salesApproved?`<button onclick="approveBillingSales('${num}')" style="flex:2;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✓ Approve Billing</button>`:''}
+      <button onclick="saveAndClose('${num}')" style="flex:1;padding:12px;background:#f5f7fa;border:1px solid #dde1ea;border-radius:8px;font-size:13px;font-weight:600;color:#4a5568;cursor:pointer">Save & Close</button>
+    </div>`:`
+    <button onclick="saveAndClose('${num}')" style="width:100%;padding:12px;background:#1a56db;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Save & Close</button>`}`;
+  document.getElementById('ov-stage').classList.add('open');
+}
+
+async function saveSalesPO(num){
+  const j=jobs.find(x=>x.jobNum===num); if(!j) return;
+  j.poNumber=document.getElementById('sales-po').value.trim();
+  updateJob(j); await syncJob(j);
+  showToast('✓ PO number saved');
+}
+
+async function approveBillingSales(num){
+  const j=jobs.find(x=>x.jobNum===num); if(!j) return;
+  const comment=document.getElementById('sales-comment').value.trim();
+  j.salesApproved=true;
+  j.salesApprovedBy=session.name;
+  j.salesApprovedAt=new Date().toISOString();
+  j.salesComment=comment;
+  j.salesApprovalNote=comment;
+  updateJob(j); await syncJob(j);
+  document.getElementById('ov-stage').classList.remove('open');
+  // Notify coordinator
+  const ap=approvers[0];
+  if(ap?.phone){
+    let msg=`✅ *Sales Approval — MSSI Cal Lab*\n━━━━━━━━━━━━━━━━━━\n`;
+    msg+=`📋 Job: *${j.jobNum}*\n🏢 ${j.customer}\nPO: ${j.poNumber||'—'}\n\n`;
+    msg+=`✅ Billing approved by Sales (${session.name})\n`;
+    if(comment) msg+=`💬 Comment: ${comment}\n`;
+    msg+=`\n▶ Ready for Coordinator to process billing\n_MSSI Cal Lab CalTrack_`;
+    setTimeout(()=>{ window.location.href=`https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; },1200);
+  }
+  showToast('✓ Billing approved — coordinator notified');
+  renderSalesPanel();
+}
+
+async function saveAndClose(num){
+  const j=jobs.find(x=>x.jobNum===num); if(!j) return;
+  j.salesComment=document.getElementById('sales-comment')?.value.trim()||j.salesComment||'';
+  const po=document.getElementById('sales-po')?.value.trim();
+  if(po) j.poNumber=po;
+  updateJob(j); await syncJob(j);
+  document.getElementById('ov-stage').classList.remove('open');
+  showToast('✓ Saved');
+  renderSalesPanel();
+}
+
+function viewDoc(type, num){
+  const j=jobs.find(x=>x.jobNum===num); if(!j) return;
+  const data = type==='sr' ? j.srPhotoData : j.mclPhotoData;
+  const label = type==='sr' ? 'Service Report' : 'MCL Document';
+  if(!data){ showToast('No document uploaded'); return; }
+  // Open in new tab for viewing and downloading
+  const win=window.open('','_blank');
+  if(!win){ showToast('Allow popups to view documents'); return; }
+  if(data.startsWith('data:application/pdf')){
+    win.document.write(`<html><body style="margin:0"><embed src="${data}" width="100%" height="100%" type="application/pdf"></body></html>`);
+  } else {
+    win.document.write(`<html><head><title>${label} — ${j.jobNum}</title></head><body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;min-height:100vh">
+      <div style="background:#1a56db;width:100%;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="color:#fff;font-size:14px;font-weight:600">${label} — ${j.jobNum} · ${j.customer}</div>
+        <a href="${data}" download="${label.replace(/ /g,'_')}_${j.jobNum}.jpg" style="background:#fff;color:#1a56db;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">⬇ Download</a>
+      </div>
+      <img src="${data}" style="max-width:100%;margin-top:10px">
+    </body></html>`);
+  }
+}
+
 function renderPINMgmt(){
   const roles=[
     {k:'technician',icon:'🔧',label:'Technician'},
     {k:'ops_head',icon:'👔',label:'Operations Head'},
     {k:'coordinator',icon:'🚗',label:'Coordinator'},
-    {k:'accounts',icon:'💼',label:'Accounts'},
+    {k:'sales',icon:'🌟',label:'Sales'},
     {k:'quality',icon:'🎯',label:'Quality Manager'},
     {k:'lab_head',icon:'🏛️',label:'Lab Head'},
   ];
@@ -1863,7 +2047,7 @@ function renderPINMgmt(){
 }
 
 function savePINSettings(){
-  ['technician','ops_head','coordinator','accounts','quality','lab_head'].forEach(k=>{
+  ['technician','ops_head','coordinator','sales','quality','lab_head'].forEach(k=>{
     const el=document.getElementById('pin-set-'+k);
     if(el&&el.value.length===4&&/^[0-9]{4}$/.test(el.value)) pins[k]=el.value;
   });
