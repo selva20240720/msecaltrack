@@ -2312,7 +2312,7 @@ function renderStage2UI(el){
     <div class="section-hd" style="margin-top:16px">MCL — Customer Instruments Calibrated</div>
     <div id="s2-mcl-list">${renderMCLItems(items)}</div>
     <button onclick="addMCLItem()" style="width:100%;padding:10px;background:var(--surface);border:1px dashed var(--border2);border-radius:var(--r2);color:var(--text3);font-family:var(--sans);font-size:13px;cursor:pointer;margin-top:4px">+ Add Instrument to MCL</button>
-    <button onclick="submitStage2()" style="width:100%;padding:14px;background:var(--amber);color:#1a0900;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-top:16px">Save MCL &amp; Mark On-Site Complete</button>`;
+    <button onclick="submitStage2()" style="width:100%;padding:14px;background:var(--amber);color:#1a0900;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-top:16px">Save MCL & Mark On-Site Complete</button>`;
 }
 
 function renderMCLItems(items){
@@ -6159,7 +6159,7 @@ function renderCoordUpload(){
       </div>`:''}
 
       <!-- Quick action button -->
-      ${j.stage===5?`<button onclick="openDeliveryModal('${j.jobNum}')" style="width:100%;padding:10px;background:rgba(0,180,216,.1);border:1.5px solid rgba(8,145,178,.3);border-radius:var(--r2);color:#0891b2;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px">🚗 Record Delivery &amp; Get Signature →</button>`:''}
+      ${j.stage===5?`<button onclick="openDeliveryModal('${j.jobNum}')" style="width:100%;padding:10px;background:rgba(0,180,216,.1);border:1.5px solid rgba(8,145,178,.3);border-radius:var(--r2);color:#0891b2;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px">🚗 Record Delivery & Get Signature →</button>`:''}
     </div>`;
   }).join('');
 }
