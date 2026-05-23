@@ -791,7 +791,7 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
           <div class="field-label" style="margin-top:12px">Project URL</div>
           <input type="text" id="set-sb-url" class="field-input mono" placeholder="https://xxxx.supabase.co" value="https://cotuzmcqvrhigquvgald.supabase.co">
           <div class="field-label">Anon Key</div>
-          <input type="text" id="set-sb-key" class="field-input mono" placeholder="sb_publishable_… or eyJ…" style="margin-bottom:12px" value="sb_publishable_Sv1AHraHCSlrSfAxewzzqA_lm3iLaCS">
+          <input type="text" id="set-sb-key" class="field-input mono" placeholder="sb_publishable_… or eyJ…" style="margin-bottom:12px" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvdHV6bWNxdnJoaWdxdXZnYWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTYzNDcsImV4cCI6MjA5NDkzMjM0N30.2MvJ2YcAas3XNRmMT6K4xb7KaK3QQrCJaFt2RNlXpFA">
           <button onclick="saveSupabaseSettings()" style="width:100%;padding:11px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Save & Test Connection</button>
           <div id="set-sb-status" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:8px;text-align:center"></div>
         </div>
@@ -1254,10 +1254,11 @@ let session     = JSON.parse(localStorage.getItem(KEY_SESSION) || 'null');
 let jobs        = JSON.parse(localStorage.getItem(KEY_JOBS) || '[]');
 let equipDB     = JSON.parse(localStorage.getItem(KEY_EQ) || '[]');
 let equipMap    = {};
-if(!localStorage.getItem(KEY_SB_URL)) localStorage.setItem(KEY_SB_URL, 'https://cotuzmcqvrhigquvgald.supabase.co');
-if(!localStorage.getItem(KEY_SB_KEY)) localStorage.setItem(KEY_SB_KEY, 'sb_publishable_Sv1AHraHCSlrSfAxewzzqA_lm3iLaCS');
-let SB_URL      = localStorage.getItem(KEY_SB_URL);
-let SB_KEY_VAL  = localStorage.getItem(KEY_SB_KEY);
+// Supabase credentials — hardcoded for centralized use
+localStorage.setItem(KEY_SB_URL, 'https://cotuzmcqvrhigquvgald.supabase.co');
+localStorage.setItem(KEY_SB_KEY, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvdHV6bWNxdnJoaWdxdXZnYWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTYzNDcsImV4cCI6MjA5NDkzMjM0N30.2MvJ2YcAas3XNRmMT6K4xb7KaK3QQrCJaFt2RNlXpFA');
+let SB_URL      = 'https://cotuzmcqvrhigquvgald.supabase.co';
+let SB_KEY_VAL  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvdHV6bWNxdnJoaWdxdXZnYWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTYzNDcsImV4cCI6MjA5NDkzMjM0N30.2MvJ2YcAas3XNRmMT6K4xb7KaK3QQrCJaFt2RNlXpFA';
 let approvers   = JSON.parse(localStorage.getItem(KEY_APPROVERS) || '[]');
 let technicians  = JSON.parse(localStorage.getItem(KEY_TECHS)||'[]');
 let salesStaff   = JSON.parse(localStorage.getItem(KEY_SALES)||'[]');
