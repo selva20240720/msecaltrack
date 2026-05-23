@@ -308,12 +308,35 @@ textarea.field-input { resize: none; height: 80px; }
           <div class="role-card" data-role="quality" onclick="selectRole(this)">
             <div class="role-icon">🎯</div><div class="role-label">Quality Manager</div>
           </div>
-          <div class="role-card" onclick="openFindMasterGuest()" style="border-color:rgba(0,229,176,.3);background:rgba(0,229,176,.05)">
-            <div class="role-icon">🔍</div><div class="role-label" style="color:var(--accent)">Find Master</div>
+          <div class="role-card" data-role="lab_head" onclick="selectRole(this)">
+            <div class="role-icon">🏛️</div><div class="role-label">Lab Head</div>
           </div>
         </div>
       </div>
       <button onclick="goToPIN()" style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;box-shadow:0 4px 14px rgba(26,86,219,.3)">Continue →</button>
+
+      <!-- Find Master standalone section -->
+      <div style="margin-top:16px;position:relative">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap">OR QUICK ACCESS</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+        <button onclick="openFindMasterGuest()" style="width:100%;padding:14px;background:var(--surface);border:2px solid rgba(0,229,176,.4);border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;color:var(--accent);display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Find Master Instrument
+          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(0,229,176,.12);color:var(--accent);font-family:var(--mono)">NO LOGIN</span>
+        </button>
+
+        <!-- Inline Find Master search (expands below button) -->
+        <div id="login-find-master-box" style="display:none;margin-top:10px;background:var(--surface);border:1.5px solid rgba(0,229,176,.3);border-radius:var(--r);padding:14px;animation:sheet-up .2s ease">
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input type="text" id="login-find-query" class="field-input" placeholder="Instrument ID, model, make, site…" oninput="renderLoginFindMaster()" autocomplete="off" style="flex:1;font-size:14px">
+            <button onclick="document.getElementById('login-find-master-box').style.display='none'" style="padding:0 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text3);font-size:18px;cursor:pointer;line-height:1">×</button>
+          </div>
+          <div id="login-find-results" style="max-height:240px;overflow-y:auto"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Step 2: PIN entry -->
@@ -887,9 +910,62 @@ function doLogout(){
 }
 
 function openFindMasterGuest(){
-  const el = document.getElementById('modal-find-master-guest');
-  if(el){ el.style.display='flex'; document.getElementById('guest-find-query').value=''; document.getElementById('guest-find-results').innerHTML=''; setTimeout(()=>document.getElementById('guest-find-query').focus(),100); }
+  const box = document.getElementById('login-find-master-box');
+  const modal = document.getElementById('modal-find-master-guest');
+  if(box){
+    // inline login screen version
+    box.style.display = box.style.display==='none' ? 'block' : 'none';
+    if(box.style.display==='block'){
+      document.getElementById('login-find-query').value='';
+      document.getElementById('login-find-results').innerHTML='';
+      setTimeout(()=>document.getElementById('login-find-query').focus(),100);
+    }
+  } else if(modal){
+    modal.style.display='flex';
+    document.getElementById('guest-find-query').value='';
+    document.getElementById('guest-find-results').innerHTML='';
+    setTimeout(()=>document.getElementById('guest-find-query').focus(),100);
+  }
 }
+function renderLoginFindMaster(){
+  const el = document.getElementById('login-find-results');
+  if(!el) return;
+  const q = (document.getElementById('login-find-query')?.value||'').trim().toLowerCase();
+  if(!q){ el.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">Type instrument ID, model or site to search</div>'; return; }
+  // reuse renderGuestFindMaster logic but output to login-find-results
+  const instrMap = {};
+  jobs.forEach(j=>{
+    (j.masterItems||[]).forEach(id=>{
+      const existing = instrMap[id];
+      const isActive = j.stage>=1 && j.stage<=3 && j.status!=='complete';
+      if(!existing || isActive) instrMap[id] = { id, job:j.jobNum, customer:j.customer, site:j.site, stage:j.stage, tech:j.tech, isActive };
+    });
+  });
+  const allIds = new Set([...Object.keys(instrMap), ...equipDB.map(e=>e.id)]);
+  const results = [...allIds].filter(id=>{
+    const info = instrMap[id]; const eq = equipMap[id]||{};
+    return id.toLowerCase().includes(q)||(eq.model||'').toLowerCase().includes(q)||(eq.make||'').toLowerCase().includes(q)||(info?.customer||'').toLowerCase().includes(q)||(info?.site||'').toLowerCase().includes(q)||(info?.tech||'').toLowerCase().includes(q);
+  });
+  if(!results.length){ el.innerHTML=`<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">No results for "<strong>${q}</strong>"</div>`; return; }
+  el.innerHTML = results.slice(0,8).map(id=>{
+    const info = instrMap[id]; const eq = equipMap[id]||{};
+    const model = eq.model||'Unknown'; const make = eq.make||'';
+    let badge, detail;
+    if(!info){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">IN LAB</span>`; detail='Not on any active job'; }
+    else if(info.isActive && info.stage===1){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(240,165,0,.15);color:var(--amber);font-family:var(--mono)">ISSUED OUT</span>`; detail=`Job ${info.job} · ${info.customer} · 👤 ${info.tech}`; }
+    else if(info.isActive && info.stage===2){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(59,130,246,.15);color:var(--blue);font-family:var(--mono)">ON SITE</span>`; detail=`${info.site} · Job ${info.job} · 👤 ${info.tech}`; }
+    else if(info.isActive && info.stage===3){ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(124,58,237,.15);color:var(--purple);font-family:var(--mono)">RETURNING</span>`; detail=`Job ${info.job} · 👤 ${info.tech} returning`; }
+    else{ badge=`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">IN LAB</span>`; detail=`Last: Job ${info.job}`; }
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:9px 11px;margin-bottom:7px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px">
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text)">${id}</div>${badge}
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${make?make+' · ':''}${model}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">${detail}</div>
+    </div>`;
+  }).join('') + (results.length>8?`<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px">${results.length-8} more — refine your search</div>`:'');
+}
+
 function closeFindMasterGuest(){
   const el = document.getElementById('modal-find-master-guest');
   if(el) el.style.display='none';
