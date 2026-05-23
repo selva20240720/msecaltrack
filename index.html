@@ -481,7 +481,10 @@ textarea.field-input { resize: none; height: 80px; }
 
       <!-- FIND MASTER tab -->
       <div class="tab-panel" id="panel-find-master">
-        <div class="section-hd" style="margin-bottom:4px">Find Master Instrument</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div class="section-hd" style="margin-bottom:0">Find Master Instrument</div>
+          <button id="btn-new-transfer" onclick="openTransferModal(null)" style="display:none;padding:7px 12px;background:rgba(26,86,219,.1);border:1.5px solid rgba(26,86,219,.25);border-radius:var(--r2);color:var(--blue);font-size:11px;font-weight:700;font-family:var(--sans);cursor:pointer">📦 New Transfer</button>
+        </div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Search by ID, model, serial, site or technician.</div>
 
         <!-- Branch location filter pills -->
@@ -645,22 +648,39 @@ textarea.field-input { resize: none; height: 80px; }
   </div>
 </div>
 
-<!-- Branch Transfer Modal -->
-<div class="modal-overlay" id="modal-transfer" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal-sheet">
-    <div class="modal-title">📦 Transfer Master Instrument</div>
-    <div class="modal-sub" id="transfer-instr-name" style="font-family:var(--mono);color:var(--accent);font-size:15px;font-weight:700"></div>
-    <div class="field-label">Current Location</div>
-    <div id="transfer-current-loc" style="font-size:13px;color:var(--text);padding:8px 12px;background:var(--surface2);border-radius:var(--r2);margin-bottom:4px"></div>
-    <div class="field-label" style="margin-top:14px">Transfer To</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px" id="transfer-branch-grid"></div>
-    <div class="field-label" style="margin-top:14px">Reason / Notes</div>
-    <textarea id="transfer-note" class="field-input" placeholder="e.g. Sent for annual job at Sohar client, expected return 15 Jun" style="height:70px"></textarea>
+<!-- Branch Transfer Modal — BATCH with QR scan -->
+<div class="modal-overlay" id="modal-transfer" onclick="if(event.target===this)closeTransferModal()">
+  <div class="modal-sheet" style="padding-bottom:40px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="modal-title">📦 Batch Transfer to Branch</div>
+      <button onclick="closeTransferModal()" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;line-height:1;padding:0">×</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Scan or type multiple instruments, then select destination branch.</div>
+
+    <!-- Destination branch selector -->
+    <div class="field-label">Transfer To</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px" id="transfer-branch-grid"></div>
+
+    <!-- Instrument batch -->
+    <div class="field-label">Instruments to Transfer</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button onclick="startCamera('transfer')" style="flex:1;padding:10px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--r2);color:var(--accent);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+        Scan QR
+      </button>
+      <input type="text" id="transfer-manual-id" class="field-input mono" placeholder="Type ID manually" style="flex:2" onkeydown="if(event.key==='Enter')addTransferItemManual()">
+      <button onclick="addTransferItemManual()" style="padding:10px 13px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Add</button>
+    </div>
+    <div id="transfer-batch-list" style="max-height:180px;overflow-y:auto;margin-bottom:12px"></div>
+
+    <!-- Details -->
+    <div class="field-label">Reason / Notes</div>
+    <textarea id="transfer-note" class="field-input" placeholder="e.g. Sent with Tamil for OQ Sohar job S26-0120, return end of month" style="height:65px;margin-bottom:8px"></textarea>
     <div class="field-label">Sent By</div>
-    <input type="text" id="transfer-by" class="field-input" placeholder="Your name">
+    <input type="text" id="transfer-by" class="field-input" placeholder="Your name" style="margin-bottom:4px">
     <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="document.getElementById('modal-transfer').classList.remove('open')">Cancel</button>
-      <button class="modal-btn primary" id="transfer-confirm-btn" onclick="confirmTransfer()">Confirm Transfer →</button>
+      <button class="modal-btn secondary" onclick="closeTransferModal()">Cancel</button>
+      <button class="modal-btn primary" id="transfer-confirm-btn" onclick="confirmTransfer()">Transfer 0 Items →</button>
     </div>
   </div>
 </div>
@@ -1074,7 +1094,11 @@ function switchTab(tab){
   if(tab==='delivery')   renderDelivery();
   if(tab==='billing')    renderBilling();
   if(tab==='jobs')       renderJobsPanel();
-  if(tab==='find-master') renderFindMaster();
+  if(tab==='find-master'){
+    renderFindMaster();
+    const btn = document.getElementById('btn-new-transfer');
+    if(btn) btn.style.display = session?.role==='ops_head' ? 'block' : 'none';
+  }
   if(tab==='settings')   renderSettings();
   updateNotifs();
 }
@@ -1506,6 +1530,16 @@ function onQRDetected(raw){
   const id=raw.trim().toUpperCase(), now=Date.now();
   if(id===lastScan&&now-lastScanAt<2500) return;
   lastScan=id; lastScanAt=now;
+
+  // Route to transfer batch if camera opened from transfer modal
+  if(cameraMode==='transfer'){
+    if(transferBatch.find(i=>i.id===id)){ showToast('⚠ '+id+' already in transfer list'); return; }
+    addToTransferBatch(id);
+    const instr=equipMap[id]||{};
+    showToast('✓ '+id+(instr.model?' — '+instr.model:'')+' added to transfer');
+    return;
+  }
+
   if(batchQueue.find(i=>i.id===id)){ showToast('⚠ '+id+' already in batch'); return; }
   const instr=equipMap[id]||{};
   if(!instr.id&&id.startsWith('MSSI')){ showToast('⚠ '+id+' not found in equipment list'); }
@@ -1518,7 +1552,6 @@ function onQRDetected(raw){
   const label=instr.model?`${id} — ${instr.model}`:`${id}`;
   showToast('✓ '+label+(instr.isMaster?' ⭐ MASTER':''));
   updateCamCount();
-  // Refresh batch display if visible
   renderBatchInEl('s1-batch');
   renderBatchInEl('s3-batch');
 }
@@ -1634,11 +1667,11 @@ async function submitStage3(){
 // BRANCH TRANSFER SYSTEM
 // ════════════════════════════════════════════════════
 let branchFilter = 'all';
-let transferTarget = null; // {instrId, selectedBranch}
+let transferBatch = [];      // [{id, model, currentBranch}]
+let transferDestBranch = ''; // selected destination
 
 function setBranchFilter(f){
   branchFilter = f;
-  // Update pill styles
   ['all','hq','sohar','salalah'].forEach(k=>{
     const btn = document.getElementById('bf-'+k);
     if(!btn) return;
@@ -1653,38 +1686,91 @@ function setBranchFilter(f){
 }
 
 function getInstrBranch(id){
-  // Returns current branch: hq by default, or whatever was last transferred
   const t = transfers[id];
   return t ? t.branch : 'hq';
 }
 
+// Open batch transfer modal — optionally pre-add one instrument
 function openTransferModal(instrId){
-  const eq = equipMap[instrId]||{};
-  const currentBranch = getInstrBranch(instrId);
-  const br = BRANCHES.find(b=>b.id===currentBranch)||BRANCHES[0];
-  transferTarget = { instrId, selectedBranch: currentBranch };
-
-  document.getElementById('transfer-instr-name').textContent = instrId + (eq.model ? ' — ' + eq.model : '');
-  document.getElementById('transfer-current-loc').innerHTML = `${br.icon} Currently at <strong>${br.label}</strong>${transfers[instrId] ? ' · Sent by '+transfers[instrId].by+' · '+fmtRelTime(transfers[instrId].at) : ' (Home base)'}`;
+  transferBatch = [];
+  transferDestBranch = '';
+  if(instrId) addToTransferBatch(instrId);
+  buildTransferBranchGrid();
   document.getElementById('transfer-note').value = '';
   document.getElementById('transfer-by').value = session?.name||'';
-
-  // Build branch selection grid
-  const grid = document.getElementById('transfer-branch-grid');
-  grid.innerHTML = BRANCHES.map(b=>`
-    <button onclick="selectTransferBranch('${b.id}')" id="tbr-${b.id}"
-      style="padding:12px 8px;border-radius:var(--r2);border:2px solid ${b.id===currentBranch?b.color:'var(--border2)'};background:${b.id===currentBranch?b.color+'18':'var(--surface2)'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .15s">
-      <span style="font-size:22px">${b.icon}</span>
-      <span style="font-size:11px;font-weight:700;color:${b.id===currentBranch?b.color:'var(--text3)'};font-family:var(--mono);text-align:center;line-height:1.2">${b.label}</span>
-      ${b.id===currentBranch?`<span style="font-size:9px;color:${b.color};font-family:var(--mono)">CURRENT</span>`:''}
-    </button>`).join('');
-
+  document.getElementById('transfer-manual-id').value = '';
+  updateTransferBatchUI();
   document.getElementById('modal-transfer').classList.add('open');
 }
 
+function closeTransferModal(){
+  document.getElementById('modal-transfer').classList.remove('open');
+  transferBatch = [];
+  transferDestBranch = '';
+}
+
+function addToTransferBatch(id){
+  id = id.trim().toUpperCase();
+  if(!id) return false;
+  if(transferBatch.find(i=>i.id===id)){ showToast('⚠ '+id+' already in list'); return false; }
+  const eq = equipMap[id]||{};
+  const currentBranch = getInstrBranch(id);
+  transferBatch.push({ id, model:eq.model||'', make:eq.make||'', currentBranch });
+  updateTransferBatchUI();
+  return true;
+}
+
+function addTransferItemManual(){
+  const el = document.getElementById('transfer-manual-id');
+  const id = el?.value.trim().toUpperCase();
+  if(!id){ showToast('Enter instrument ID'); return; }
+  if(addToTransferBatch(id)){
+    el.value='';
+    el.focus();
+  }
+}
+
+function removeTransferItem(id){
+  transferBatch = transferBatch.filter(i=>i.id!==id);
+  updateTransferBatchUI();
+}
+
+function updateTransferBatchUI(){
+  const list = document.getElementById('transfer-batch-list');
+  const btn  = document.getElementById('transfer-confirm-btn');
+  if(!list) return;
+
+  if(!transferBatch.length){
+    list.innerHTML = `<div style="text-align:center;padding:14px;color:var(--text3);font-size:12px;background:var(--surface2);border-radius:var(--r2)">No instruments added — scan QR or type ID above</div>`;
+  } else {
+    list.innerHTML = transferBatch.map(item=>{
+      const fromBr = BRANCHES.find(b=>b.id===item.currentBranch)||BRANCHES[0];
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text)">${item.id}</div>
+          <div style="font-size:11px;color:var(--text3)">${item.model||'Unknown'} · ${fromBr.icon} ${fromBr.label}</div>
+        </div>
+        <button onclick="removeTransferItem('${item.id}')" style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  if(btn) btn.textContent = `Transfer ${transferBatch.length} Item${transferBatch.length!==1?'s':''} →`;
+}
+
+function buildTransferBranchGrid(){
+  const grid = document.getElementById('transfer-branch-grid');
+  if(!grid) return;
+  grid.innerHTML = BRANCHES.map(b=>`
+    <button onclick="selectTransferBranch('${b.id}')" id="tbr-${b.id}"
+      style="padding:12px 8px;border-radius:var(--r2);border:2px solid var(--border2);background:var(--surface2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .15s">
+      <span style="font-size:22px">${b.icon}</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text3);font-family:var(--mono);text-align:center;line-height:1.2">${b.label}</span>
+    </button>`).join('');
+}
+
 function selectTransferBranch(branchId){
-  if(!transferTarget) return;
-  transferTarget.selectedBranch = branchId;
+  transferDestBranch = branchId;
   BRANCHES.forEach(b=>{
     const btn = document.getElementById('tbr-'+b.id);
     if(!btn) return;
@@ -1695,42 +1781,44 @@ function selectTransferBranch(branchId){
   });
 }
 
-function confirmTransfer(){
-  if(!transferTarget) return;
-  const { instrId, selectedBranch } = transferTarget;
+async function confirmTransfer(){
+  if(!transferBatch.length){ showToast('Add at least one instrument'); return; }
+  if(!transferDestBranch){ showToast('Select a destination branch'); return; }
   const note = document.getElementById('transfer-note').value.trim();
   const by   = document.getElementById('transfer-by').value.trim() || session?.name || 'Unknown';
-  const currentBranch = getInstrBranch(instrId);
+  const destBr = BRANCHES.find(b=>b.id===transferDestBranch);
+  const skipped = [];
 
-  if(selectedBranch === currentBranch){ showToast('Select a different location to transfer'); return; }
-
-  const br = BRANCHES.find(b=>b.id===selectedBranch);
-
-  // Save transfer record
-  if(!transfers[instrId]) transfers[instrId] = {};
-  transfers[instrId] = {
-    branch: selectedBranch,
-    by,
-    at: new Date().toISOString(),
-    note,
-    history: [...(transfers[instrId]?.history||[]), {
-      from: currentBranch, to: selectedBranch, by, at: new Date().toISOString(), note
-    }]
-  };
+  transferBatch.forEach(item=>{
+    if(item.currentBranch === transferDestBranch){ skipped.push(item.id); return; }
+    if(!transfers[item.id]) transfers[item.id]={};
+    const rec = transfers[item.id];
+    rec.history = [...(rec.history||[]), { from:item.currentBranch, to:transferDestBranch, by, at:new Date().toISOString(), note }];
+    rec.branch  = transferDestBranch;
+    rec.by      = by;
+    rec.at      = new Date().toISOString();
+    rec.note    = note;
+    // Sync each to Supabase
+    if(SB_URL && SB_KEY_VAL){
+      fetch(`${SB_URL}/rest/v1/ct2_transfers`, {
+        method:'POST',
+        headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+        body: JSON.stringify({ instr_id:item.id, branch:transferDestBranch, transferred_by:by, note, transferred_at:rec.at })
+      }).catch(()=>{});
+    }
+  });
   saveBranchTransfers();
 
-  // Sync to Supabase if available
-  if(SB_URL && SB_KEY_VAL){
-    fetch(`${SB_URL}/rest/v1/ct2_transfers`, {
-      method:'POST',
-      headers:{'apikey':SB_KEY_VAL,'Authorization':`Bearer ${SB_KEY_VAL}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-      body: JSON.stringify({ instr_id:instrId, branch:selectedBranch, transferred_by:by, note, transferred_at:new Date().toISOString() })
-    }).catch(()=>{});
-  }
-
-  document.getElementById('modal-transfer').classList.remove('open');
-  showToast(`✓ ${instrId} transferred to ${br?.label}`);
+  const moved = transferBatch.length - skipped.length;
+  closeTransferModal();
+  showToast(`✓ ${moved} instrument${moved!==1?'s':''} transferred to ${destBr?.label}${skipped.length?' ('+skipped.length+' skipped — already there)':''}`);
   renderFindMaster();
+}
+
+// Hook QR scan into transfer batch
+function handleTransferQR(id){
+  addToTransferBatch(id.trim().toUpperCase());
+  showToast(`✓ ${id} added to transfer batch`);
 }
 
 function openTransferHistory(instrId){
@@ -1755,25 +1843,26 @@ function openTransferHistory(instrId){
         <div style="font-size:11px;color:var(--text3)">Current location${t ? ' · Updated '+fmtRelTime(t.at) : ' (Home base)'}</div>
       </div>
     </div>
-    <div class="section-hd">Transfer History (${history.length} moves)</div>
-    ${!history.length ? `<div style="color:var(--text3);font-size:12px;text-align:center;padding:16px">No transfers recorded — instrument has always been at Muscat HQ</div>` :
-      [...history].reverse().map((h,i)=>{
-        const fromBr = BRANCHES.find(b=>b.id===h.from)||BRANCHES[0];
-        const toBr   = BRANCHES.find(b=>b.id===h.to)||BRANCHES[0];
-        return `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-            <span style="font-size:14px">${fromBr.icon}</span>
-            <span style="font-size:11px;color:var(--text3)">${fromBr.label}</span>
-            <span style="color:var(--text3)">→</span>
-            <span style="font-size:14px">${toBr.icon}</span>
-            <span style="font-size:11px;font-weight:700;color:${toBr.color}">${toBr.label}</span>
-            <span style="margin-left:auto;font-size:10px;color:var(--text3);font-family:var(--mono)">${fmtRelTime(h.at)}</span>
-          </div>
-          <div style="font-size:11px;color:var(--text2)">By: <strong>${h.by}</strong></div>
-          ${h.note?`<div style="font-size:11px;color:var(--text3);margin-top:3px;font-style:italic">"${h.note}"</div>`:''}
-        </div>`;
-      }).join('')
+    <div class="section-hd">Transfer History (${history.length} move${history.length!==1?'s':''})</div>
+    ${!history.length
+      ? `<div style="color:var(--text3);font-size:12px;text-align:center;padding:16px">No transfers recorded — always at Muscat HQ</div>`
+      : [...history].reverse().map(h=>{
+          const fromBr = BRANCHES.find(b=>b.id===h.from)||BRANCHES[0];
+          const toBr   = BRANCHES.find(b=>b.id===h.to)||BRANCHES[0];
+          return `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap">
+              <span style="font-size:14px">${fromBr.icon}</span>
+              <span style="font-size:11px;color:var(--text3)">${fromBr.label}</span>
+              <span style="color:var(--text3)">→</span>
+              <span style="font-size:14px">${toBr.icon}</span>
+              <span style="font-size:11px;font-weight:700;color:${toBr.color}">${toBr.label}</span>
+              <span style="margin-left:auto;font-size:10px;color:var(--text3);font-family:var(--mono)">${fmtRelTime(h.at)}</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2)">By: <strong>${h.by}</strong> · ${new Date(h.at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+            ${h.note?`<div style="font-size:11px;color:var(--text3);margin-top:3px;font-style:italic">"${h.note}"</div>`:''}
+          </div>`;
+        }).join('')
     }`;
 
   document.getElementById('modal-transfer-history').classList.add('open');
