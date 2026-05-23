@@ -266,6 +266,51 @@ textarea.field-input { resize: none; height: 80px; }
 .ib-red    { background: #fef2f2;         border: 1px solid rgba(220,38,38,.2);  color: #dc2626; }
 .ib-green  { background: #f0fdf4;         border: 1px solid rgba(22,163,74,.2);  color: #16a34a; }
 .ib-purple { background: #f5f3ff;         border: 1px solid rgba(124,58,237,.2); color: #7c3aed; }
+
+/* ── BRANCH MANAGER PORTAL ── */
+#bm-portal { position:fixed; inset:0; background:var(--bg); z-index:500; display:none; flex-direction:column; overflow:hidden; }
+#bm-portal.open { display:flex; }
+.bm-header { background:linear-gradient(135deg,#1e40af 0%,#1a56db 60%,#3b82f6 100%); padding:16px 16px 12px; flex-shrink:0; }
+.bm-header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.bm-title { font-family:var(--mono); font-size:17px; font-weight:700; color:#fff; letter-spacing:-.02em; }
+.bm-sub { font-size:10px; color:rgba(255,255,255,.6); font-family:var(--mono); }
+.bm-tabs { display:flex; gap:4px; margin-top:10px; }
+.bm-tab { flex:1; padding:8px 4px; background:rgba(255,255,255,.1); border:none; border-radius:8px; color:rgba(255,255,255,.65); font-size:10px; font-weight:600; font-family:var(--sans); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; transition:all .15s; }
+.bm-tab.active { background:rgba(255,255,255,.25); color:#fff; }
+.bm-content { flex:1; overflow-y:auto; padding:14px; -webkit-overflow-scrolling:touch; }
+.bm-panel { display:none; }
+.bm-panel.active { display:block; }
+.branch-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r); padding:13px; margin-bottom:10px; }
+.branch-card-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.branch-tag { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; font-family:var(--mono); }
+.branch-count { font-family:var(--mono); font-size:22px; font-weight:700; }
+.transfer-item { background:var(--surface2); border:1px solid var(--border); border-radius:var(--r2); padding:10px 12px; margin-bottom:7px; display:flex; align-items:center; gap:10px; }
+.transfer-item-icon { width:32px; height:32px; border-radius:8px; background:rgba(26,86,219,.12); border:1px solid rgba(26,86,219,.2); display:grid; place-items:center; font-size:14px; flex-shrink:0; }
+/* BM Login */
+#bm-login { position:absolute; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; z-index:10; }
+.bm-login-icon { width:72px; height:72px; border-radius:20px; background:rgba(26,86,219,.15); border:2px solid rgba(26,86,219,.3); display:grid; place-items:center; margin:0 auto 14px; font-size:34px; }
+/* Live pulse */
+@keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.3} }
+.live-dot { width:7px; height:7px; border-radius:50%; background:#16a34a; display:inline-block; animation:pulse-dot 1.5s infinite; margin-right:5px; }
+.receive-btn { background:rgba(22,163,74,.1); border:1.5px solid rgba(22,163,74,.3); border-radius:var(--r2); padding:8px 14px; color:#16a34a; font-size:12px; font-weight:700; font-family:var(--sans); cursor:pointer; }
+.send-btn { background:rgba(26,86,219,.1); border:1.5px solid rgba(26,86,219,.3); border-radius:var(--r2); padding:8px 14px; color:#1a56db; font-size:12px; font-weight:700; font-family:var(--sans); cursor:pointer; }
+
+/* ── COORDINATOR UPLOADS ── */
+.coord-upload-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:13px; margin-bottom:10px; }
+.coord-upload-card-hd { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+.upload-zone { border:2px dashed var(--border2); border-radius:var(--r2); padding:16px; text-align:center; cursor:pointer; transition:all .15s; margin-top:6px; }
+.upload-zone:active { border-color:var(--accent); background:rgba(0,229,176,.05); }
+.upload-zone.done { border-color:var(--accent); border-style:solid; background:rgba(0,229,176,.06); }
+.upload-zone.done-warn { border-color:var(--amber); border-style:solid; background:rgba(240,165,0,.06); }
+.upload-thumb { width:100%; max-height:120px; object-fit:cover; border-radius:var(--r2); margin-bottom:6px; }
+.doc-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:10px; font-weight:700; font-family:var(--mono); }
+.doc-badge.ok  { background:rgba(0,229,176,.12); color:var(--accent); }
+.doc-badge.miss{ background:rgba(248,81,73,.1);  color:var(--red); }
+.doc-badge.warn{ background:rgba(240,165,0,.1);  color:var(--amber); }
+/* Coordinator tab highlight */
+#tab-btn-coord-upload { position:relative; }
+#tab-btn-coord-upload::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,#0891b2,#38bdf8); }
+#tab-btn-coord-upload.active { color:#0891b2 !important; border-bottom-color:#0891b2 !important; }
 </style>
 </head>
 <body>
@@ -315,6 +360,15 @@ textarea.field-input { resize: none; height: 80px; }
       </div>
       <button onclick="goToPIN()" style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;box-shadow:0 4px 14px rgba(26,86,219,.3)">Continue →</button>
 
+
+        <!-- Branch Manager Portal Button -->
+        <div style="margin-top:10px">
+          <button onclick="openBMPortal()" style="width:100%;padding:14px;background:var(--surface);border:2px solid rgba(26,86,219,.35);border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;color:#1a56db;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Branch Manager Portal
+            <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(26,86,219,.12);color:#1a56db;font-family:var(--mono)">TRANSFER</span>
+          </button>
+        </div>
       <!-- Find Master standalone section -->
       <div style="margin-top:16px;position:relative">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -462,7 +516,13 @@ textarea.field-input { resize: none; height: 80px; }
 
       <!-- DELIVERY tab (coordinator) -->
       <div class="tab-panel" id="panel-delivery">
-        <div class="section-hd">Pending Deliveries</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="section-hd" style="margin-bottom:0">Certificates to Deliver</div>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">Stage 5</span>
+        </div>
+        <div style="background:rgba(0,180,216,.08);border:1px solid rgba(8,145,178,.2);border-radius:var(--r2);padding:9px 12px;font-size:12px;color:#0891b2;margin-bottom:12px">
+          🚗 Go to site · Hand over certificates · Get signature · Upload D.O copy
+        </div>
         <div id="delivery-list"></div>
       </div>
 
@@ -470,6 +530,20 @@ textarea.field-input { resize: none; height: 80px; }
       <div class="tab-panel" id="panel-billing">
         <div class="section-hd">Jobs Awaiting Billing</div>
         <div id="billing-list"></div>
+      </div>
+
+      <!-- COORDINATOR UPLOADS tab -->
+      <div class="tab-panel" id="panel-coord-upload">
+        <!-- KPI row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px" id="coord-kpi-row"></div>
+        <!-- Filter pills -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="coord-filter-pills">
+          <button onclick="setCoordFilter('all')" id="cdf-all" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--accent);background:rgba(0,180,216,.1);color:#0891b2;font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">All</button>
+          <button onclick="setCoordFilter('po')" id="cdf-po" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">📄 PO</button>
+          <button onclick="setCoordFilter('do')" id="cdf-do" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">🚗 D.O</button>
+          <button onclick="setCoordFilter('cert')" id="cdf-cert" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">📜 Cert</button>
+        </div>
+        <div id="coord-upload-list"></div>
       </div>
 
       <!-- JOBS tab (all) -->
@@ -583,7 +657,33 @@ textarea.field-input { resize: none; height: 80px; }
 
       <!-- SETTINGS tab -->
       <div class="tab-panel" id="panel-settings">
-        <div class="settings-card">
+        
+        <div class="settings-card" id="bm-settings-card" style="display:none">
+          <div class="settings-card-title">🏛️ Branch Manager Access <span style="font-size:10px;color:var(--text3);font-weight:400">(Ops Head only)</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">
+            Assign branch managers for Muscat, Sohar and Salalah. They will use the <strong>Branch Manager Portal</strong> button on the login screen to access asset transfers.
+          </div>
+          <div id="bm-users-settings"></div>
+          <div style="margin-top:12px">
+            <div class="field-label" style="margin-top:0">Name</div>
+            <input type="text" id="new-bm-name" class="field-input" placeholder="Branch manager name" style="margin-bottom:8px">
+            <div class="field-label">Branch</div>
+            <select id="new-bm-branch" class="field-input" style="margin-bottom:8px;appearance:none;-webkit-appearance:none">
+              <option value="">— Select branch —</option>
+              <option value="hq">🏛️ Muscat HQ</option>
+              <option value="sohar">🏭 Sohar</option>
+              <option value="salalah">🌴 Salalah</option>
+            </select>
+            <div class="field-label">PIN (4 digits)</div>
+            <div style="display:flex;gap:8px">
+              <input type="password" id="new-bm-pin" maxlength="4" placeholder="4-digit PIN" class="field-input mono" style="width:120px;letter-spacing:.1em" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+              <span style="font-size:11px;color:var(--text3);flex:1;align-self:center">Default: 0000</span>
+              <button onclick="addBMUser()" style="padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">+ Add</button>
+            </div>
+          </div>
+        </div>
+
+<div class="settings-card">
           <div class="settings-card-title">👷 Technician Register <span style="font-size:10px;color:var(--text3);font-weight:400">(Ops Head only)</span></div>
           <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Add your technicians here. They will select their name from a list when logging in — no typing needed.</div>
           <div id="tech-register-list"></div>
@@ -629,6 +729,7 @@ textarea.field-input { resize: none; height: 80px; }
             SR photos and PO documents upload to <strong style="color:var(--text)">Supabase Storage</strong> when configured — keeping the app fast and storage lean. Without Supabase, files save locally on device only.
           </div>
           <div id="storage-status-box" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;font-size:12px;margin-bottom:10px"></div>
+          <div id="local-storage-bar" style="margin-bottom:10px"></div>
           <div style="font-size:11px;color:var(--text3);line-height:1.6">
             <strong style="color:var(--text)">One-time Supabase setup:</strong><br>
             1. Go to your Supabase project → Storage<br>
@@ -674,6 +775,163 @@ textarea.field-input { resize: none; height: 80px; }
 </div>
 
 <!-- ── MODALS ── -->
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- BRANCH MANAGER PORTAL                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="bm-portal">
+
+  <!-- PIN Login Screen -->
+  <div id="bm-login">
+    <div class="bm-login-icon">🏛️</div>
+    <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);text-align:center;margin-bottom:3px">Branch Manager</div>
+    <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:28px">Asset Transfer & Live Monitoring</div>
+
+    <!-- Branch selector -->
+    <div style="width:100%;margin-bottom:16px">
+      <div class="field-label" style="margin-top:0">Your Branch</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="bm-branch-grid">
+        <div class="role-card" data-branch="hq" onclick="bmSelectBranch(this)" style="border-color:rgba(26,86,219,.3)">
+          <div class="role-card-icon">🏛️</div><div class="role-card-label">Muscat HQ</div>
+        </div>
+        <div class="role-card" data-branch="sohar" onclick="bmSelectBranch(this)" style="border-color:rgba(217,119,6,.3)">
+          <div class="role-card-icon">🏭</div><div class="role-card-label">Sohar</div>
+        </div>
+        <div class="role-card" data-branch="salalah" onclick="bmSelectBranch(this)" style="border-color:rgba(22,163,74,.3)">
+          <div class="role-card-icon">🌴</div><div class="role-card-label">Salalah</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Name selector -->
+    <div style="width:100%;margin-bottom:16px">
+      <div class="field-label">Your Name</div>
+      <div id="bm-name-area">
+        <input type="text" id="bm-name-input" class="field-input" placeholder="Enter your name…">
+      </div>
+    </div>
+
+    <!-- PIN pad -->
+    <div style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:18px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text3);text-align:center;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Enter Your PIN</div>
+      <div class="pin-display" id="bm-pin-display">
+        <div class="pin-dot" id="bmpd0"></div>
+        <div class="pin-dot" id="bmpd1"></div>
+        <div class="pin-dot" id="bmpd2"></div>
+        <div class="pin-dot" id="bmpd3"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="bmPinKey('1')">1</button>
+        <button class="pin-key" onclick="bmPinKey('2')">2</button>
+        <button class="pin-key" onclick="bmPinKey('3')">3</button>
+        <button class="pin-key" onclick="bmPinKey('4')">4</button>
+        <button class="pin-key" onclick="bmPinKey('5')">5</button>
+        <button class="pin-key" onclick="bmPinKey('6')">6</button>
+        <button class="pin-key" onclick="bmPinKey('7')">7</button>
+        <button class="pin-key" onclick="bmPinKey('8')">8</button>
+        <button class="pin-key" onclick="bmPinKey('9')">9</button>
+        <button class="pin-key pin-del" onclick="bmPinKey('back')">⌫ Del</button>
+        <button class="pin-key" onclick="bmPinKey('0')">0</button>
+        <button class="pin-key pin-del" onclick="closeBMPortal()" style="font-size:12px">✕ Close</button>
+      </div>
+      <div class="pin-hint" id="bm-pin-hint">Contact Operations Head for your PIN</div>
+    </div>
+  </div>
+
+  <!-- Main Portal (shown after login) -->
+  <div id="bm-main" style="display:none;flex-direction:column;height:100%">
+
+    <!-- Header -->
+    <div class="bm-header">
+      <div class="bm-header-top">
+        <div>
+          <div class="bm-title" id="bm-header-title">Branch Manager Portal</div>
+          <div class="bm-sub" id="bm-header-sub">MSSI Cal Lab · Asset Transfer</div>
+        </div>
+        <button onclick="bmLogout()" style="background:rgba(255,255,255,.15);border:none;border-radius:50%;width:34px;height:34px;display:grid;place-items:center;cursor:pointer;color:#fff;font-size:16px">✕</button>
+      </div>
+      <div class="bm-tabs">
+        <button class="bm-tab active" id="bm-tab-transfer" onclick="bmSwitchTab('transfer')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Transfer
+        </button>
+        <button class="bm-tab" id="bm-tab-monitor" onclick="bmSwitchTab('monitor')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Live Monitor
+        </button>
+        <button class="bm-tab" id="bm-tab-history" onclick="bmSwitchTab('history')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </button>
+        <button class="bm-tab" id="bm-tab-receive" onclick="bmSwitchTab('receive')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Receive
+        </button>
+      </div>
+    </div>
+
+    <div class="bm-content">
+
+      <!-- TRANSFER PANEL -->
+      <div class="bm-panel active" id="bm-panel-transfer">
+        <div class="section-hd" style="margin-top:0">Send Assets to Branch</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Select destination, scan/add instruments, then confirm transfer.</div>
+
+        <!-- Destination -->
+        <div class="field-label">Send To Branch</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="bm-dest-grid"></div>
+
+        <!-- Add instruments -->
+        <div class="field-label">Instruments to Transfer</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button onclick="startCamera('bm-transfer')" style="flex:1;padding:10px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--r2);color:var(--accent);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+            Scan QR
+          </button>
+          <input type="text" id="bm-manual-id" class="field-input mono" placeholder="Type Instrument ID" style="flex:2" onkeydown="if(event.key==='Enter')bmAddManualItem()">
+          <button onclick="bmAddManualItem()" style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Add</button>
+        </div>
+        <div id="bm-transfer-list" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
+
+        <div class="field-label">Transfer Notes / Reason</div>
+        <textarea id="bm-transfer-note" class="field-input" placeholder="e.g. Sent for OQ Sohar job — return by end of month" style="height:65px;margin-bottom:14px"></textarea>
+
+        <button onclick="bmConfirmTransfer()" style="width:100%;padding:14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer" id="bm-transfer-confirm-btn">Transfer 0 Items →</button>
+      </div>
+
+      <!-- LIVE MONITOR PANEL -->
+      <div class="bm-panel" id="bm-panel-monitor">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span class="live-dot"></span>
+          <span style="font-size:13px;font-weight:700;color:var(--text)">Live Asset Distribution</span>
+          <button onclick="bmRenderMonitor()" style="margin-left:auto;padding:5px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer">↻ Refresh</button>
+        </div>
+        <div id="bm-monitor-content"></div>
+      </div>
+
+      <!-- HISTORY PANEL -->
+      <div class="bm-panel" id="bm-panel-history">
+        <div class="section-hd" style="margin-top:0">Transfer History</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="bm-hist-filters">
+          <button onclick="bmSetHistFilter('all')" id="bmhf-all" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--accent);background:rgba(0,229,176,.1);color:var(--accent);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">All</button>
+          <button onclick="bmSetHistFilter('hq')" id="bmhf-hq" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">🏛️ Muscat</button>
+          <button onclick="bmSetHistFilter('sohar')" id="bmhf-sohar" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">🏭 Sohar</button>
+          <button onclick="bmSetHistFilter('salalah')" id="bmhf-salalah" style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">🌴 Salalah</button>
+        </div>
+        <div id="bm-history-list"></div>
+      </div>
+
+      <!-- RECEIVE PANEL -->
+      <div class="bm-panel" id="bm-panel-receive">
+        <div class="section-hd" style="margin-top:0">Incoming Assets — My Branch</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Assets currently logged as transferred to <strong id="bm-receive-branch-name">your branch</strong>. Confirm receipt to update status.</div>
+        <div id="bm-receive-list"></div>
+      </div>
+
+    </div><!-- end bm-content -->
+  </div><!-- end bm-main -->
+</div><!-- end bm-portal -->
 
 <!-- New Job Modal -->
 <div class="modal-overlay" id="modal-new-job" onclick="if(event.target===this)this.classList.remove('open')">
@@ -807,6 +1065,56 @@ const KEY_SB_KEY    = 'ct2-sb-key';
 const KEY_APPROVERS = 'ct2-approvers';
 const KEY_JOB_SEQ   = 'ct2-job-seq';
 const KEY_TRANSFERS = 'ct2-transfers';
+const KEY_SAVED_NAMES = 'ct2-saved-names'; // {role: name}
+// ════════════════════════════════════════════════════
+// IMAGE COMPRESSION — shrink before storing
+// Reduces 3–8 MB phone photo → ~50–100 KB
+// ════════════════════════════════════════════════════
+function compressImage(file, maxPx, quality){
+  maxPx   = maxPx   || 900;   // max width/height in pixels
+  quality = quality || 0.60;  // JPEG quality 0–1
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      let w = img.width, h = img.height;
+      if(w > maxPx || h > maxPx){
+        if(w >= h){ h = Math.round(h * maxPx / w); w = maxPx; }
+        else       { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      const approxKB = Math.round(dataUrl.length * 0.75 / 1024);
+      console.log(`[CalTrack] Photo compressed: ${w}×${h}px ~${approxKB}KB`);
+      resolve(dataUrl);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// Estimate total localStorage usage
+function getStorageUsageKB(){
+  let total = 0;
+  for(let key in localStorage){
+    if(localStorage.hasOwnProperty(key)){
+      total += (localStorage[key].length + key.length) * 2;
+    }
+  }
+  return Math.round(total / 1024);
+}
+
+function warnIfStorageFull(){
+  const kb = getStorageUsageKB();
+  if(kb > 3500){
+    showToast('⚠ Storage ' + Math.round(kb/1024*10)/10 + 'MB — consider setting up Supabase cloud');
+  }
+}
+
+
 
 // ════════════════════════════════════════════════════
 // CUSTOMER DATABASE (832 customers from MSSI list)
@@ -831,7 +1139,7 @@ const STAGES = [
 const ROLE_CONFIG = {
   technician:  { label:'Technician',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['find-master','new-job','tasks','jobs'],                         canApprove:false, readOnly:false },
   ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['qc','find-master','pipeline','tasks','jobs','settings'],          canApprove:true,  readOnly:false },
-  coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['find-master','tasks','delivery','billing','jobs'],                canApprove:false, readOnly:false },
+  coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['find-master','tasks','delivery','coord-upload','billing','jobs'], canApprove:false, readOnly:false },
   sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['find-master','pipeline','sales','jobs'],                          canApprove:false, readOnly:false, isSales:true },
   quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['qc','pipeline','jobs'],                                           canApprove:false, readOnly:true  },
   lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['pipeline','jobs'],                                               canApprove:false, readOnly:true  },
@@ -847,6 +1155,7 @@ const TAB_CONFIG = {
   'sales':        { label:'Sales',      icon:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' },
   'log':          { label:'Log',        icon:'<path d="M12 5v14M5 12h14"/>' },
   'find-master':  { label:'Find Master',icon:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/>' },
+  'coord-upload': { label:'Uploads',    icon:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>' },
   'settings':     { label:'Setup',      icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
 };
 
@@ -866,6 +1175,7 @@ let pins        = JSON.parse(localStorage.getItem(KEY_PINS)||'{"technician":"000
 let techPins    = JSON.parse(localStorage.getItem(KEY_TECH_PINS)||'{}');
 let salesPins   = JSON.parse(localStorage.getItem(KEY_SALES_PINS)||'{}');
 let transfers   = JSON.parse(localStorage.getItem(KEY_TRANSFERS)||'{}'); // instrId → {branch, by, at, note}
+let savedNames  = JSON.parse(localStorage.getItem(KEY_SAVED_NAMES)||'{}'); // {role: name}
 
 const BRANCHES = [
   { id:'hq',     label:'Muscat HQ',       icon:'🏛️', color:'#1a56db' },
@@ -935,10 +1245,34 @@ function updateNameField(){
     nameArea.innerHTML = `<div class="login-card-title">Select Your Name</div>`
       + buildNamePicker(salesStaff, 'No sales staff registered yet', 'tech-name-select');
   } else {
-    nameArea.innerHTML = `
-      <div class="login-card-title">Your Name</div>
-      <input type="text" id="login-name" class="fi" placeholder="Enter your full name…" autocomplete="name">`;
+    // Check for saved name for this role
+    const saved = savedNames[selectedRole] || '';
+    if(saved){
+      // Show greeting with saved name + option to change
+      nameArea.innerHTML = `
+        <div class="login-card-title">Welcome Back</div>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid rgba(26,86,219,.3);border-radius:var(--r2);padding:12px 14px">
+          <div style="font-size:24px">${{technician:'🔧',ops_head:'👔',coordinator:'🚗',sales:'🌟',quality:'🎯',lab_head:'🏛️'}[selectedRole]||'👤'}</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700;color:var(--text)">${saved}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em">${(ROLE_CONFIG[selectedRole]||{}).label||selectedRole}</div>
+          </div>
+          <button onclick="clearSavedName('${selectedRole}')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;padding:0">Not you?</button>
+        </div>
+        <input type="hidden" id="login-name" value="${saved}">`;
+    } else {
+      nameArea.innerHTML = `
+        <div class="login-card-title">Your Name</div>
+        <input type="text" id="login-name" class="fi" placeholder="Enter your full name…" autocomplete="name">
+        <div style="font-size:10px;color:var(--text3);margin-top:5px">💡 Your name will be remembered on this device</div>`;
+    }
   }
+}
+
+function clearSavedName(role){
+  delete savedNames[role];
+  localStorage.setItem(KEY_SAVED_NAMES, JSON.stringify(savedNames));
+  updateNameField();
 }
 
 function selectStaffName(name, hiddenId){
@@ -1043,6 +1377,11 @@ function checkPIN(){
     if(!name){ showToast('Name missing — go back'); return; }
     session={name,role:selectedRole};
     localStorage.setItem(KEY_SESSION,JSON.stringify(session));
+    // Save name for this role (not for technician/sales — they use dropdown)
+    if(selectedRole!=='technician'&&selectedRole!=='sales'){
+      savedNames[selectedRole]=name;
+      localStorage.setItem(KEY_SAVED_NAMES,JSON.stringify(savedNames));
+    }
     initApp();
   } else {
     for(let i=0;i<4;i++){ const d=document.getElementById('pd'+i); if(d) d.classList.add('error'); }
@@ -1192,6 +1531,7 @@ function switchTab(tab){
   if(tab==='tasks')      renderTasks();
   if(tab==='new-job'||tab==='log') renderNewJobTab();
   if(tab==='delivery')   renderDelivery();
+  if(tab==='coord-upload') renderCoordUpload();
   if(tab==='billing')    renderBilling();
   if(tab==='jobs')       renderJobsPanel();
   if(tab==='find-master'){
@@ -1695,15 +2035,20 @@ async function handlePhotoUpload(e){
     }
   }
 
-  // Fallback: base64 local storage
-  const reader = new FileReader();
-  reader.onload = ev=>{
-    activeJob.srPhotoData = ev.target.result;
+  // Fallback: compress then store locally
+  try{
+    const dataUrl = await compressImage(file, 900, 0.60);
+    activeJob.srPhotoData = dataUrl;
     updateJob(activeJob);
     renderStageActionArea();
-    showToast('✓ Service report photo saved locally');
-  };
-  reader.readAsDataURL(file);
+    const kb = Math.round(dataUrl.length * 0.75 / 1024);
+    showToast('✓ SR photo saved (' + kb + 'KB)');
+    warnIfStorageFull();
+  }catch(e){
+    const reader = new FileReader();
+    reader.onload = ev=>{ activeJob.srPhotoData = ev.target.result; updateJob(activeJob); renderStageActionArea(); };
+    reader.readAsDataURL(file);
+  }
 }
 
 async function onPODocUpload(e, num){
@@ -1729,17 +2074,22 @@ async function onPODocUpload(e, num){
     }
   }
 
-  // Fallback: base64
-  const r=new FileReader();
-  r.onload=ev=>{
-    j.poDocData=ev.target.result;
+  // Fallback: compress then store locally
+  try{
+    const dataUrl = await compressImage(f, 900, 0.65);
+    j.poDocData=dataUrl;
     j.poDocName=f.name;
     j.poNumber=document.getElementById('sales-po')?.value.trim()||j.poNumber||'';
     updateJob(j); syncJob(j);
-    showToast('✓ PO document saved locally');
+    const kb = Math.round(dataUrl.length * 0.75 / 1024);
+    showToast('✓ PO saved locally (' + kb + 'KB)');
     openSalesJobModal(num);
-  };
-  r.readAsDataURL(f);
+    warnIfStorageFull();
+  }catch(e){
+    const r=new FileReader();
+    r.onload=ev=>{ j.poDocData=ev.target.result; j.poDocName=f.name; updateJob(j); syncJob(j); openSalesJobModal(num); };
+    r.readAsDataURL(f);
+  }
 }
 
 // ════════════════════════════════════════════════════
@@ -2867,27 +3217,82 @@ function openDeliveryModal(jobNum){
   const j = jobs.find(x=>x.jobNum===jobNum);
   if(!j) return;
   const body = document.getElementById('modal-stage-body');
+  const hasDoPhoto = !!(j.doPhotoData||j.doPhotoUrl);
   body.innerHTML = `
-    <div class="modal-title">Record Delivery</div>
+    <div class="modal-title">🚗 Record Delivery</div>
     <div class="modal-sub">${j.jobNum} · ${j.customer} · 📍 ${j.site}</div>
+
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px;margin-bottom:14px;font-size:12px;color:var(--text2)">
       <strong style="color:var(--text)">Deliver:</strong> Calibration certificates<br>
       <strong style="color:var(--text)">To:</strong> ${j.contact||j.customer}<br>
       ${j.certNumbers?.length?`<strong style="color:var(--text)">Certs:</strong> ${j.certNumbers.join(', ')}`:''}
     </div>
+
     <div class="field-label">Delivered by</div>
     <input type="text" id="del-by" class="field-input" value="${session.name}">
+
     <div class="field-label">Customer Acknowledgement / Signature from</div>
-    <input type="text" id="del-ack" class="field-input" placeholder="Name of person who signed acknowledgement">
+    <input type="text" id="del-ack" class="field-input" placeholder="Name of person who received & signed">
+
     <div class="field-label">Delivery Date & Time</div>
     <input type="text" id="del-date" class="field-input mono" value="${new Date().toLocaleString('en-GB')}">
-    <div class="field-label">Notes</div>
-    <textarea id="del-notes" class="field-input" placeholder="Any notes about the delivery…"></textarea>
+
+    <div class="field-label" style="margin-top:14px">📸 D.O Copy — Signed Delivery Order <span style="color:var(--red)">*</span></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Photo of the signed delivery order / acknowledgement slip from customer</div>
+    <div class="upload-zone ${hasDoPhoto?'done':''}" id="do-photo-zone" onclick="triggerDOPhotoUpload('${jobNum}')">
+      ${hasDoPhoto
+        ? `<img src="${j.doPhotoUrl||j.doPhotoData}" class="upload-thumb" alt="D.O"><div style="font-size:11px;color:var(--accent);font-weight:600">✓ D.O copy uploaded — tap to replace</div>`
+        : `<div style="font-size:28px;margin-bottom:6px">📷</div>
+           <div style="font-size:13px;font-weight:600;color:var(--text2)">Tap to take photo or upload</div>
+           <div style="font-size:11px;color:var(--text3);margin-top:3px">D.O / delivery slip / signed acknowledgement</div>`
+      }
+    </div>
+    <input type="file" id="do-photo-input-${jobNum}" accept="image/*" capture="environment" style="display:none" onchange="onDOPhotoSelected(event,'${jobNum}')">
+
+    <div class="field-label" style="margin-top:12px">Notes</div>
+    <textarea id="del-notes" class="field-input" placeholder="Any notes about the delivery…" style="height:60px"></textarea>
+
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="document.getElementById('modal-stage').classList.remove('open')">Cancel</button>
       <button class="modal-btn primary" onclick="submitDelivery('${jobNum}')">✓ Record Delivery → Billing</button>
     </div>`;
   document.getElementById('modal-stage').classList.add('open');
+}
+
+function triggerDOPhotoUpload(jobNum){
+  document.getElementById('do-photo-input-'+jobNum)?.click();
+}
+
+async function onDOPhotoSelected(e, jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum); if(!j) return;
+  const file = e.target.files[0]; if(!file) return;
+  showToast('Uploading D.O photo…');
+  // Try Supabase
+  if(SB_URL && SB_KEY_VAL){
+    const ext = file.name.split('.').pop()||'jpg';
+    const path = `do-photos/${jobNum}_${Date.now()}.${ext}`;
+    const url = await sbStorageUpload('caltrack-docs', path, file);
+    if(url){
+      j.doPhotoData = url; j.doPhotoUrl = url;
+      updateJob(j); syncJobToSupabase(j);
+      openDeliveryModal(jobNum);
+      showToast('✓ D.O photo uploaded to cloud');
+      return;
+    }
+  }
+  try{
+    const dataUrl = await compressImage(file, 900, 0.60);
+    j.doPhotoData = dataUrl;
+    updateJob(j);
+    openDeliveryModal(jobNum);
+    const kb = Math.round(dataUrl.length * 0.75 / 1024);
+    showToast('✓ D.O photo saved (' + kb + 'KB)');
+    warnIfStorageFull();
+  }catch(e){
+    const reader = new FileReader();
+    reader.onload = ev=>{ j.doPhotoData = ev.target.result; updateJob(j); openDeliveryModal(jobNum); };
+    reader.readAsDataURL(file);
+  }
 }
 
 async function submitDelivery(jobNum){
@@ -2896,12 +3301,17 @@ async function submitDelivery(jobNum){
   const ack   = document.getElementById('del-ack').value.trim();
   const by    = document.getElementById('del-by').value.trim();
   const notes = document.getElementById('del-notes').value.trim();
-  if(!ack){ showToast('Enter acknowledgement name'); return; }
+  if(!ack){ showToast('Enter customer acknowledgement name'); return; }
+  if(!(j.doPhotoData||j.doPhotoUrl)){
+    if(!confirm('No D.O photo uploaded. Continue without it?')) return;
+  }
   j.deliveryAck = ack;
   j.deliveryBy  = by;
+  j.deliveryNotes = notes;
+  j.deliveryDate  = new Date().toISOString();
   j.stage = 6;
   j.stageHistory = j.stageHistory||{};
-  j.stageHistory[5] = { completedAt: new Date().toISOString(), by, ack, notes };
+  j.stageHistory[5] = { completedAt: new Date().toISOString(), by, ack, notes, hasDoPhoto: !!(j.doPhotoData||j.doPhotoUrl) };
   updateJob(j);
   await syncJobToSupabase(j);
   document.getElementById('modal-stage').classList.remove('open');
@@ -3001,7 +3411,7 @@ function sendBillingWhatsApp(jobNum){
   msg += `\n*Type:* ${type==='cash'?'💵 Cash (process in SAP)':'🏦 Credit (submit to Head Office)'}\n`;
   if(j.deliveryAck) msg += `*Delivery ack:* ${j.deliveryAck}\n`;
   msg += `\n_Please process. — MSSI Cal Lab Operations_`;
-  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  showWAPrompt('', msg, 'Send WhatsApp');
 }
 
 // ════════════════════════════════════════════════════
@@ -3044,7 +3454,8 @@ function sendStageWhatsApp(job, stage, details){
     msg += `\n✅ *Job fully complete!*`;
   }
   msg += `\n━━━━━━━━━━━━━━━━━━\n_MSSI Cal Lab CalTrack_`;
-  setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+  // Show optional WA button — never auto-redirect
+  showWAPrompt(ap.phone, msg, `Notify ${ap.name||'Ops Head'}`);
 }
 
 // ════════════════════════════════════════════════════
@@ -3199,7 +3610,7 @@ async function approveBillingSales(num){
     msg+=`✅ Billing approved by Sales (${session.name})\n`;
     if(comment) msg+=`💬 Comment: ${comment}\n`;
     msg+=`\n▶ Ready for Coordinator to process billing\n_MSSI Cal Lab CalTrack_`;
-    setTimeout(()=>{ window.location.href=`https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; },1200);
+    showWAPrompt(ap.phone, msg, 'Send WhatsApp');
   }
   showToast('✓ Billing approved — coordinator notified');
   renderSalesPanel();
@@ -3406,6 +3817,20 @@ function savePINSettings(){
 }
 
 function renderSettings(){
+  // Show BM settings card for ops_head
+  const bmCard = document.getElementById('bm-settings-card');
+  if(bmCard) bmCard.style.display = (session?.role==='ops_head') ? 'block' : 'none';
+  if(session?.role==='ops_head') renderBMUserSettings();
+  // Show My PIN card for ops_head
+  const myPinCard = document.getElementById('my-pin-card');
+  if(myPinCard) myPinCard.style.display = (session?.role==='ops_head') ? 'block' : 'none';
+  const myPinStatus = document.getElementById('my-pin-status');
+  if(myPinStatus && session?.role==='ops_head'){
+    const cur = pins['ops_head']||'0000';
+    myPinStatus.textContent = cur==='0000' ? '⚠ Still using default PIN (0000) — set a private PIN above' : '✅ Custom PIN is set';
+    myPinStatus.style.color = cur==='0000' ? 'var(--amber)' : 'var(--accent)';
+  }
+
   renderTechRegister();
   renderSalesRegister();
   renderPINMgmt();
@@ -3424,13 +3849,32 @@ function renderSettings(){
   status.textContent = SB_URL ? '✓ Supabase configured' : 'Not configured';
   status.style.color = SB_URL ? 'var(--accent)' : 'var(--text3)';
 
+  // Show local storage usage meter
+  const barEl = document.getElementById('local-storage-bar');
+  if(barEl){
+    const usedKB = getStorageUsageKB();
+    const limitKB = 5120; // ~5MB typical limit
+    const pct = Math.min(100, Math.round(usedKB / limitKB * 100));
+    const color = pct > 80 ? 'var(--red)' : pct > 60 ? 'var(--amber)' : 'var(--accent)';
+    barEl.innerHTML = `
+      <div style="font-size:11px;color:var(--text3);margin-bottom:5px;display:flex;justify-content:space-between">
+        <span>📱 Local storage used</span>
+        <span style="font-family:var(--mono);color:${color}">${usedKB}KB / ~5120KB</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .3s"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">${pct}% used${pct>70?' — set up Supabase to free space':''}</div>
+    `;
+  }
+
   // Storage status
   const storageBox = document.getElementById('storage-status-box');
   if(storageBox){
     if(SB_URL){
-      storageBox.innerHTML = `<span style="color:var(--accent);font-weight:600">✓ Cloud storage active</span> — SR photos and PO documents upload to Supabase Storage bucket <span style="font-family:var(--mono);color:var(--blue)">caltrack-docs</span>. Files accessible by all offices.`;
+      storageBox.innerHTML = `<span style="color:var(--accent);font-weight:600">✓ Cloud storage active</span> — Photos upload to Supabase. Images are compressed before upload (~50–100KB each). Local storage stays lean.`;
     } else {
-      storageBox.innerHTML = `<span style="color:var(--amber);font-weight:600">⚠ No Supabase configured</span> — Files saved as base64 on this device only. Configure Supabase below to enable cloud storage.`;
+      storageBox.innerHTML = `<span style="color:var(--amber);font-weight:600">⚠ Local storage only</span> — Photos compressed to ~50–100KB before saving. Still recommend Supabase for long-term use (100+ jobs).`;
     }
   }
 }
@@ -3532,6 +3976,14 @@ function exportJobsExcel(){
 }
 
 function updateNotifs(){
+  // Coordinator upload badge
+  const coordBadge = document.getElementById('notif-coord-upload');
+  if(coordBadge){
+    const noPO  = jobs.filter(j=>j.status!=='draft'&&!(j.poDocData||j.poDocUrl||j.poNumber)).length;
+    const noDO  = jobs.filter(j=>j.stage>=5&&!(j.doPhotoData||j.doPhotoUrl)).length;
+    const count = noPO + noDO;
+    coordBadge.classList.toggle('show', count>0);
+  }
   const role = session?.role;
   const rc   = ROLE_CONFIG[role]||{};
   const tasksNotif = document.getElementById('notif-tasks');
@@ -3712,7 +4164,7 @@ function shareJobWA(j){
 `;
   msg += `_Shared from MSSI Cal Lab CalTrack_`;
 
-  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  showWAPrompt('', msg, 'Send WhatsApp');
 }
 
 function exportJobExcel(j){
@@ -4256,7 +4708,7 @@ function shareQCSummaryWA(){
     issues.forEach(i=>{ const st=getStatusInfo(getInstrumentStatus(i)); msg += `• ${i.id} — ${i.model||'—'} (${st.label})\n`; });
   }
   msg += `\n_MSSI Cal Lab CalTrack_`;
-  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  showWAPrompt('', msg, 'Send WhatsApp');
 }
 
 // ════════════════════════════════════════════════════
@@ -4336,7 +4788,7 @@ ${rejectUrl}
   msg += `━━━━━━━━━━━━━━━━━━
 `;
   msg += `_Tap a link to open CalTrack and record decision_`;
-  setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+  showWAPrompt(ap.phone, msg, 'Send WhatsApp');
 }
 
 async function approveStage1(jobNum){
@@ -4374,7 +4826,7 @@ async function approveStage1(jobNum){
 `;
     msg += `━━━━━━━━━━━━━━━━━━
 _MSSI Cal Lab CalTrack_`;
-    setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+    showWAPrompt(ap.phone, msg, 'Notify Technician (Approved)');
   }
   showToast(`✓ Issue Out approved — ${j.jobNum} moved to Stage 2`);
   renderTasks(); renderPipeline(); updateNotifs();
@@ -4407,7 +4859,7 @@ async function rejectStage1(jobNum){
     msg += `
 Please re-scan the correct instruments and resubmit.
 _MSSI Cal Lab CalTrack_`;
-    setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+    showWAPrompt(ap.phone, msg, 'Send WhatsApp');
   }
   showToast(`Rejected — technician notified`);
   renderTasks(); updateNotifs();
@@ -4487,6 +4939,673 @@ function showToast(msg){
   if(!inApp&&!isIOS){ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;}); }
 })();
 
+
+// ════════════════════════════════════════════════════
+// BRANCH MANAGER PORTAL JS
+// ════════════════════════════════════════════════════
+const KEY_BM_USERS = 'ct2-bm-users'; // [{name, branch, pin}]
+const KEY_BM_TRANSFERS = 'ct2-bm-transfers'; // [{id, items:[{id,model}], from, to, by, at, note, status}]
+
+let bmUsers = JSON.parse(localStorage.getItem(KEY_BM_USERS)||'[]');
+let bmTransferLog = JSON.parse(localStorage.getItem(KEY_BM_TRANSFERS)||'[]');
+let bmSession = null; // {name, branch}
+let bmPinEntry = '';
+let bmSelectedBranch = '';
+let bmSelectedDest = '';
+let bmTransferItems = [];
+let bmHistFilter = 'all';
+
+function saveBmUsers(){ localStorage.setItem(KEY_BM_USERS, JSON.stringify(bmUsers)); }
+function saveBmTransferLog(){ localStorage.setItem(KEY_BM_TRANSFERS, JSON.stringify(bmTransferLog)); }
+
+function openBMPortal(){
+  document.getElementById('bm-portal').classList.add('open');
+  document.getElementById('bm-login').style.display='flex';
+  document.getElementById('bm-main').style.display='none';
+  bmPinEntry=''; bmSelectedBranch=''; bmUpdatePinDisplay();
+  document.querySelectorAll('#bm-branch-grid .role-card').forEach(c=>c.classList.remove('selected'));
+  bmUpdateNameArea();
+}
+
+function closeBMPortal(){
+  document.getElementById('bm-portal').classList.remove('open');
+  bmSession=null; bmPinEntry=''; bmSelectedBranch='';
+}
+
+function bmLogout(){
+  bmSession=null;
+  document.getElementById('bm-login').style.display='flex';
+  document.getElementById('bm-main').style.display='none';
+  bmPinEntry=''; bmSelectedBranch='';
+  document.querySelectorAll('#bm-branch-grid .role-card').forEach(c=>c.classList.remove('selected'));
+  bmUpdateNameArea();
+}
+
+function bmSelectBranch(el){
+  document.querySelectorAll('#bm-branch-grid .role-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  bmSelectedBranch = el.dataset.branch;
+  bmUpdateNameArea();
+  bmPinEntry=''; bmUpdatePinDisplay();
+}
+
+function bmUpdateNameArea(){
+  const area = document.getElementById('bm-name-area');
+  if(!area) return;
+  if(!bmSelectedBranch){
+    area.innerHTML = '<input type="text" id="bm-name-input" class="field-input" placeholder="Select branch first…" disabled>';
+    return;
+  }
+  const usersForBranch = bmUsers.filter(u=>u.branch===bmSelectedBranch);
+  if(!usersForBranch.length){
+    area.innerHTML = '<input type="text" id="bm-name-input" class="field-input" placeholder="Enter your name…">';
+    document.getElementById('bm-pin-hint').textContent = 'No users assigned — contact Ops Head';
+    return;
+  }
+  area.innerHTML = `<div style="position:relative">
+    <select id="bm-name-select" onchange="bmOnNameSelect(this)"
+      style="width:100%;padding:13px 40px 13px 14px;border:1.5px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:var(--sans);font-size:15px;font-weight:600;background:var(--surface);outline:none;appearance:none;-webkit-appearance:none;cursor:pointer">
+      <option value="">— Select your name —</option>
+      ${usersForBranch.map(u=>`<option value="${u.name}">${u.name}</option>`).join('')}
+    </select>
+    <svg style="position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8896ab" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </div>`;
+}
+
+function bmOnNameSelect(el){
+  const u = bmUsers.find(x=>x.name===el.value && x.branch===bmSelectedBranch);
+  const hint = document.getElementById('bm-pin-hint');
+  if(u && u.pin) hint.textContent = 'Enter your 4-digit PIN';
+  else hint.textContent = 'No PIN set — contact Ops Head (default: 0000)';
+  bmPinEntry=''; bmUpdatePinDisplay();
+}
+
+function bmUpdatePinDisplay(){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('bmpd'+i);
+    if(!d) return;
+    d.classList.toggle('filled',i<bmPinEntry.length);
+    d.classList.remove('error');
+  }
+}
+
+function bmPinKey(k){
+  if(k==='back'){ bmPinEntry=bmPinEntry.slice(0,-1); bmUpdatePinDisplay(); return; }
+  if(bmPinEntry.length>=4) return;
+  bmPinEntry+=k; bmUpdatePinDisplay();
+  if(bmPinEntry.length===4) setTimeout(bmCheckPIN,150);
+}
+
+function bmCheckPIN(){
+  if(!bmSelectedBranch){ showToast('Select your branch'); bmPinEntry=''; bmUpdatePinDisplay(); return; }
+  let name = '';
+  const nameSelect = document.getElementById('bm-name-select');
+  const nameInput  = document.getElementById('bm-name-input');
+  name = (nameSelect ? nameSelect.value : '') || (nameInput ? nameInput.value.trim() : '');
+  if(!name){ showToast('Enter your name'); bmPinEntry=''; bmUpdatePinDisplay(); return; }
+
+  const u = bmUsers.find(x=>x.name===name && x.branch===bmSelectedBranch);
+  const correctPIN = u?.pin || '0000';
+
+  if(bmPinEntry===correctPIN){
+    bmSession = { name, branch: bmSelectedBranch };
+    bmOpenMain();
+  } else {
+    for(let i=0;i<4;i++){ const d=document.getElementById('bmpd'+i); if(d) d.classList.add('error'); }
+    setTimeout(()=>{ bmPinEntry=''; bmUpdatePinDisplay(); },800);
+    showToast('Incorrect PIN — try again');
+  }
+}
+
+function bmOpenMain(){
+  document.getElementById('bm-login').style.display='none';
+  document.getElementById('bm-main').style.display='flex';
+  document.getElementById('bm-main').style.flexDirection='column';
+  document.getElementById('bm-main').style.height='100%';
+  const BRANCH_LABELS = {hq:'Muscat HQ 🏛️', sohar:'Sohar 🏭', salalah:'Salalah 🌴'};
+  document.getElementById('bm-header-title').textContent = bmSession.name;
+  document.getElementById('bm-header-sub').textContent = BRANCH_LABELS[bmSession.branch]||bmSession.branch;
+  document.getElementById('bm-receive-branch-name').textContent = BRANCH_LABELS[bmSession.branch]||bmSession.branch;
+  bmTransferItems=[];
+  bmSelectedDest='';
+  bmRenderDestGrid();
+  bmSwitchTab('transfer');
+}
+
+function bmSwitchTab(tab){
+  document.querySelectorAll('.bm-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bm-panel').forEach(p=>p.classList.remove('active'));
+  const btn = document.getElementById('bm-tab-'+tab);
+  if(btn) btn.classList.add('active');
+  const panel = document.getElementById('bm-panel-'+tab);
+  if(panel) panel.classList.add('active');
+  if(tab==='monitor')  bmRenderMonitor();
+  if(tab==='history')  bmRenderHistory();
+  if(tab==='receive')  bmRenderReceive();
+}
+
+function bmRenderDestGrid(){
+  const grid = document.getElementById('bm-dest-grid');
+  if(!grid||!bmSession) return;
+  const others = BRANCHES.filter(b=>b.id!==bmSession.branch);
+  grid.innerHTML = others.map(b=>`
+    <div onclick="bmSelectDest('${b.id}',this)" data-dest="${b.id}"
+      style="padding:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s">
+      <div style="font-size:22px">${b.icon}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center">${b.label}</div>
+    </div>`).join('');
+}
+
+function bmSelectDest(id, el){
+  bmSelectedDest = id;
+  document.querySelectorAll('#bm-dest-grid > div').forEach(c=>{
+    c.style.borderColor = 'var(--border)';
+    c.style.background = 'var(--surface)';
+  });
+  el.style.borderColor = 'var(--blue)';
+  el.style.background = 'rgba(26,86,219,.08)';
+  bmUpdateTransferBtn();
+}
+
+function bmAddManualItem(){
+  const input = document.getElementById('bm-manual-id');
+  const id = (input?.value||'').trim().toUpperCase();
+  if(!id){ showToast('Enter an instrument ID'); return; }
+  if(bmTransferItems.find(x=>x.id===id)){ showToast('Already in list'); return; }
+  const eq = equipMap[id]||{};
+  bmTransferItems.push({ id, model: eq.model||'—', make: eq.make||'' });
+  if(input) input.value='';
+  bmRenderTransferList();
+  bmUpdateTransferBtn();
+}
+
+function bmRenderTransferList(){
+  const el = document.getElementById('bm-transfer-list');
+  if(!el) return;
+  if(!bmTransferItems.length){
+    el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:12px">No instruments added yet</div>';
+    return;
+  }
+  el.innerHTML = bmTransferItems.map((item,i)=>`
+    <div class="transfer-item">
+      <div class="transfer-item-icon">📡</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text)">${item.id}</div>
+        <div style="font-size:11px;color:var(--text2)">${item.model}</div>
+      </div>
+      <button onclick="bmRemoveItem(${i})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">×</button>
+    </div>`).join('');
+}
+
+function bmRemoveItem(i){
+  bmTransferItems.splice(i,1);
+  bmRenderTransferList();
+  bmUpdateTransferBtn();
+}
+
+function bmUpdateTransferBtn(){
+  const btn = document.getElementById('bm-transfer-confirm-btn');
+  if(btn) btn.textContent = `Transfer ${bmTransferItems.length} Item${bmTransferItems.length!==1?'s':''} →`;
+}
+
+function bmConfirmTransfer(){
+  if(!bmSelectedDest){ showToast('Select destination branch'); return; }
+  if(!bmTransferItems.length){ showToast('Add at least one instrument'); return; }
+  const note = document.getElementById('bm-transfer-note')?.value.trim()||'';
+  const destBranch = BRANCHES.find(b=>b.id===bmSelectedDest);
+  const now = new Date().toISOString();
+
+  const transferRecord = {
+    id: 'TR-'+Date.now(),
+    items: [...bmTransferItems],
+    from: bmSession.branch,
+    to: bmSelectedDest,
+    by: bmSession.name,
+    at: now,
+    note,
+    status: 'pending' // pending = sent, not yet received
+  };
+
+  bmTransferLog.unshift(transferRecord);
+  saveBmTransferLog();
+
+  // Also update the main transfer map
+  bmTransferItems.forEach(item=>{
+    transfers[item.id] = {
+      branch: bmSelectedDest,
+      by: bmSession.name,
+      at: now,
+      note: note || `Transfer from ${bmSession.branch} to ${bmSelectedDest}`,
+      fromBranch: bmSession.branch,
+      transferId: transferRecord.id
+    };
+  });
+  saveBranchTransfers();
+
+  const count = bmTransferItems.length;
+  bmTransferItems=[];
+  bmSelectedDest='';
+  bmRenderDestGrid();
+  bmRenderTransferList();
+  bmUpdateTransferBtn();
+  document.getElementById('bm-transfer-note').value='';
+
+  showToast(`✓ Transfer confirmed — ${count} item${count!==1?'s':''} sent to ${destBranch?.label||bmSelectedDest}`);
+  bmSwitchTab('history');
+}
+
+function bmRenderMonitor(){
+  const el = document.getElementById('bm-monitor-content');
+  if(!el) return;
+
+  // Count assets per branch
+  const counts = {hq:[], sohar:[], salalah:[]};
+  // From main transfers object
+  Object.entries(transfers).forEach(([id, info])=>{
+    const br = info.branch||'hq';
+    if(counts[br]) counts[br].push(id);
+  });
+  // Also look at equipment not in transfers (default = hq)
+  const assigned = new Set(Object.keys(transfers));
+  equipDB.filter(e=>!assigned.has(e.id)).forEach(e=>{ counts['hq'].push(e.id); });
+
+  // Recent transfers (last 24h)
+  const recentCutoff = Date.now() - 86400000;
+  const recentTransfers = bmTransferLog.filter(t=>new Date(t.at).getTime()>recentCutoff);
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+      ${BRANCHES.map(b=>`
+        <div class="kpi-card" style="text-align:center;border-color:rgba(26,86,219,.2)">
+          <div style="font-size:20px;margin-bottom:3px">${b.icon}</div>
+          <div class="branch-count" style="color:var(--blue)">${counts[b.id]?.length||0}</div>
+          <div class="kpi-label">${b.label.split(' ')[0]}</div>
+        </div>`).join('')}
+    </div>
+
+    ${BRANCHES.map(b=>{
+      const items = counts[b.id]||[];
+      if(!items.length) return `<div class="branch-card"><div class="branch-card-hd"><span class="branch-tag">${b.icon} ${b.label}</span><span style="font-size:11px;color:var(--text3)">0 assets</span></div><div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">No assets assigned</div></div>`;
+      const sample = items.slice(0,5);
+      return `<div class="branch-card">
+        <div class="branch-card-hd">
+          <span class="branch-tag">${b.icon} ${b.label}</span>
+          <span style="font-size:11px;color:var(--text2);font-family:var(--mono);font-weight:700">${items.length} assets</span>
+        </div>
+        ${sample.map(id=>{ const eq=equipMap[id]||{}; const tr=transfers[id]; return `
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px">
+            <span style="font-family:var(--mono);font-weight:700;color:var(--blue);flex-shrink:0;min-width:100px">${id}</span>
+            <span style="color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eq.model||eq.description||'—'}</span>
+            ${tr?.at ? `<span style="font-size:9px;color:var(--text3);flex-shrink:0">${new Date(tr.at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</span>` : ''}
+          </div>`; }).join('')}
+        ${items.length>5?`<div style="font-size:11px;color:var(--text3);padding-top:6px;text-align:center">+${items.length-5} more</div>`:''}
+      </div>`;
+    }).join('')}
+
+    ${recentTransfers.length?`
+      <div class="section-hd">Recent Transfers (24h)</div>
+      ${recentTransfers.slice(0,5).map(t=>`
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:7px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:600;color:var(--text)">${t.by}</span>
+            <span style="font-size:10px;color:var(--text3)">${new Date(t.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2)">${BRANCHES.find(b=>b.id===t.from)?.icon} ${BRANCHES.find(b=>b.id===t.from)?.label} → ${BRANCHES.find(b=>b.id===t.to)?.icon} ${BRANCHES.find(b=>b.id===t.to)?.label}</div>
+          <div style="font-size:11px;color:var(--accent);font-family:var(--mono)">${t.items.length} item${t.items.length!==1?'s':''}</div>
+        </div>`).join('')}
+    `:''}
+  `;
+}
+
+function bmRenderHistory(){
+  const el = document.getElementById('bm-history-list');
+  if(!el) return;
+  let list = [...bmTransferLog];
+  if(bmHistFilter!=='all') list = list.filter(t=>t.from===bmHistFilter||t.to===bmHistFilter);
+  if(!list.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">📦</div><div style="font-size:13px">No transfers found</div></div>';
+    return;
+  }
+  el.innerHTML = list.slice(0,30).map(t=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px">${t.by}</div>
+          <div style="font-size:11px;color:var(--text2)">${BRANCHES.find(b=>b.id===t.from)?.icon||'📍'} ${BRANCHES.find(b=>b.id===t.from)?.label||t.from} → ${BRANCHES.find(b=>b.id===t.to)?.icon||'📍'} ${BRANCHES.find(b=>b.id===t.to)?.label||t.to}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--text3)">${new Date(t.at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'})}</div>
+          <div style="font-size:9px;color:var(--text3)">${new Date(t.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        ${t.items.map(item=>`<span style="font-family:var(--mono);font-size:10px;font-weight:600;background:rgba(26,86,219,.1);color:var(--blue);padding:2px 7px;border-radius:20px">${item.id}</span>`).join('')}
+      </div>
+      ${t.note?`<div style="font-size:11px;color:var(--text2);padding:6px 10px;background:var(--surface2);border-radius:var(--r2);border-left:2px solid var(--border2)">${t.note}</div>`:''}
+      <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${t.status==='received'?'rgba(22,163,74,.12)':'rgba(26,86,219,.1)'};color:${t.status==='received'?'#16a34a':'#1a56db'};font-family:var(--mono)">${(t.status||'sent').toUpperCase()}</span>
+        ${t.status!=='received'&&bmSession?.branch===t.to?`<button onclick="bmMarkReceived('${t.id}')" class="receive-btn">✓ Mark Received</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function bmSetHistFilter(f){
+  bmHistFilter=f;
+  document.querySelectorAll('[id^="bmhf-"]').forEach(el=>{
+    const isActive = el.id==='bmhf-'+f;
+    el.style.borderColor = isActive ? 'var(--accent)' : 'var(--border2)';
+    el.style.background = isActive ? 'rgba(0,229,176,.1)' : 'var(--surface)';
+    el.style.color = isActive ? 'var(--accent)' : 'var(--text3)';
+  });
+  bmRenderHistory();
+}
+
+function bmMarkReceived(transferId){
+  const tr = bmTransferLog.find(t=>t.id===transferId);
+  if(!tr) return;
+  tr.status='received';
+  tr.receivedBy = bmSession.name;
+  tr.receivedAt = new Date().toISOString();
+  saveBmTransferLog();
+  // Update location of items
+  tr.items.forEach(item=>{
+    if(transfers[item.id]) transfers[item.id].received = true;
+  });
+  saveBranchTransfers();
+  showToast(`✓ Receipt confirmed for ${tr.items.length} item${tr.items.length!==1?'s':''}`);
+  bmRenderHistory();
+}
+
+function bmRenderReceive(){
+  const el = document.getElementById('bm-receive-list');
+  if(!el||!bmSession) return;
+  const incoming = bmTransferLog.filter(t=>t.to===bmSession.branch && t.status!=='received');
+  if(!incoming.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">✅</div><div style="font-size:13px">No pending incoming transfers</div><div style="font-size:11px;margin-top:4px">All assets received</div></div>';
+    return;
+  }
+  el.innerHTML = incoming.map(t=>`
+    <div style="background:var(--surface);border:1.5px solid rgba(22,163,74,.3);border-radius:var(--r);padding:13px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(22,163,74,.12);display:grid;place-items:center;font-size:18px;flex-shrink:0">📦</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${BRANCHES.find(b=>b.id===t.from)?.label||t.from} → Your Branch</div>
+          <div style="font-size:11px;color:var(--text2)">Sent by ${t.by} · ${new Date(t.at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+        ${t.items.map(item=>`<span style="font-family:var(--mono);font-size:10px;font-weight:600;background:rgba(22,163,74,.1);color:#16a34a;padding:2px 7px;border-radius:20px">${item.id}</span>`).join('')}
+      </div>
+      ${t.note?`<div style="font-size:11px;color:var(--text2);padding:6px 10px;background:var(--surface2);border-radius:var(--r2);margin-bottom:8px">${t.note}</div>`:''}
+      <button onclick="bmMarkReceived('${t.id}')" style="width:100%;padding:11px;background:rgba(22,163,74,.12);border:1.5px solid rgba(22,163,74,.3);border-radius:var(--r2);color:#16a34a;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">✓ Confirm Receipt</button>
+    </div>`).join('');
+}
+
+// ── Ops Head: Add BM users in Settings ──
+function renderBMUserSettings(){
+  const el = document.getElementById('bm-users-settings');
+  if(!el) return;
+  bmUsers = JSON.parse(localStorage.getItem(KEY_BM_USERS)||'[]');
+  el.innerHTML = bmUsers.length ? bmUsers.map((u,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:8px 10px;margin-bottom:6px">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${u.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${BRANCHES.find(b=>b.id===u.branch)?.icon||'📍'} ${BRANCHES.find(b=>b.id===u.branch)?.label||u.branch} · PIN: ${u.pin||'0000'}</div>
+      </div>
+      <button onclick="removeBMUser(${i})" style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer">×</button>
+    </div>`) .join('') : '<div style="font-size:12px;color:var(--text3);text-align:center;padding:10px">No branch managers added yet</div>';
+}
+
+function addBMUser(){
+  const name  = document.getElementById('new-bm-name')?.value.trim();
+  const pin   = document.getElementById('new-bm-pin')?.value.trim();
+  const branch = document.getElementById('new-bm-branch')?.value;
+  if(!name){ showToast('Enter manager name'); return; }
+  if(!branch){ showToast('Select branch'); return; }
+  if(pin && !/^\d{4}$/.test(pin)){ showToast('PIN must be 4 digits'); return; }
+  bmUsers.push({ name, branch, pin: pin||'0000' });
+  saveBmUsers();
+  document.getElementById('new-bm-name').value='';
+  document.getElementById('new-bm-pin').value='';
+  renderBMUserSettings();
+  showToast('Branch manager added');
+}
+
+function removeBMUser(i){
+  if(!confirm('Remove this branch manager?')) return;
+  bmUsers.splice(i,1);
+  saveBmUsers();
+  renderBMUserSettings();
+}
+
+// Hook into camera scan for BM Transfer
+const _origCameraAdd = window.onCameraQRScanned;
+function bmHandleQRScan(id){
+  if(!id) return;
+  const clean = id.trim().toUpperCase();
+  if(bmTransferItems.find(x=>x.id===clean)){ showToast('Already in transfer list'); return; }
+  const eq = equipMap[clean]||{};
+  bmTransferItems.push({ id:clean, model: eq.model||'—', make: eq.make||'' });
+  bmRenderTransferList();
+  bmUpdateTransferBtn();
+  showToast('Added: '+clean);
+}
+
+
+function saveMyPIN(){
+  const newPin  = document.getElementById('my-new-pin')?.value.trim();
+  const confPin = document.getElementById('my-confirm-pin')?.value.trim();
+  const status  = document.getElementById('my-pin-status');
+  if(!newPin||newPin.length!==4||!/^[0-9]{4}$/.test(newPin)){
+    if(status){ status.textContent='⚠ PIN must be exactly 4 digits'; status.style.color='var(--amber)'; }
+    return;
+  }
+  if(newPin!==confPin){
+    if(status){ status.textContent='❌ PINs do not match — try again'; status.style.color='var(--red)'; }
+    return;
+  }
+  pins['ops_head'] = newPin;
+  localStorage.setItem(KEY_PINS, JSON.stringify(pins));
+  if(status){ status.textContent='✅ PIN saved! Use it next time you log in.'; status.style.color='var(--accent)'; }
+  document.getElementById('my-new-pin').value='';
+  document.getElementById('my-confirm-pin').value='';
+  showToast('✓ Your PIN has been updated');
+}
+
+function resetMyPIN(){
+  if(!confirm('Reset your PIN to 0000?')) return;
+  pins['ops_head'] = '0000';
+  localStorage.setItem(KEY_PINS, JSON.stringify(pins));
+  const status = document.getElementById('my-pin-status');
+  if(status){ status.textContent='PIN reset to 0000'; status.style.color='var(--text3)'; }
+  showToast('PIN reset to 0000');
+}
+
+// ════════════════════════════════════════════════════
+// WA PROMPT — show optional button, never auto-redirect
+// ════════════════════════════════════════════════════
+let _waPendingTimer = null;
+function showWAPrompt(phone, msg, label){
+  // Remove any previous WA prompt
+  const old = document.getElementById('wa-prompt-bar');
+  if(old) old.remove();
+  if(_waPendingTimer){ clearTimeout(_waPendingTimer); _waPendingTimer=null; }
+
+  const url = phone
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+  const bar = document.createElement('div');
+  bar.id = 'wa-prompt-bar';
+  bar.style.cssText = 'position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:#1b4332;border:1.5px solid rgba(37,211,102,.4);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:400;max-width:360px;width:calc(100% - 32px);box-shadow:0 4px 20px rgba(0,0,0,.4);animation:sheet-up .25s ease';
+  bar.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    <span style="flex:1;font-size:12px;font-weight:600;color:#d1fae5">${label||'Send WhatsApp'}</span>
+    <button onclick="window.open('${url}','_blank');this.closest('#wa-prompt-bar').remove()" style="background:#25d366;border:none;border-radius:8px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Open WA</button>
+    <button onclick="this.closest('#wa-prompt-bar').remove()" style="background:rgba(255,255,255,.1);border:none;border-radius:8px;width:28px;height:28px;color:#d1fae5;font-size:16px;cursor:pointer;display:grid;place-items:center;flex-shrink:0">×</button>
+  `;
+  document.body.appendChild(bar);
+  // Auto-dismiss after 12 seconds
+  _waPendingTimer = setTimeout(()=>{ bar.remove(); _waPendingTimer=null; }, 12000);
+}
+
+
+// ════════════════════════════════════════════════════
+// COORDINATOR UPLOADS TAB
+// ════════════════════════════════════════════════════
+let coordFilter = 'all';
+
+function setCoordFilter(f){
+  coordFilter = f;
+  ['all','po','do','cert'].forEach(id=>{
+    const el = document.getElementById('cdf-'+id);
+    if(!el) return;
+    const active = id===f;
+    el.style.borderColor = active ? 'var(--accent)' : 'var(--border2)';
+    el.style.background  = active ? 'rgba(0,180,216,.1)' : 'var(--surface)';
+    el.style.color       = active ? '#0891b2' : 'var(--text3)';
+  });
+  renderCoordUpload();
+}
+
+function renderCoordUpload(){
+  const kpiEl = document.getElementById('coord-kpi-row');
+  const listEl = document.getElementById('coord-upload-list');
+  if(!listEl) return;
+
+  // All jobs relevant to coordinator
+  const allJobs = jobs.filter(j=>j.status!=='draft');
+  const noPO    = allJobs.filter(j=>!(j.poDocData||j.poDocUrl||j.poNumber));
+  const noDO    = allJobs.filter(j=>j.stage>=5 && !(j.doPhotoData||j.doPhotoUrl));
+  const pendingDel = allJobs.filter(j=>j.stage===5);
+
+  if(kpiEl) kpiEl.innerHTML = `
+    <div class="kpi-card" style="border-color:rgba(255,107,53,.2)">
+      <div class="kpi-val" style="color:var(--s6);font-size:22px">${noPO.length}</div>
+      <div class="kpi-label">Missing PO</div>
+    </div>
+    <div class="kpi-card" style="border-color:rgba(0,180,216,.2)">
+      <div class="kpi-val" style="color:var(--s5);font-size:22px">${pendingDel.length}</div>
+      <div class="kpi-label">To Deliver</div>
+    </div>
+    <div class="kpi-card" style="border-color:rgba(248,81,73,.2)">
+      <div class="kpi-val" style="color:var(--red);font-size:22px">${noDO.length}</div>
+      <div class="kpi-label">No D.O</div>
+    </div>`;
+
+  // Filter jobs to show
+  let filtered = allJobs;
+  if(coordFilter==='po')   filtered = allJobs.filter(j=>!(j.poDocData||j.poDocUrl));
+  if(coordFilter==='do')   filtered = allJobs.filter(j=>j.stage>=5 && !(j.doPhotoData||j.doPhotoUrl));
+  if(coordFilter==='cert') filtered = allJobs.filter(j=>j.stage===5||j.stage===6);
+
+  if(!filtered.length){
+    listEl.innerHTML='<div class="empty-state"><p>Nothing to show ✓</p></div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(j=>{
+    const hasPO   = !!(j.poDocData||j.poDocUrl||j.poNumber);
+    const hasDO   = !!(j.doPhotoData||j.doPhotoUrl);
+    const hasCert = !!(j.certNumbers?.length);
+    const stage   = STAGES[j.stage-1]||STAGES[0];
+
+    return `<div class="coord-upload-card">
+      <div class="coord-upload-card-hd">
+        <div>
+          <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent)">${j.jobNum}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-top:1px">${j.customer}</div>
+          <div style="font-size:11px;color:var(--text2)">📍 ${j.site}</div>
+        </div>
+        <span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(0,0,0,.25);color:${stage.color};font-family:var(--mono)">S${j.stage}</span>
+      </div>
+
+      <!-- Status badges -->
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="doc-badge ${hasPO?'ok':'miss'}">📄 PO ${hasPO?'✓':'Missing'}</span>
+        <span class="doc-badge ${hasDO?'ok':j.stage>=5?'miss':'warn'}">🚗 D.O ${hasDO?'✓':j.stage>=5?'Missing':'N/A'}</span>
+        <span class="doc-badge ${hasCert?'ok':'warn'}">📜 Cert ${hasCert?j.certNumbers.length+' nos':'—'}</span>
+      </div>
+
+      <!-- PO Upload -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">PO Number / Document</div>
+        <div style="display:flex;gap:7px;align-items:center;margin-bottom:6px">
+          <input type="text" class="field-input mono" placeholder="PO number" style="flex:1;padding:9px 11px"
+            value="${j.poNumber||''}" id="po-num-${j.jobNum}" onchange="coordSavePO('${j.jobNum}',this.value)">
+          <button onclick="document.getElementById('po-file-${j.jobNum}').click()" style="padding:9px 12px;background:${hasPO?'rgba(0,229,176,.1)':'var(--surface)'};border:1.5px ${hasPO?'solid rgba(0,229,176,.3)':'dashed var(--border2)'};border-radius:var(--r2);color:${hasPO?'var(--accent)':'var(--text3)'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">
+            ${hasPO?'📄 Replace':'📷 Upload'}
+          </button>
+          <input type="file" id="po-file-${j.jobNum}" accept="image/*,application/pdf" capture="environment" style="display:none" onchange="coordUploadPO(event,'${j.jobNum}')">
+        </div>
+        ${(j.poDocData||j.poDocUrl)?`
+          <div style="position:relative;margin-top:4px">
+            <img src="${j.poDocUrl||j.poDocData}" style="width:100%;max-height:100px;object-fit:cover;border-radius:var(--r2);border:1px solid var(--border)" alt="PO">
+            <a href="${j.poDocUrl||j.poDocData}" target="_blank" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:3px 7px;border-radius:6px;text-decoration:none">View</a>
+          </div>`:''}
+      </div>
+
+      <!-- D.O Upload — only for stage 5+ -->
+      ${j.stage>=5?`<div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">D.O / Signed Delivery Order</div>
+        <div class="upload-zone ${hasDO?'done':''}" onclick="document.getElementById('do-file-${j.jobNum}').click()" style="padding:10px">
+          ${hasDO
+            ? `<img src="${j.doPhotoUrl||j.doPhotoData}" class="upload-thumb" style="max-height:80px" alt="DO"><div style="font-size:11px;color:var(--accent);font-weight:600">✓ D.O uploaded — tap to replace</div>`
+            : `<div style="font-size:13px;color:var(--text3)">📷 Tap to upload signed D.O</div>`}
+        </div>
+        <input type="file" id="do-file-${j.jobNum}" accept="image/*" capture="environment" style="display:none" onchange="onDOPhotoSelected(event,'${j.jobNum}');renderCoordUpload()">
+      </div>`:''}
+
+      <!-- Certificate info -->
+      ${hasCert?`<div style="background:rgba(0,229,176,.06);border:1px solid rgba(0,229,176,.15);border-radius:var(--r2);padding:9px 11px;font-size:11px;color:var(--accent)">
+        📜 Certs: ${j.certNumbers.join(', ')} ${j.deliveryAck?'· Delivered to: '+j.deliveryAck:''}
+      </div>`:''}
+
+      <!-- Quick action button -->
+      ${j.stage===5?`<button onclick="openDeliveryModal('${j.jobNum}')" style="width:100%;padding:10px;background:rgba(0,180,216,.1);border:1.5px solid rgba(8,145,178,.3);border-radius:var(--r2);color:#0891b2;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px">🚗 Record Delivery &amp; Get Signature →</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function coordSavePO(jobNum, val){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j) return;
+  j.poNumber = val;
+  updateJob(j); syncJobToSupabase(j);
+}
+
+async function coordUploadPO(e, jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum); if(!j) return;
+  const file = e.target.files[0]; if(!file) return;
+  showToast('Uploading PO document…');
+  if(SB_URL && SB_KEY_VAL){
+    const ext = file.name.split('.').pop()||'jpg';
+    const path = `po-docs/${jobNum}_${Date.now()}.${ext}`;
+    const url = await sbStorageUpload('caltrack-docs', path, file);
+    if(url){
+      j.poDocData=url; j.poDocUrl=url; j.poDocName=file.name;
+      updateJob(j); syncJobToSupabase(j);
+      renderCoordUpload();
+      showToast('✓ PO uploaded to cloud');
+      return;
+    }
+  }
+  try{
+    const dataUrl = await compressImage(file, 900, 0.65);
+    j.poDocData = dataUrl; j.poDocName = file.name;
+    updateJob(j);
+    renderCoordUpload();
+    const kb = Math.round(dataUrl.length * 0.75 / 1024);
+    showToast('✓ PO saved locally (' + kb + 'KB)');
+    warnIfStorageFull();
+  }catch(e){
+    const reader = new FileReader();
+    reader.onload = ev=>{ j.poDocData = ev.target.result; j.poDocName = file.name; updateJob(j); renderCoordUpload(); };
+    reader.readAsDataURL(file);
+  }
+}
+
+// Update notifs to include coord tab
 // ════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════
