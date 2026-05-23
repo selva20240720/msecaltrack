@@ -308,8 +308,8 @@ textarea.field-input { resize: none; height: 80px; }
           <div class="role-card" data-role="quality" onclick="selectRole(this)">
             <div class="role-icon">🎯</div><div class="role-label">Quality Manager</div>
           </div>
-          <div class="role-card" data-role="lab_head" onclick="selectRole(this)">
-            <div class="role-icon">🏛️</div><div class="role-label">Lab Head</div>
+          <div class="role-card" onclick="openFindMasterGuest()" style="border-color:rgba(0,229,176,.3);background:rgba(0,229,176,.05)">
+            <div class="role-icon">🔍</div><div class="role-label" style="color:var(--accent)">Find Master</div>
           </div>
         </div>
       </div>
@@ -473,9 +473,15 @@ textarea.field-input { resize: none; height: 80px; }
           <div class="settings-card-title">👷 Technician Register <span style="font-size:10px;color:var(--text3);font-weight:400">(Ops Head only)</span></div>
           <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Add your technicians here. They will select their name from a list when logging in — no typing needed.</div>
           <div id="tech-register-list"></div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <input type="text" id="new-tech-name" class="fi" placeholder="Technician name e.g. Ahmed Ali" style="flex:1">
-            <button onclick="addTechnician()" style="padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">+ Add</button>
+          <div style="margin-top:10px">
+            <div style="display:flex;gap:8px;margin-bottom:6px">
+              <input type="text" id="new-tech-name" class="fi" placeholder="Technician name e.g. Ahmed Ali" style="flex:1">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="new-tech-pin" maxlength="4" placeholder="PIN (4 digits)" class="fi" style="width:110px;font-family:var(--mono);letter-spacing:.1em" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+              <span style="font-size:11px;color:var(--text3);flex:1">Optional — leave blank to use role PIN</span>
+              <button onclick="addTechnician()" style="padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">+ Add</button>
+            </div>
           </div>
         </div>
 
@@ -483,9 +489,15 @@ textarea.field-input { resize: none; height: 80px; }
           <div class="settings-card-title">🌟 Sales Staff Register <span style="font-size:10px;color:var(--text3);font-weight:400">(Ops Head only)</span></div>
           <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Add your sales team members. They select their name from a list when logging in.</div>
           <div id="sales-register-list"></div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <input type="text" id="new-sales-name" class="fi" placeholder="Sales person name" style="flex:1">
-            <button onclick="addSalesStaff()" style="padding:10px 16px;background:#16a34a;color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">+ Add</button>
+          <div style="margin-top:10px">
+            <div style="display:flex;gap:8px;margin-bottom:6px">
+              <input type="text" id="new-sales-name" class="fi" placeholder="Sales person name" style="flex:1">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="new-sales-pin" maxlength="4" placeholder="PIN (4 digits)" class="fi" style="width:110px;font-family:var(--mono);letter-spacing:.1em" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+              <span style="font-size:11px;color:var(--text3);flex:1">Optional — leave blank to use role PIN</span>
+              <button onclick="addSalesStaff()" style="padding:10px 16px;background:#16a34a;color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">+ Add</button>
+            </div>
           </div>
         </div>
 
@@ -583,6 +595,24 @@ textarea.field-input { resize: none; height: 80px; }
   <div class="cam-overlay"></div>
 </div>
 
+<!-- Find Master Guest Modal (login screen shortcut) -->
+<div id="modal-find-master-guest" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;flex-direction:column;align-items:center;justify-content:flex-end;backdrop-filter:blur(4px)">
+  <div style="background:var(--bg2);border-radius:20px 20px 0 0;border:1px solid var(--border2);border-bottom:none;width:100%;max-width:480px;padding:20px 16px 40px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">🔍 Find Master Instrument</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Live location lookup — no login required</div>
+      </div>
+      <button onclick="closeFindMasterGuest()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;color:var(--text3);font-size:18px">×</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="text" id="guest-find-query" class="field-input" placeholder="Instrument ID, model, make…" oninput="renderGuestFindMaster()" style="flex:1" autocomplete="off">
+      <button onclick="renderGuestFindMaster()" style="padding:11px 14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">Go</button>
+    </div>
+    <div id="guest-find-results" style="max-height:50dvh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -620,12 +650,12 @@ const STAGES = [
 ];
 
 const ROLE_CONFIG = {
-  technician:  { label:'Technician',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['new-job','tasks','find-master','jobs'],                        canApprove:false, readOnly:false },
-  ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['pipeline','tasks','find-master','jobs','settings'],             canApprove:true,  readOnly:false },
-  coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['tasks','delivery','billing','find-master','jobs'],              canApprove:false, readOnly:false },
-  sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['pipeline','sales','find-master','jobs'],                        canApprove:false, readOnly:false, isSales:true },
-  quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['pipeline','find-master','jobs'],                                canApprove:false, readOnly:true  },
-  lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['pipeline','find-master','jobs'],                                canApprove:false, readOnly:true  },
+  technician:  { label:'Technician',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['find-master','new-job','tasks','jobs'],                        canApprove:false, readOnly:false },
+  ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['find-master','pipeline','tasks','jobs','settings'],             canApprove:true,  readOnly:false },
+  coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['find-master','tasks','delivery','billing','jobs'],              canApprove:false, readOnly:false },
+  sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['find-master','pipeline','sales','jobs'],                        canApprove:false, readOnly:false, isSales:true },
+  quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['find-master','pipeline','jobs'],                                canApprove:false, readOnly:true  },
+  lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['find-master','pipeline','jobs'],                                canApprove:false, readOnly:true  },
 };
 
 const TAB_CONFIG = {
@@ -849,12 +879,56 @@ function doLogout(){
   activeJob=null; batchQueue=[];
   document.getElementById('app-view').style.display='none';
   document.getElementById('login-view').style.display='block';
-  // Reset to step 1
   const sn=document.getElementById('step-name'), sp=document.getElementById('step-pin');
   if(sn) sn.style.display='block';
   if(sp) sp.style.display='none';
   pinEntry=''; selectedRole='';
   document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+}
+
+function openFindMasterGuest(){
+  const el = document.getElementById('modal-find-master-guest');
+  if(el){ el.style.display='flex'; document.getElementById('guest-find-query').value=''; document.getElementById('guest-find-results').innerHTML=''; setTimeout(()=>document.getElementById('guest-find-query').focus(),100); }
+}
+function closeFindMasterGuest(){
+  const el = document.getElementById('modal-find-master-guest');
+  if(el) el.style.display='none';
+}
+function renderGuestFindMaster(){
+  const el = document.getElementById('guest-find-results');
+  if(!el) return;
+  const q = (document.getElementById('guest-find-query')?.value||'').trim().toLowerCase();
+  if(!q){ el.innerHTML=''; return; }
+  // Reuse same logic as renderFindMaster but render into guest div
+  const instrMap = {};
+  jobs.forEach(j=>{
+    (j.masterItems||[]).forEach(id=>{
+      const existing = instrMap[id];
+      const isActive = j.stage>=1 && j.stage<=3 && j.status!=='complete';
+      if(!existing || isActive) instrMap[id] = { id, job:j.jobNum, customer:j.customer, site:j.site, stage:j.stage, tech:j.tech, status:j.status, stageLabel:STAGES[j.stage-1]?.label||'Unknown', stageColor:STAGES[j.stage-1]?.color||'var(--text3)', isActive };
+    });
+  });
+  const allIds = new Set([...Object.keys(instrMap), ...equipDB.map(e=>e.id)]);
+  const results = [...allIds].filter(id=>{
+    const info = instrMap[id]; const eq = equipMap[id]||{};
+    return id.toLowerCase().includes(q)||(eq.model||'').toLowerCase().includes(q)||(eq.make||'').toLowerCase().includes(q)||(eq.description||'').toLowerCase().includes(q)||(info?.customer||'').toLowerCase().includes(q)||(info?.site||'').toLowerCase().includes(q)||(info?.tech||'').toLowerCase().includes(q);
+  });
+  if(!results.length){ el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3)">No instruments found for "<strong>${q}</strong>"</div>`; return; }
+  el.innerHTML = results.slice(0,10).map(id=>{
+    const info = instrMap[id]; const eq = equipMap[id]||{};
+    const model = eq.model||eq.description||'Unknown'; const make = eq.make||'';
+    let badge, detail;
+    if(!info){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">🏛 IN LAB</span>`; detail=`<div style="font-size:11px;color:var(--text3);margin-top:4px">Not on any active job</div>`; }
+    else if(info.isActive && info.stage===1){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(240,165,0,.15);color:var(--amber);font-family:var(--mono)">⚙ ISSUED OUT</span>`; detail=`<div style="font-size:11px;color:var(--text2);margin-top:4px">Job ${info.job} · ${info.customer} · 👤 ${info.tech}</div>`; }
+    else if(info.isActive && info.stage===2){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(59,130,246,.15);color:var(--blue);font-family:var(--mono)">📍 ON SITE</span>`; detail=`<div style="font-size:11px;color:var(--text2);margin-top:4px">Job ${info.job} · ${info.customer} · <strong>${info.site}</strong> · 👤 ${info.tech}</div>`; }
+    else if(info.isActive && info.stage===3){ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(124,58,237,.15);color:var(--purple);font-family:var(--mono)">🔄 RETURNING</span>`; detail=`<div style="font-size:11px;color:var(--text2);margin-top:4px">Job ${info.job} · ${info.tech} returning to lab</div>`; }
+    else{ badge=`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(22,163,74,.12);color:var(--accent);font-family:var(--mono)">🏛 IN LAB</span>`; detail=`<div style="font-size:11px;color:var(--text3);margin-top:4px">Last: Job ${info.job}</div>`; }
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div><div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text)">${id}</div><div style="font-size:11px;color:var(--text2)">${make?make+' · ':''}${model}</div></div>
+        ${badge}
+      </div>${detail}</div>`;
+  }).join('') + (results.length>10 ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:8px">${results.length-10} more results — refine your search</div>` : '');
 }
 
 // ════════════════════════════════════════════════════
@@ -2435,15 +2509,19 @@ function saveTechPin(i, name){
 }
 
 function addTechnician(){
-  const el=document.getElementById('new-tech-name');
-  const name=el?.value.trim();
+  const nameEl = document.getElementById('new-tech-name');
+  const pinEl  = document.getElementById('new-tech-pin');
+  const name = nameEl?.value.trim();
+  const pin  = pinEl?.value.trim();
   if(!name){ showToast('Enter technician name'); return; }
   if(technicians.includes(name)){ showToast('Already added'); return; }
+  if(pin && (pin.length!==4||!/^[0-9]{4}$/.test(pin))){ showToast('PIN must be exactly 4 digits'); return; }
   technicians.push(name);
   localStorage.setItem(KEY_TECHS, JSON.stringify(technicians));
-  el.value='';
+  if(pin){ techPins[name]=pin; localStorage.setItem(KEY_TECH_PINS, JSON.stringify(techPins)); }
+  nameEl.value=''; if(pinEl) pinEl.value='';
   renderTechRegister();
-  showToast('✓ '+name+' added');
+  showToast('✓ '+name+' added'+(pin?' with PIN':''));
 }
 
 function removeTechnician(i){
@@ -2491,15 +2569,19 @@ function saveSalesPin(i, name){
 }
 
 function addSalesStaff(){
-  const el=document.getElementById('new-sales-name');
-  const name=el?.value.trim();
+  const nameEl = document.getElementById('new-sales-name');
+  const pinEl  = document.getElementById('new-sales-pin');
+  const name = nameEl?.value.trim();
+  const pin  = pinEl?.value.trim();
   if(!name){ showToast('Enter sales person name'); return; }
   if(salesStaff.includes(name)){ showToast('Already added'); return; }
+  if(pin && (pin.length!==4||!/^[0-9]{4}$/.test(pin))){ showToast('PIN must be exactly 4 digits'); return; }
   salesStaff.push(name);
   localStorage.setItem(KEY_SALES, JSON.stringify(salesStaff));
-  el.value='';
+  if(pin){ salesPins[name]=pin; localStorage.setItem(KEY_SALES_PINS, JSON.stringify(salesPins)); }
+  nameEl.value=''; if(pinEl) pinEl.value='';
   renderSalesRegister();
-  showToast('✓ '+name+' added to Sales');
+  showToast('✓ '+name+' added to Sales'+(pin?' with PIN':''));
 }
 
 function removeSalesStaff(i){
