@@ -440,7 +440,13 @@ textarea.field-input { resize: none; height: 80px; }
                 <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Active Job</div>
                 <div id="active-job-num" style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent)">—</div>
               </div>
-              <div style="display:flex;gap:7px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+                <button onclick="shareJobDetails(activeJob?.jobNum,'wa')" style="padding:7px 11px;background:#e7f9ef;border:1px solid rgba(37,211,102,.3);border-radius:8px;color:#16a34a;font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;gap:4px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WA
+                </button>
+                <button onclick="shareJobDetails(activeJob?.jobNum,'excel')" style="padding:7px 11px;background:#eff6ff;border:1px solid rgba(26,86,219,.2);border-radius:8px;color:#1a56db;font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;gap:4px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel
+                </button>
                 <button onclick="openJobDetailModal(null)" style="padding:7px 11px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer">View</button>
                 <button onclick="clearActiveJob()" style="padding:7px 11px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);border-radius:8px;color:var(--red);font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer">Close</button>
               </div>
@@ -500,6 +506,79 @@ textarea.field-input { resize: none; height: 80px; }
           <button onclick="renderFindMaster()" style="padding:11px 14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">Search</button>
         </div>
         <div id="find-master-results"></div>
+      </div>
+
+      <!-- QC tab -->
+      <div class="tab-panel" id="panel-qc">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)">QC — Master Instruments</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Quality Manager maintains this list</div>
+          </div>
+          <button onclick="openQCUploadModal()" style="padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload List
+          </button>
+        </div>
+
+        <!-- Alert summary -->
+        <div id="qc-alert-bar" style="margin-bottom:12px"></div>
+
+        <!-- KPI row -->
+        <div style="display:flex;gap:8px;margin-bottom:14px" id="qc-kpis"></div>
+
+        <!-- Filter tabs -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="qc-filters"></div>
+
+        <!-- Search -->
+        <input type="text" id="qc-search" class="fi" placeholder="Search by ID, model, serial…" oninput="renderQCPanel()" style="margin-bottom:12px">
+
+        <!-- Export row -->
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button onclick="exportQCExcel()" style="flex:1;padding:10px;background:#f0fdf4;border:1px solid rgba(22,163,74,.2);border-radius:var(--r2);color:#16a34a;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer">📥 Export Excel</button>
+          <button onclick="shareQCSummaryWA()" style="flex:1;padding:10px;background:#e7f9ef;border:1px solid rgba(37,211,102,.2);border-radius:var(--r2);color:#16a34a;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer">📲 Share WA</button>
+        </div>
+
+        <!-- Instrument list -->
+        <div id="qc-list"></div>
+      </div>
+
+      <!-- QC Upload Modal -->
+      <div class="modal-overlay" id="modal-qc-upload" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal-sheet">
+          <div class="sheet-title">Upload Master Instrument List</div>
+          <div class="sheet-sub">Upload Excel or CSV — app reads and updates all 122 instruments</div>
+
+          <div style="background:#eff6ff;border:1px solid rgba(26,86,219,.15);border-radius:var(--r2);padding:12px;margin-bottom:14px;font-size:12px;color:#1a56db">
+            <strong>Expected columns (any order):</strong><br>
+            ID/Instrument ID, Model, Make/Brand, Serial/Serial No, Range, Cal Due/Next Cal Date, Cert No/Certificate, Status
+          </div>
+
+          <div onclick="document.getElementById('qc-file-input').click()"
+            style="border:2px dashed #dde1ea;border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;background:#f5f7fa;margin-bottom:14px" id="qc-upload-zone">
+            <div style="font-size:32px;margin-bottom:8px">📊</div>
+            <div style="font-size:14px;font-weight:600;color:#1a56db">Tap to select Excel or CSV file</div>
+            <div style="font-size:11px;color:#8896ab;margin-top:4px">.xlsx · .xls · .csv supported</div>
+          </div>
+          <input type="file" id="qc-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="onQCFileUpload(event)">
+
+          <div id="qc-upload-preview" style="display:none">
+            <div style="background:#f0fdf4;border:1px solid rgba(22,163,74,.2);border-radius:var(--r2);padding:12px;margin-bottom:14px">
+              <div style="font-size:13px;font-weight:600;color:#16a34a;margin-bottom:4px" id="qc-upload-status">Ready to import</div>
+              <div style="font-size:11px;color:#8896ab" id="qc-upload-detail"></div>
+            </div>
+            <button onclick="confirmQCUpload()" style="width:100%;padding:13px;background:#1a56db;color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer">Update Master List</button>
+          </div>
+
+          <button onclick="document.getElementById('modal-qc-upload').classList.remove('open')" style="width:100%;padding:11px;background:#f5f7fa;border:1px solid #dde1ea;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:600;color:#8896ab;cursor:pointer;margin-top:8px">Cancel</button>
+        </div>
+      </div>
+
+      <!-- QC Instrument Detail Modal -->
+      <div class="modal-overlay" id="modal-qc-detail" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="modal-sheet" id="modal-qc-detail-body"></div>
       </div>
 
       <!-- SETTINGS tab -->
@@ -750,12 +829,12 @@ const STAGES = [
 ];
 
 const ROLE_CONFIG = {
-  technician:  { label:'Technician',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['find-master','new-job','tasks','jobs'],                        canApprove:false, readOnly:false },
-  ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['find-master','pipeline','tasks','jobs','settings'],             canApprove:true,  readOnly:false },
-  coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['find-master','tasks','delivery','billing','jobs'],              canApprove:false, readOnly:false },
-  sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['find-master','pipeline','sales','jobs'],                        canApprove:false, readOnly:false, isSales:true },
-  quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['find-master','pipeline','jobs'],                                canApprove:false, readOnly:true  },
-  lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['find-master','pipeline','jobs'],                                canApprove:false, readOnly:true  },
+  technician:  { label:'Technician',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['find-master','new-job','tasks','jobs'],                         canApprove:false, readOnly:false },
+  ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['qc','find-master','pipeline','tasks','jobs','settings'],          canApprove:true,  readOnly:false },
+  coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['find-master','tasks','delivery','billing','jobs'],                canApprove:false, readOnly:false },
+  sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['find-master','pipeline','sales','jobs'],                          canApprove:false, readOnly:false, isSales:true },
+  quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['qc','pipeline','jobs'],                                           canApprove:false, readOnly:true  },
+  lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['pipeline','jobs'],                                               canApprove:false, readOnly:true  },
 };
 
 const TAB_CONFIG = {
@@ -1121,6 +1200,7 @@ function switchTab(tab){
     if(btn) btn.style.display = session?.role==='ops_head' ? 'inline-flex' : 'none';
   }
   if(tab==='settings')   renderSettings();
+  if(tab==='qc')        renderQCPanel();
   updateNotifs();
 }
 
@@ -1250,6 +1330,9 @@ async function syncJobToSupabase(job){
     contact_person: job.contact||'',
     technician:     job.tech||'',
     stage:          job.stage||1,
+    stage1_pending: job.stage1Pending||false,
+    stage1_rejected:job.stage1Rejected||false,
+    stage1_reject_reason:job.stage1RejectReason||'',
     status:         job.status||'open',
     master_items:   JSON.stringify(job.masterItems||[]),
     mcl_items:      JSON.stringify(job.mclItems||[]),
@@ -1378,9 +1461,52 @@ function stageLockedCard(title, sub){
 
 // Stage 1: Issue Out — scan master instruments
 function renderStage1UI(el){
+  // If rejected — show rejection notice with re-scan option
+  if(activeJob.stage1Rejected){
+    el.innerHTML = `
+      <div style="background:#fef2f2;border:1.5px solid rgba(220,38,38,.3);border-radius:var(--r);padding:16px;margin-bottom:14px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">❌</div>
+        <div style="font-size:15px;font-weight:700;color:#dc2626;margin-bottom:4px">Issue Out Rejected</div>
+        <div style="font-size:12px;color:#8896ab;margin-bottom:6px">${activeJob.stage1RejectReason||'No reason given'}</div>
+        <div style="font-size:11px;color:#8896ab">Please re-scan the correct instruments and resubmit.</div>
+      </div>
+      <button onclick="resetStage1()" style="width:100%;padding:13px;background:#1a56db;color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer">
+        🔄 Re-scan Instruments
+      </button>`;
+    return;
+  }
+  // If pending approval — show waiting card
+  if(activeJob.stage1Pending){
+    const items = activeJob.masterItems||[];
+    el.innerHTML = `
+      <div style="background:#fffbeb;border:1.5px solid rgba(217,119,6,.3);border-radius:var(--r);padding:16px;margin-bottom:14px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">⏳</div>
+        <div style="font-size:15px;font-weight:700;color:#d97706;margin-bottom:4px">Waiting for Approval</div>
+        <div style="font-size:12px;color:#8896ab">Your instrument list has been submitted.<br>Waiting for Operations Head to approve.</div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#8896ab;text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin-bottom:8px">
+        ${items.length} Instruments Submitted
+      </div>
+      ${items.map(id=>{
+        const instr=equipMap[id]||{};
+        return `<div style="background:#f5f7fa;border:1px solid #dde1ea;border-radius:var(--r2);padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:7px;background:#eff6ff;display:grid;place-items:center;font-size:13px;flex-shrink:0">🔧</div>
+          <div>
+            <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#1a56db">${id}</div>
+            <div style="font-size:11px;color:#8896ab">${instr.model||'—'}</div>
+          </div>
+        </div>`;
+      }).join('')}
+      <button onclick="cancelStage1Submission()" style="width:100%;padding:11px;background:#f5f7fa;border:1.5px solid #dde1ea;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:600;color:#8896ab;cursor:pointer;margin-top:8px">
+        ↩ Cancel & Re-scan
+      </button>`;
+    return;
+  }
+
   el.innerHTML = `
     <div class="section-hd">Stage 1 — Issue Out Master Instruments</div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Scan your master calibration instruments before leaving the lab.</div>
+    <div id="locked-instruments-list"></div>
     <button onclick="startCamera('stage1')" style="width:100%;padding:13px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--r);color:var(--accent);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
       Scan Instrument QR
@@ -1392,6 +1518,27 @@ function renderStage1UI(el){
     <div id="s1-batch"></div>
     <button onclick="submitStage1()" style="width:100%;padding:14px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;margin-top:12px" id="s1-submit">Issue Out ${batchQueue.length} Instruments</button>`;
   renderBatchInEl('s1-batch');
+  // Populate locked instruments list
+  setTimeout(()=>{
+    const el = document.getElementById('locked-instruments-list');
+    if(!el) return;
+    const locked = getLockedInstruments();
+    const others = [...locked.entries()].filter(([id,info])=>!activeJob||info.jobNum!==activeJob.jobNum);
+    if(!others.length){ el.innerHTML=''; return; }
+    el.innerHTML = `
+      <div style="background:#fff7ed;border:1px solid rgba(217,119,6,.2);border-radius:var(--r);padding:10px 13px;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;color:#d97706;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">
+          🔒 ${others.length} Instrument${others.length!==1?'s':''} Currently Out at Other Sites
+        </div>
+        ${others.slice(0,8).map(([id,info])=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(217,119,6,.15);font-size:11px">
+            <span style="font-family:var(--mono);font-weight:700;color:#1a56db;min-width:110px;flex-shrink:0">${id}</span>
+            <span style="color:#4a5568;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Job ${info.jobNum} · ${info.site}</span>
+            <span style="background:#fef2f2;color:#dc2626;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;flex-shrink:0">OUT</span>
+          </div>`).join('')}
+        ${others.length>8?`<div style="font-size:11px;color:#8896ab;margin-top:5px;text-align:center">+${others.length-8} more instruments out</div>`:''}
+      </div>`;
+  }, 100);
 }
 
 // Stage 2: On Site — MCL entry
@@ -1646,6 +1793,25 @@ function onQRDetected(raw){
 
   if(batchQueue.find(i=>i.id===id)){ showToast('⚠ '+id+' already in batch'); return; }
   const instr=equipMap[id]||{};
+
+  // ── LOCK CHECK ──
+  // Skip lock check for return mode (stage 3) — technician is bringing it back
+  const isReturnMode = activeJob && activeJob.stage === 3;
+  if(!isReturnMode){
+    const locked = getLockedInstruments();
+    if(locked.has(id)){
+      const info = locked.get(id);
+      // Allow if it's the same job (technician re-scanning their own job)
+      const isSameJob = activeJob && activeJob.jobNum === info.jobNum;
+      if(!isSameJob){
+        showToast(`🔒 ${id} is OUT on job ${info.jobNum}`);
+        // Show blocking card in batch area
+        showLockedInstrumentAlert(id, info);
+        return;
+      }
+    }
+  }
+
   if(!instr.id&&id.startsWith('MSSI')){ showToast('⚠ '+id+' not found in equipment list'); }
   batchQueue.push({
     id, model:instr.model||'Unknown', isMaster:!!instr.isMaster,
@@ -1658,6 +1824,36 @@ function onQRDetected(raw){
   updateCamCount();
   renderBatchInEl('s1-batch');
   renderBatchInEl('s3-batch');
+}
+
+function showLockedInstrumentAlert(id, info){
+  // Show a clear warning in the batch area
+  const el = document.getElementById('s1-batch') || document.getElementById('s3-batch');
+  if(!el) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#fef2f2;border:1.5px solid rgba(220,38,38,.3);border-radius:12px;padding:14px;margin-bottom:8px';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:20px">🔒</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#dc2626">Instrument Locked — Currently Out</div>
+        <div style="font-size:11px;color:#8896ab;margin-top:2px">Cannot be issued to another job</div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:8px;padding:10px;font-size:12px">
+      <div style="font-family:var(--mono);font-weight:700;color:#1a56db;margin-bottom:4px">${id}</div>
+      <div style="color:#4a5568"><strong>Job:</strong> ${info.jobNum}</div>
+      <div style="color:#4a5568"><strong>Customer:</strong> ${info.customer}</div>
+      <div style="color:#4a5568"><strong>Site:</strong> ${info.site}</div>
+      <div style="color:#4a5568"><strong>Technician:</strong> ${info.tech}</div>
+      <div style="color:${info.pending?'#d97706':'#dc2626'};font-weight:600;margin-top:4px">
+        ${info.pending ? '⏳ Pending approval' : '📤 Currently at site — Stage '+info.stage}
+      </div>
+    </div>`;
+  // Insert at top of batch list
+  el.insertBefore(div, el.firstChild);
+  // Auto-remove after 6 seconds
+  setTimeout(()=>{ if(div.parentElement) div.remove(); }, 6000);
 }
 
 function manualAddEquip(){
@@ -1715,14 +1911,32 @@ function removeBatchItem(i){ batchQueue.splice(i,1); renderStageActionArea(); up
 async function submitStage1(){
   if(!batchQueue.length){ showToast('Scan at least one instrument'); return; }
   activeJob.masterItems = batchQueue.map(i=>i.id);
-  activeJob.stage = 2;
+  activeJob.stage = 1; // stays at 1 until Ops Head approves
+  activeJob.stage1Pending = true; // flag: submitted, awaiting approval
   activeJob.stageHistory = activeJob.stageHistory||{};
-  activeJob.stageHistory[1] = { completedAt: new Date().toISOString(), by: session.name, items: [...activeJob.masterItems] };
+  activeJob.stageHistory['1_submitted'] = {
+    submittedAt: new Date().toISOString(),
+    by: session.name,
+    items: [...activeJob.masterItems]
+  };
   updateJob(activeJob);
   await syncJobToSupabase(activeJob);
   batchQueue = [];
-  sendStageWhatsApp(activeJob, 1, `${activeJob.masterItems.length} master instruments issued out`);
-  showToast('✓ Stage 1 complete — instruments issued');
+  // Show pending state first, then offer WhatsApp button
+  showToast('✓ Submitted — tap Send WhatsApp to notify Ops Head');
+  renderStageActionArea();
+  renderActivJobBanner();
+  updateNotifs();
+  // Show WhatsApp send button (don't auto-redirect)
+  setTimeout(()=>{
+    const el = document.getElementById('stage-action-area');
+    if(!el) return;
+    const waBtn = document.createElement('button');
+    waBtn.innerHTML = '📲 Send WhatsApp Approval Request to Ops Head';
+    waBtn.style.cssText = 'width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px';
+    waBtn.onclick = ()=>{ sendStage1ApprovalWA(activeJob); waBtn.textContent='✓ Sent — waiting for approval'; waBtn.disabled=true; waBtn.style.background='#8896ab'; };
+    el.appendChild(waBtn);
+  }, 300);
   renderStageActionArea();
   renderActivJobBanner();
   updateNotifs();
@@ -2242,10 +2456,11 @@ function renderTasks(){
     const taskJobs = jobs.filter(j=>j.tech===session.name && j.stage>=1 && j.stage<=3);
     renderTechnicianTasks(el, taskJobs);
   } else if(role==='ops_head'){
+    const s1 = jobs.filter(j=>j.stage===1&&j.stage1Pending);
     const s3 = jobs.filter(j=>j.stage===3);
     const s4 = jobs.filter(j=>j.stage===4&&!j.certAssigned);
     const s5 = jobs.filter(j=>j.stage===5&&!j.deliveryAck);
-    renderManagerTasks(el, s3, s4, s5);
+    renderManagerTasks(el, s1, s3, s4, s5);
   } else if(role==='sales'){
     const needApproval=jobs.filter(j=>j.stage===6&&!j.salesApproved);
     const noPO=jobs.filter(j=>!j.poNumber&&j.stage>1);
@@ -2287,8 +2502,24 @@ function renderTechnicianTasks(el, taskJobs){
   }).join('');
 }
 
-function renderManagerTasks(el, s3, s4, s5){
+function renderManagerTasks(el, s1, s3, s4, s5){
   let html = '';
+  if(s1&&s1.length){
+    html += `<div class="section-hd" style="color:#d97706">🔔 Issue Out Approval Needed (${s1.length})</div>`;
+    html += s1.map(j=>`
+      <div class="task-card">
+        <div class="task-card-num">${j.jobNum}</div>
+        <div class="task-card-customer">${j.customer}</div>
+        <div class="task-card-meta">📍 ${j.site} · 👤 ${j.tech} · 🔧 ${(j.masterItems||[]).length} instruments</div>
+        <div style="font-size:11px;font-family:var(--mono);color:#8896ab;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${(j.masterItems||[]).join(', ')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="approveStage1('${j.jobNum}')" style="flex:2;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">✓ Approve Issue Out</button>
+          <button onclick="rejectStage1('${j.jobNum}')" style="flex:1;padding:10px;background:#fef2f2;border:1px solid rgba(220,38,38,.2);border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:600;color:#dc2626;cursor:pointer">✗ Reject</button>
+        </div>
+      </div>`).join('');
+  }
   if(s3.length){
     html += `<div class="section-hd">⏳ Awaiting Return Approval (${s3.length})</div>`;
     html += s3.map(j=>`<div class="task-card" onclick="openJobDetailModal('${j.jobNum}')">
@@ -2516,7 +2747,11 @@ function openJobDetailModal(jobNum){
         <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)">${j.jobNum}</div>
         <div style="font-size:14px;font-weight:600;color:var(--text)">${j.customer}</div>
       </div>
-      <button onclick="document.getElementById('modal-job-detail').classList.remove('open')" style="background:var(--surface2);border:1px solid var(--border2);border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;color:var(--text3);font-size:18px;border:none">×</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="shareJobDetails('${j.jobNum}','wa')" style="padding:6px 11px;background:#e7f9ef;border:1px solid rgba(37,211,102,.3);border-radius:8px;color:#16a34a;font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer;white-space:nowrap">📲 WA</button>
+        <button onclick="shareJobDetails('${j.jobNum}','excel')" style="padding:6px 11px;background:#eff6ff;border:1px solid rgba(26,86,219,.2);border-radius:8px;color:#1a56db;font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer;white-space:nowrap">📥 Excel</button>
+        <button onclick="document.getElementById('modal-job-detail').classList.remove('open')" style="background:var(--surface2);border:1px solid var(--border2);border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;color:var(--text3);font-size:18px;border:none">×</button>
+      </div>
     </div>
     ${canResume ? `<button onclick="document.getElementById('modal-job-detail').classList.remove('open');resumeJob('${j.jobNum}');switchTab('new-job')" style="width:100%;padding:13px;background:var(--accent);color:#021a13;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px">▶ Set as Active Job — Stage ${j.stage}: ${STAGES[j.stage-1]?.label}</button>` : ''}
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
@@ -3024,21 +3259,27 @@ function renderTechRegister(){
         <input type="password" id="tech-pin-${i}" maxlength="4" placeholder="0000"
           style="width:80px;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--r2);font-family:var(--mono);font-size:14px;text-align:center;background:var(--surface);color:var(--text);outline:none"
           value="${techPins[t]||''}">
-        <button onclick="saveTechPin(${i},'${t}')" style="padding:7px 12px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Save PIN</button>
+        <button onclick="saveTechPin(${i})" style="padding:7px 12px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Save PIN</button>
         <span style="font-size:10px;color:var(--text3)">${techPins[t]?'Custom PIN set':'Default role PIN'}</span>
       </div>
     </div>`).join('');
 }
 
-function saveTechPin(i, name){
-  const el = document.getElementById('tech-pin-'+i);
-  if(!el) return;
-  const val = el.value.trim();
+function saveTechPin(i){
+  const pinEl = document.getElementById('tech-pin-'+i);
+  const name = technicians[i];
+  if(!pinEl||!name) return;
+  const val = pinEl.value.trim();
   if(val && (val.length!==4||!/^[0-9]{4}$/.test(val))){ showToast('PIN must be 4 digits'); return; }
   if(val){ techPins[name]=val; } else { delete techPins[name]; }
   localStorage.setItem(KEY_TECH_PINS, JSON.stringify(techPins));
   renderTechRegister();
-  showToast(val ? `✓ PIN set for ${name}` : `✓ PIN cleared for ${name} (using role PIN)`);
+  showToast(val ? '✓ PIN set for '+name : '✓ PIN cleared for '+name);
+}
+  if(val){ techPins[name]=val; } else { delete techPins[name]; }
+  localStorage.setItem(KEY_TECH_PINS, JSON.stringify(techPins));
+  renderTechRegister();
+  showToast(val ? `✓ PIN set for ${name}` : `✓ PIN cleared for ${name}`);
 }
 
 function addTechnician(){
@@ -3084,17 +3325,23 @@ function renderSalesRegister(){
         <input type="password" id="sales-pin-${i}" maxlength="4" placeholder="0000"
           style="width:80px;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--r2);font-family:var(--mono);font-size:14px;text-align:center;background:var(--surface);color:var(--text);outline:none"
           value="${salesPins[t]||''}">
-        <button onclick="saveSalesPin(${i},'${t}')" style="padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:var(--r2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Save PIN</button>
+        <button onclick="saveSalesPin(${i})" style="padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:var(--r2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Save PIN</button>
         <span style="font-size:10px;color:var(--text3)">${salesPins[t]?'Custom PIN set':'Default role PIN'}</span>
       </div>
     </div>`).join('');
 }
 
-function saveSalesPin(i, name){
-  const el = document.getElementById('sales-pin-'+i);
-  if(!el) return;
-  const val = el.value.trim();
+function saveSalesPin(i){
+  const pinEl = document.getElementById('sales-pin-'+i);
+  const name = salesStaff[i];
+  if(!pinEl||!name) return;
+  const val = pinEl.value.trim();
   if(val && (val.length!==4||!/^[0-9]{4}$/.test(val))){ showToast('PIN must be 4 digits'); return; }
+  if(val){ salesPins[name]=val; } else { delete salesPins[name]; }
+  localStorage.setItem(KEY_SALES_PINS, JSON.stringify(salesPins));
+  renderSalesRegister();
+  showToast(val ? '✓ PIN set for '+name : '✓ PIN cleared for '+name);
+}
   if(val){ salesPins[name]=val; } else { delete salesPins[name]; }
   localStorage.setItem(KEY_SALES_PINS, JSON.stringify(salesPins));
   renderSalesRegister();
@@ -3159,6 +3406,9 @@ function savePINSettings(){
 }
 
 function renderSettings(){
+  renderTechRegister();
+  renderSalesRegister();
+  renderPINMgmt();
   document.getElementById('set-sb-url').value = SB_URL;
   document.getElementById('set-sb-key').value = SB_KEY_VAL;
   document.getElementById('set-eq-url').value = localStorage.getItem(KEY_EQ_URL)||DEFAULT_EQ_URL;
@@ -3289,7 +3539,7 @@ function updateNotifs(){
     let count = 0;
     if(!rc.readOnly){
       if(role==='technician')  count = jobs.filter(j=>j.tech===session.name&&j.stage>=1&&j.stage<=3).length;
-      if(role==='ops_head')    count = jobs.filter(j=>j.stage===3||j.stage===4||j.stage===5).length;
+      if(role==='ops_head')    count = jobs.filter(j=>(j.stage===1&&j.stage1Pending)||j.stage===3||j.stage===4||j.stage===5).length;
       if(role==='coordinator') count = jobs.filter(j=>j.stage===5).length;
       if(role==='accounts')    count = jobs.filter(j=>j.stage===6).length;
     }
@@ -3319,7 +3569,870 @@ function handleApprovalURL(){
   window.history.replaceState({},{},window.location.pathname);
   const j = jobs.find(x=>x.jobNum===jobNum);
   if(!j){ showToast('Job not found — may be on another device'); return; }
+  if(action==='approve1'){ approveStage1(jobNum); }
+  if(action==='reject1'){  rejectStage1(jobNum); }
   if(action==='approve3'){ approveStage3Return(jobNum); }
+}
+
+// ════════════════════════════════════════════════════
+// SHARE JOB DETAILS (WhatsApp & Excel)
+// Available to Technician and Ops Head at any stage
+// ════════════════════════════════════════════════════
+function shareJobDetails(jobNum, method){
+  const j = jobNum ? jobs.find(x=>x.jobNum===jobNum) : activeJob;
+  if(!j){ showToast('No active job'); return; }
+
+  if(method==='wa') shareJobWA(j);
+  else if(method==='excel') exportJobExcel(j);
+}
+
+function shareJobWA(j){
+  const stage = STAGES[j.stage-1]||STAGES[0];
+  const sh    = j.stageHistory||{};
+  const fmt   = iso => iso ? new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+  const items = j.masterItems||[];
+
+  let msg = `📋 *Job Details — MSSI Cal Lab*
+`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+  msg += `📁 *Job Number:* ${j.jobNum}
+`;
+  msg += `🏢 *Customer:* ${j.customer||'—'}
+`;
+  msg += `📍 *Site / Location:* ${j.site||'—'}
+`;
+  msg += `👤 *Technician:* ${j.tech||'—'}
+`;
+  if(j.contact)   msg += `🙎 *Contact:* ${j.contact}
+`;
+  if(j.contactPhone) msg += `📞 *Contact No:* ${j.contactPhone}
+`;
+  if(j.poNumber)  msg += `📄 *PO Number:* ${j.poNumber}
+`;
+  if(j.srNumber)  msg += `📝 *SR Number:* ${j.srNumber}
+`;
+  msg += `
+📊 *Current Stage:* ${stage.icon} Stage ${j.stage} — ${stage.label}
+`;
+
+  // Stage history
+  msg += `
+📅 *Stage Timeline:*
+`;
+  STAGES.forEach(s=>{
+    const h = sh[s.id];
+    if(h?.completedAt){
+      msg += `${s.icon} Stage ${s.id} ${s.label}: ${fmt(h.completedAt)}`;
+      if(h.approvedBy) msg += ` (approved by ${h.approvedBy})`;
+      if(h.by && h.by!==h.approvedBy) msg += ` (by ${h.by})`;
+      msg += '
+';
+    }
+  });
+
+  // Master instruments
+  if(items.length){
+    msg += `
+🔧 *Master Instruments (${items.length}):*
+`;
+    items.forEach(id=>{
+      const instr = equipMap[id]||{};
+      msg += `• *${id}*`;
+      if(instr.model) msg += ` — ${instr.model}`;
+      if(instr.make)  msg += ` (${instr.make})`;
+      if(instr.serial) msg += `
+  S/N: ${instr.serial}`;
+      if(instr.calDue){
+        const days = Math.ceil((new Date(instr.calDue)-new Date())/86400000);
+        msg += `
+  Cal Due: ${instr.calDue}${days<0?' ⚠ OVERDUE':days<60?' ⚠ Due soon':''}`;
+      }
+      msg += '
+';
+    });
+  }
+
+  // MCL summary
+  if(j.mclItems?.length){
+    msg += `
+📋 *MCL — Customer Instruments (${j.mclItems.length}):*
+`;
+    j.mclItems.slice(0,10).forEach((m,i)=>{
+      msg += `${i+1}. ${m.description||m.tagNo||'—'}`;
+      if(m.make)   msg += ` — ${m.make}`;
+      if(m.serial) msg += ` | S/N: ${m.serial}`;
+      if(m.result) msg += ` | *${m.result}*`;
+      msg += '
+';
+    });
+    if(j.mclItems.length>10) msg += `...and ${j.mclItems.length-10} more
+`;
+  } else if(j.mclPhotoData){
+    msg += `
+📋 *MCL:* Document uploaded ✓
+`;
+  }
+
+  // Cert info
+  if(j.certNumbers?.length){
+    msg += `
+📜 *Certificates:* ${j.certNumbers.join(', ')}
+`;
+    if(j.certAssigned) msg += `   Assigned to: ${j.certAssigned}
+`;
+  }
+
+  // Delivery
+  if(j.deliveryAck){
+    msg += `
+🚗 *Delivery:* Delivered by ${j.deliveryBy||'—'}
+`;
+    msg += `   Acknowledged by: ${j.deliveryAck}
+`;
+  }
+
+  // Billing
+  if(j.billingType){
+    msg += `
+💰 *Billing:* ${j.billingType==='cash'?'Cash (SAP)':'Credit (Head Office)'}`;
+    if(j.billingRef) msg += ` — Ref: ${j.billingRef}`;
+    msg += '
+';
+  }
+
+  if(j.salesComment){
+    msg += `
+💬 *Sales Comment:* ${j.salesComment}
+`;
+  }
+
+  msg += `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+  msg += `_Shared from MSSI Cal Lab CalTrack_`;
+
+  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+}
+
+function exportJobExcel(j){
+  const stage = STAGES[j.stage-1]||STAGES[0];
+  const sh    = j.stageHistory||{};
+  const fmt   = iso => iso ? new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+
+  // Build CSV rows
+  const rows = [];
+  const add  = (label, value) => rows.push([label, value||'']);
+  const sep  = () => rows.push(['','']);
+
+  add('JOB NUMBER',    j.jobNum);
+  add('CUSTOMER',      j.customer);
+  add('SITE/LOCATION', j.site);
+  add('TECHNICIAN',    j.tech);
+  add('CONTACT PERSON',j.contact);
+  add('CONTACT PHONE', j.contactPhone);
+  add('PO NUMBER',     j.poNumber);
+  add('SR NUMBER',     j.srNumber);
+  add('STAGE',         `Stage ${j.stage} — ${stage.label}`);
+  add('STATUS',        j.status);
+  sep();
+
+  // Stage timeline
+  add('STAGE TIMELINE','');
+  STAGES.forEach(s=>{
+    const h = sh[s.id];
+    if(h?.completedAt){
+      add(`  Stage ${s.id} ${s.label}`, fmt(h.completedAt) + (h.approvedBy?' | Approved by: '+h.approvedBy:'') + (h.by?' | By: '+h.by:''));
+    }
+  });
+  sep();
+
+  // Master instruments
+  add('MASTER INSTRUMENTS ('+( j.masterItems?.length||0)+')', '');
+  add('Instrument ID','Model | Make | Serial | Range | Cal Due');
+  (j.masterItems||[]).forEach(id=>{
+    const instr=equipMap[id]||{};
+    add(id, [instr.model,instr.make,instr.serial,instr.range,instr.calDue].filter(Boolean).join(' | '));
+  });
+  sep();
+
+  // MCL
+  if(j.mclItems?.length){
+    add('MCL — CUSTOMER INSTRUMENTS ('+j.mclItems.length+')','');
+    add('Tag/ID','Description | Make | Serial | Range | Result');
+    j.mclItems.forEach(m=>{
+      add(m.tagNo||'—', [m.description,m.make,m.serial,m.range,m.result].filter(Boolean).join(' | '));
+    });
+    sep();
+  }
+
+  // Certs
+  if(j.certNumbers?.length){
+    add('CERTIFICATES', j.certNumbers.join(', '));
+    add('CERT ASSIGNED TO', j.certAssigned);
+    sep();
+  }
+
+  // Delivery
+  if(j.deliveryAck){
+    add('DELIVERY BY',    j.deliveryBy);
+    add('ACKNOWLEDGED BY',j.deliveryAck);
+    sep();
+  }
+
+  // Billing
+  if(j.billingType){
+    add('BILLING TYPE', j.billingType==='cash'?'Cash (SAP)':'Credit (Head Office)');
+    add('BILLING REF',  j.billingRef);
+    sep();
+  }
+
+  if(j.salesComment) add('SALES COMMENT', j.salesComment);
+
+  // Convert to CSV
+  const BOM = '﻿';
+  const csv = rows.map(r => r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('
+');
+  const blob = new Blob([BOM+csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `Job_${j.jobNum}_${j.customer?.replace(/\s/g,'_')||'Details'}.csv`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast(`✓ Job ${j.jobNum} exported to Excel`);
+}
+
+
+// ════════════════════════════════════════════════════
+// QC MODULE — Master Instrument Management
+// Owner: Quality Manager (secondary: Ops Head)
+// ════════════════════════════════════════════════════
+const KEY_QC_DATA    = 'ct3-qc-data';      // per-instrument QC records
+let qcData           = JSON.parse(localStorage.getItem(KEY_QC_DATA)||'{}');
+let qcFilter         = 'all';
+let qcUploadBuffer   = [];  // parsed rows ready to confirm
+
+function saveQCData(){ localStorage.setItem(KEY_QC_DATA, JSON.stringify(qcData)); }
+
+// ── STATUS DEFINITIONS ──
+const QC_STATUS = {
+  ok:          { label:'OK',              color:'#16a34a', bg:'#f0fdf4', icon:'✅' },
+  due_soon:    { label:'Due Soon',        color:'#d97706', bg:'#fffbeb', icon:'⚠️' },
+  overdue:     { label:'Overdue',         color:'#dc2626', bg:'#fef2f2', icon:'🔴' },
+  calibrating: { label:'Sent for Cal',    color:'#0891b2', bg:'#ecfeff', icon:'🔵' },
+  faulty:      { label:'Faulty',          color:'#dc2626', bg:'#fef2f2', icon:'🔧' },
+  under_repair:{ label:'Under Repair',    color:'#7c3aed', bg:'#f5f3ff', icon:'🔨' },
+  retired:     { label:'Retired',         color:'#8896ab', bg:'#f5f7fa', icon:'📦' },
+};
+
+function getInstrumentStatus(instr){
+  const qc = qcData[instr.id]||{};
+  // Manual status overrides date-based
+  if(qc.status && qc.status!=='ok') return qc.status;
+  const calDue = qc.calDue || instr.calDue || '';
+  if(!calDue) return 'ok';
+  const days = Math.ceil((new Date(calDue)-new Date())/86400000);
+  if(days < 0)  return 'overdue';
+  if(days <= 30) return 'due_soon';
+  return 'ok';
+}
+
+function getStatusInfo(statusKey){
+  return QC_STATUS[statusKey] || QC_STATUS.ok;
+}
+
+// ── RENDER QC PANEL ──
+function renderQCPanel(){
+  // Security guard — only Quality Manager and Ops Head can access QC
+  if(session?.role !== 'quality' && session?.role !== 'ops_head'){
+    const el = document.getElementById('panel-qc');
+    if(el) el.innerHTML = '<div style="text-align:center;padding:48px 20px;color:#8896ab"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:14px;font-weight:600">Access Restricted</div><div style="font-size:12px;margin-top:4px">QC module is available to Quality Manager and Operations Head only</div></div>';
+    return;
+  }
+  const search = (document.getElementById('qc-search')?.value||'').toLowerCase().trim();
+
+  // Build combined instrument list from equipDB + qcData
+  const allInstrs = equipDB.map(instr=>{
+    const qc = qcData[instr.id]||{};
+    return {
+      ...instr,
+      calDue:   qc.calDue   || instr.calDue   || '',
+      certNo:   qc.certNo   || instr.certNo   || '',
+      status:   getInstrumentStatus(instr),
+      notes:    qc.notes    || '',
+      calLab:   qc.calLab   || '',
+      lastUpdated: qc.lastUpdated || '',
+      updatedBy:   qc.updatedBy   || '',
+      ...qc
+    };
+  });
+
+  // Stats
+  const total    = allInstrs.length;
+  const overdue  = allInstrs.filter(i=>i.status==='overdue').length;
+  const dueSoon  = allInstrs.filter(i=>i.status==='due_soon').length;
+  const issues   = allInstrs.filter(i=>['faulty','under_repair','calibrating'].includes(i.status)).length;
+
+  // Alert bar
+  const alertBar = document.getElementById('qc-alert-bar');
+  if(alertBar){
+    if(overdue>0||dueSoon>0||issues>0){
+      alertBar.innerHTML = `
+        <div style="background:#fef2f2;border:1.5px solid rgba(220,38,38,.25);border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:20px;flex-shrink:0">🔔</span>
+          <div style="font-size:12px">
+            ${overdue>0?`<div style="color:#dc2626;font-weight:700">🔴 ${overdue} instrument${overdue!==1?'s':''} OVERDUE for calibration</div>`:''}
+            ${dueSoon>0?`<div style="color:#d97706;font-weight:600;margin-top:2px">⚠️ ${dueSoon} instrument${dueSoon!==1?'s':''} due within 30 days</div>`:''}
+            ${issues>0?`<div style="color:#7c3aed;font-weight:600;margin-top:2px">🔧 ${issues} instrument${issues!==1?'s':''} with issues (faulty/repair/calibrating)</div>`:''}
+          </div>
+        </div>`;
+    } else {
+      alertBar.innerHTML = `<div style="background:#f0fdf4;border:1px solid rgba(22,163,74,.2);border-radius:var(--r);padding:10px 14px;font-size:12px;color:#16a34a;font-weight:600">✅ All master instruments are in order</div>`;
+    }
+  }
+
+  // KPIs
+  const kpiEl = document.getElementById('qc-kpis');
+  if(kpiEl){
+    kpiEl.innerHTML = [
+      {label:'Total',   val:total,   color:'#1a56db'},
+      {label:'OK',      val:total-overdue-dueSoon-issues, color:'#16a34a'},
+      {label:'Due Soon',val:dueSoon, color:'#d97706'},
+      {label:'Overdue', val:overdue, color:'#dc2626'},
+    ].map(k=>`<div style="flex:1;background:#fff;border:1px solid #dde1ea;border-radius:var(--r);padding:10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+      <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:${k.color}">${k.val}</div>
+      <div style="font-size:9px;color:#8896ab;text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-top:2px">${k.label}</div>
+    </div>`).join('');
+  }
+
+  // Filters
+  const filters = [
+    {k:'all',          l:'All'},
+    {k:'overdue',      l:'🔴 Overdue'},
+    {k:'due_soon',     l:'⚠️ Due Soon'},
+    {k:'calibrating',  l:'🔵 Calibrating'},
+    {k:'faulty',       l:'🔧 Issues'},
+    {k:'ok',           l:'✅ OK'},
+  ];
+  const filterEl = document.getElementById('qc-filters');
+  if(filterEl){
+    filterEl.innerHTML = filters.map(f=>`
+      <button onclick="setQCFilter('${f.k}')" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${qcFilter===f.k?'#1a56db':'#dde1ea'};background:${qcFilter===f.k?'#eff6ff':'#fff'};color:${qcFilter===f.k?'#1a56db':'#8896ab'};font-size:11px;font-weight:600;font-family:var(--mono);cursor:pointer">${f.l}</button>`
+    ).join('');
+  }
+
+  // Filter and search
+  let filtered = allInstrs;
+  if(qcFilter!=='all'){
+    if(qcFilter==='faulty') filtered = allInstrs.filter(i=>['faulty','under_repair'].includes(i.status));
+    else filtered = allInstrs.filter(i=>i.status===qcFilter);
+  }
+  if(search) filtered = filtered.filter(i=>
+    (i.id||'').toLowerCase().includes(search)||
+    (i.model||'').toLowerCase().includes(search)||
+    (i.serial||'').toLowerCase().includes(search)||
+    (i.make||'').toLowerCase().includes(search)
+  );
+
+  const listEl = document.getElementById('qc-list');
+  if(!listEl) return;
+
+  if(!filtered.length){
+    listEl.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#8896ab"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;opacity:.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p style="font-size:13px">No instruments found</p></div>`;
+    return;
+  }
+
+  // Sort: overdue first, then due_soon, then others
+  const order = {overdue:0,due_soon:1,calibrating:2,faulty:2,under_repair:2,ok:3,retired:4};
+  filtered.sort((a,b)=>(order[a.status]||3)-(order[b.status]||3));
+
+  listEl.innerHTML = filtered.map(instr=>{
+    const st = getStatusInfo(instr.status);
+    const calDue = qcData[instr.id]?.calDue || instr.calDue || '—';
+    const days = calDue&&calDue!=='—' ? Math.ceil((new Date(calDue)-new Date())/86400000) : null;
+    const certNo = qcData[instr.id]?.certNo || instr.certNo || '—';
+    const notes  = qcData[instr.id]?.notes || '';
+    const canEdit = session?.role==='quality'||session?.role==='ops_head';
+    return `
+    <div style="background:#fff;border:1px solid ${days!==null&&days<0?'rgba(220,38,38,.3)':days!==null&&days<=30?'rgba(217,119,6,.3)':'#dde1ea'};border-radius:var(--r);padding:13px;margin-bottom:8px;cursor:pointer" onclick="openQCDetail('${instr.id}')">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:#1a56db">${instr.id}</span>
+            <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:${st.bg};color:${st.color}">${st.icon} ${st.label}</span>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:#1a2035;margin-bottom:2px">${instr.model||'—'}</div>
+          <div style="font-size:11px;color:#8896ab">${[instr.make,instr.serial].filter(Boolean).join(' · ')||'—'}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:11px">
+            <div style="background:#f5f7fa;border-radius:6px;padding:5px 8px">
+              <div style="color:#8896ab;font-family:var(--mono);font-size:9px;text-transform:uppercase;margin-bottom:2px">CAL DUE</div>
+              <div style="font-weight:600;color:${days!==null&&days<0?'#dc2626':days!==null&&days<=30?'#d97706':'#16a34a'};font-family:var(--mono)">${calDue}${days!==null?days<0?' ⚠':days<=30?' ⚠':' ✓':''}</div>
+            </div>
+            <div style="background:#f5f7fa;border-radius:6px;padding:5px 8px">
+              <div style="color:#8896ab;font-family:var(--mono);font-size:9px;text-transform:uppercase;margin-bottom:2px">CERT NO</div>
+              <div style="font-weight:600;color:#1a2035;font-family:var(--mono)">${certNo}</div>
+            </div>
+            ${instr.range?`<div style="background:#f5f7fa;border-radius:6px;padding:5px 8px">
+              <div style="color:#8896ab;font-family:var(--mono);font-size:9px;text-transform:uppercase;margin-bottom:2px">RANGE</div>
+              <div style="font-weight:600;color:#1a2035">${instr.range}</div>
+            </div>`:''}
+          </div>
+          ${notes?`<div style="font-size:11px;color:#7c3aed;margin-top:5px;font-style:italic">📝 ${notes}</div>`:''}
+        </div>
+        ${canEdit?`<div style="font-size:10px;color:#1a56db;font-weight:600;flex-shrink:0">Edit →</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setQCFilter(f){ qcFilter=f; renderQCPanel(); }
+
+// ── QC DETAIL MODAL (edit per instrument) ──
+function openQCDetail(instrId){
+  const canEdit = session?.role==='quality'||session?.role==='ops_head';
+  const instr = equipMap[instrId]||{id:instrId};
+  const qc    = qcData[instrId]||{};
+  const st    = getStatusInfo(getInstrumentStatus(instr));
+
+  document.getElementById('modal-qc-detail-body').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:#1a56db">${instrId}</div>
+        <div style="font-size:14px;font-weight:600;color:#1a2035">${instr.model||'—'}</div>
+      </div>
+      <button onclick="document.getElementById('modal-qc-detail').classList.remove('open')" style="background:#f5f7fa;border:1px solid #dde1ea;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;font-size:18px;color:#8896ab">×</button>
+    </div>
+
+    <!-- Instrument info -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;background:#f5f7fa;border-radius:var(--r);padding:12px;margin-bottom:16px">
+      <div><div style="color:#8896ab;font-size:10px;font-family:var(--mono);margin-bottom:2px">MAKE</div><div>${instr.make||'—'}</div></div>
+      <div><div style="color:#8896ab;font-size:10px;font-family:var(--mono);margin-bottom:2px">SERIAL</div><div style="font-family:var(--mono)">${instr.serial||'—'}</div></div>
+      <div><div style="color:#8896ab;font-size:10px;font-family:var(--mono);margin-bottom:2px">RANGE</div><div>${instr.range||'—'}</div></div>
+      <div><div style="color:#8896ab;font-size:10px;font-family:var(--mono);margin-bottom:2px">STATUS</div><div style="color:${st.color};font-weight:600">${st.icon} ${st.label}</div></div>
+    </div>
+
+    ${canEdit?`
+    <div class="fl">Cal Due Date</div>
+    <input type="text" id="qcd-caldue" class="fi mono" placeholder="YYYY-MM-DD" value="${qc.calDue||instr.calDue||''}">
+
+    <div class="fl">Certificate Number</div>
+    <input type="text" id="qcd-certno" class="fi mono" placeholder="CERT-XXXX" value="${qc.certNo||instr.certNo||''}">
+
+    <div class="fl">Calibration Lab</div>
+    <input type="text" id="qcd-lab" class="fi" placeholder="e.g. NABL Certified Lab" value="${qc.calLab||''}">
+
+    <div class="fl">Instrument Status</div>
+    <select id="qcd-status" class="fi" style="appearance:none;-webkit-appearance:none;cursor:pointer">
+      ${Object.entries(QC_STATUS).map(([k,v])=>`<option value="${k}" ${(qc.status||'ok')===k?'selected':''}>${v.icon} ${v.label}</option>`).join('')}
+    </select>
+
+    <div class="fl">Notes / Remarks</div>
+    <textarea id="qcd-notes" class="fi" placeholder="Any issues, observations, or remarks about this instrument…">${qc.notes||''}</textarea>
+
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="saveQCDetail('${instrId}')" style="flex:2;padding:13px;background:#1a56db;color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer">Save Changes</button>
+      <button onclick="document.getElementById('modal-qc-detail').classList.remove('open')" style="flex:1;padding:13px;background:#f5f7fa;border:1px solid #dde1ea;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:600;color:#8896ab;cursor:pointer">Cancel</button>
+    </div>
+    `:`<div style="background:#fffbeb;border:1px solid rgba(217,119,6,.2);border-radius:var(--r2);padding:12px;font-size:12px;color:#d97706;text-align:center">
+      👁 View only — QC Manager or Ops Head can edit
+    </div>`}`;
+
+  document.getElementById('modal-qc-detail').classList.add('open');
+}
+
+function saveQCDetail(instrId){
+  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  const calDue = document.getElementById('qcd-caldue')?.value.trim();
+  const certNo = document.getElementById('qcd-certno')?.value.trim();
+  const calLab = document.getElementById('qcd-lab')?.value.trim();
+  const status = document.getElementById('qcd-status')?.value;
+  const notes  = document.getElementById('qcd-notes')?.value.trim();
+
+  qcData[instrId] = {
+    ...qcData[instrId],
+    calDue, certNo, calLab, status, notes,
+    lastUpdated: new Date().toISOString(),
+    updatedBy: session?.name||'—'
+  };
+
+  // Also update equipMap if cal due changed
+  if(calDue && equipMap[instrId]){
+    equipMap[instrId].calDue = calDue;
+  }
+
+  saveQCData();
+  document.getElementById('modal-qc-detail').classList.remove('open');
+  renderQCPanel();
+  showToast('✓ ' + instrId + ' updated');
+}
+
+// ── EXCEL/CSV UPLOAD ──
+function openQCUploadModal(){
+  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  document.getElementById('qc-upload-preview').style.display='none';
+  document.getElementById('qc-file-input').value='';
+  document.getElementById('modal-qc-upload').classList.add('open');
+}
+
+function onQCFileUpload(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const zone = document.getElementById('qc-upload-zone');
+  zone.innerHTML = `<div style="font-size:20px;margin-bottom:6px">📄</div><div style="font-size:13px;font-weight:600;color:#1a56db">${file.name}</div><div style="font-size:11px;color:#8896ab">Reading file…</div>`;
+
+  const reader = new FileReader();
+  if(file.name.endsWith('.csv')){
+    reader.onload = ev => parseQCCSV(ev.target.result);
+    reader.readAsText(file);
+  } else {
+    reader.onload = ev => parseQCXLSX(ev.target.result);
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function parseQCCSV(text){
+  const lines = text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2){ showToast('Empty file'); return; }
+  const headers = lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+  const rows = lines.slice(1).map(line=>{
+    const vals = line.match(/(".*?"|[^,]+)/g)||[];
+    const obj = {};
+    headers.forEach((h,i)=>{ obj[h]=(vals[i]||'').replace(/"/g,'').trim(); });
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v));
+  processQCRows(rows, headers);
+}
+
+function parseQCXLSX(buffer){
+  // Simple XLSX parsing without library — read as binary and extract text
+  // For proper XLSX we inject SheetJS dynamically
+  if(typeof XLSX === 'undefined'){
+    const s = document.createElement('script');
+    s.src = 'https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js';
+    s.onload = ()=>{
+      const wb = XLSX.read(buffer, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      const headers = rows.length ? Object.keys(rows[0]).map(h=>h.toLowerCase().trim()) : [];
+      const normalizedRows = rows.map(r=>{
+        const obj={};
+        Object.entries(r).forEach(([k,v])=>{ obj[k.toLowerCase().trim()]=String(v||'').trim(); });
+        return obj;
+      });
+      processQCRows(normalizedRows, headers);
+    };
+    s.onerror = ()=>{ showToast('Failed to load Excel parser — try CSV'); };
+    document.head.appendChild(s);
+  } else {
+    const wb = XLSX.read(buffer, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+    const normalizedRows = rows.map(r=>{
+      const obj={};
+      Object.entries(r).forEach(([k,v])=>{ obj[k.toLowerCase().trim()]=String(v||'').trim(); });
+      return obj;
+    });
+    processQCRows(normalizedRows, Object.keys(rows[0]||{}).map(h=>h.toLowerCase().trim()));
+  }
+}
+
+function findCol(row, ...candidates){
+  for(const c of candidates){
+    const key = Object.keys(row).find(k=>k.includes(c));
+    if(key && row[key]) return row[key];
+  }
+  return '';
+}
+
+function processQCRows(rows, headers){
+  qcUploadBuffer = rows.map(row=>{
+    const id     = findCol(row,'id','instrument','no.','number') || '';
+    const model  = findCol(row,'model','description','name','instrument') || '';
+    const make   = findCol(row,'make','brand','manufacturer') || '';
+    const serial = findCol(row,'serial','s/n','sn') || '';
+    const range  = findCol(row,'range') || '';
+    const calDue = findCol(row,'cal due','due date','next cal','calibration date','expiry') || '';
+    const certNo = findCol(row,'cert','certificate') || '';
+    const status = findCol(row,'status','condition','remark') || '';
+    return {id:id.toUpperCase(), model, make, serial, range, calDue, certNo, status:status.toLowerCase()||'ok'};
+  }).filter(r=>r.id);
+
+  const matched   = qcUploadBuffer.filter(r=>equipMap[r.id]).length;
+  const unmatched = qcUploadBuffer.filter(r=>!equipMap[r.id]).length;
+
+  document.getElementById('qc-upload-status').textContent = `✓ ${qcUploadBuffer.length} instruments parsed`;
+  document.getElementById('qc-upload-detail').innerHTML =
+    `${matched} matched to existing instruments · ${unmatched} unrecognised IDs<br>
+     Ready to update master list — existing data will be preserved for missing fields.`;
+  document.getElementById('qc-upload-preview').style.display='block';
+}
+
+function confirmQCUpload(){
+  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  if(!qcUploadBuffer.length){ showToast('No data to import'); return; }
+  let updated=0, added=0;
+  qcUploadBuffer.forEach(row=>{
+    const existing = qcData[row.id]||{};
+    qcData[row.id] = {
+      ...existing,
+      ...(row.calDue  ? {calDue:row.calDue}   : {}),
+      ...(row.certNo  ? {certNo:row.certNo}    : {}),
+      ...(row.status&&row.status!=='ok' ? {status:row.status} : {}),
+      lastUpdated: new Date().toISOString(),
+      updatedBy: session?.name||'Upload',
+    };
+    // Update equipMap if instrument exists
+    if(equipMap[row.id]){
+      if(row.model)  equipMap[row.id].model  = row.model;
+      if(row.make)   equipMap[row.id].make   = row.make;
+      if(row.serial) equipMap[row.id].serial = row.serial;
+      if(row.range)  equipMap[row.id].range  = row.range;
+      if(row.calDue) equipMap[row.id].calDue = row.calDue;
+      updated++;
+    } else {
+      // New instrument not in equipDB — add it
+      equipDB.push({id:row.id, model:row.model, make:row.make, serial:row.serial, range:row.range, calDue:row.calDue, isMaster:true});
+      buildEquipMap();
+      added++;
+    }
+  });
+  saveQCData();
+  // Also save updated equipDB to localStorage
+  localStorage.setItem('ct3-eq', JSON.stringify(equipDB));
+  document.getElementById('modal-qc-upload').classList.remove('open');
+  renderQCPanel();
+  showToast(`✓ ${updated} updated · ${added} new instruments added`);
+}
+
+// ── EXPORT ──
+function exportQCExcel(){
+  if(session?.role !== 'quality' && session?.role !== 'ops_head'){ showToast('🔒 Access restricted'); return; }
+  const rows = equipDB.map(instr=>{
+    const qc = qcData[instr.id]||{};
+    const st = getStatusInfo(getInstrumentStatus(instr));
+    return [
+      instr.id, instr.model||'', instr.make||'', instr.serial||'', instr.range||'',
+      qc.calDue||instr.calDue||'', qc.certNo||instr.certNo||'', qc.calLab||'',
+      st.label, qc.notes||'',
+      qc.lastUpdated?new Date(qc.lastUpdated).toLocaleDateString('en-GB'):'',
+      qc.updatedBy||''
+    ].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',');
+  });
+  const headers = 'Instrument ID,Model,Make,Serial,Range,Cal Due Date,Certificate No,Cal Lab,Status,Notes,Last Updated,Updated By';
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM+[headers,...rows].join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`MSSI_Master_Instruments_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast(`✓ ${equipDB.length} instruments exported`);
+}
+
+function shareQCSummaryWA(){
+  const overdue  = equipDB.filter(i=>getInstrumentStatus(i)==='overdue');
+  const dueSoon  = equipDB.filter(i=>getInstrumentStatus(i)==='due_soon');
+  const issues   = equipDB.filter(i=>['faulty','under_repair','calibrating'].includes(getInstrumentStatus(i)));
+
+  let msg = `📋 *Master Instruments Status — MSSI Cal Lab*\n`;
+  msg += `📅 ${new Date().toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  msg += `📦 Total instruments: ${equipDB.length}\n`;
+  msg += `✅ OK: ${equipDB.length-overdue.length-dueSoon.length-issues.length}\n`;
+  if(dueSoon.length)  msg += `⚠️ Due within 30 days: ${dueSoon.length}\n`;
+  if(overdue.length)  msg += `🔴 Overdue: ${overdue.length}\n`;
+  if(issues.length)   msg += `🔧 Issues: ${issues.length}\n`;
+
+  if(overdue.length){
+    msg += `\n🔴 *Overdue Instruments:*\n`;
+    overdue.forEach(i=>{ const qc=qcData[i.id]||{}; msg += `• ${i.id} — ${i.model||'—'} (Due: ${qc.calDue||i.calDue||'?'})\n`; });
+  }
+  if(dueSoon.length){
+    msg += `\n⚠️ *Due Within 30 Days:*\n`;
+    dueSoon.forEach(i=>{ const qc=qcData[i.id]||{}; msg += `• ${i.id} — ${i.model||'—'} (Due: ${qc.calDue||i.calDue||'?'})\n`; });
+  }
+  if(issues.length){
+    msg += `\n🔧 *Instruments with Issues:*\n`;
+    issues.forEach(i=>{ const st=getStatusInfo(getInstrumentStatus(i)); msg += `• ${i.id} — ${i.model||'—'} (${st.label})\n`; });
+  }
+  msg += `\n_MSSI Cal Lab CalTrack_`;
+  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+}
+
+// ════════════════════════════════════════════════════
+// INSTRUMENT LOCK SYSTEM
+// Instruments issued out (stage >= 2, not yet returned) are locked
+// No other technician can scan them until they are returned & approved
+// ════════════════════════════════════════════════════
+function getLockedInstruments(){
+  // Returns a Map of { instrumentId -> jobInfo } for all currently out instruments
+  const locked = new Map();
+  jobs.forEach(j=>{
+    // Job is approved and instruments are out if stage >= 2 and stage < 3 done
+    // Or stage 3 but return not yet approved (stage still 3)
+    const isOut = j.stage >= 2 && j.stage <= 3 && j.status !== 'complete';
+    // Also lock if stage1 is pending approval
+    const isPending = j.stage === 1 && j.stage1Pending;
+    if(isOut || isPending){
+      (j.masterItems||[]).forEach(id=>{
+        // Only lock if not yet returned
+        const returned = (j.returnedItems||[]).includes(id);
+        if(!returned){
+          locked.set(id, {
+            jobNum: j.jobNum,
+            customer: j.customer,
+            site: j.site,
+            tech: j.tech,
+            stage: j.stage,
+            pending: isPending
+          });
+        }
+      });
+    }
+  });
+  return locked;
+}
+
+// ════════════════════════════════════════════════════
+// STAGE 1 APPROVAL FUNCTIONS
+// ════════════════════════════════════════════════════
+function sendStage1ApprovalWA(job){
+  const ap = approvers[0];
+  if(!ap?.phone){ showToast('⚠ No approver set — add in Settings'); return; }
+  const appUrl = window.location.href.split('?')[0];
+  const approveUrl = `${appUrl}?action=approve1&jobNum=${job.jobNum}`;
+  const rejectUrl  = `${appUrl}?action=reject1&jobNum=${job.jobNum}`;
+  const items = job.masterItems||[];
+  let msg = `🔔 *Approval Required — Issue Out*
+`;
+  msg += `━━━━━━━━━━━━━━━━━━
+`;
+  msg += `📋 Job: *${job.jobNum}*
+`;
+  msg += `🏢 Customer: ${job.customer}
+`;
+  msg += `📍 Site: ${job.site}
+`;
+  msg += `👤 Technician: ${job.tech}
+
+`;
+  msg += `🔧 *${items.length} Master Instrument${items.length!==1?'s':''} to Issue Out:*
+`;
+  items.forEach(id=>{
+    const instr = equipMap[id]||{};
+    msg += `• ${id}${instr.model?' — '+instr.model:''}
+`;
+  });
+  msg += `
+━━━━━━━━━━━━━━━━━━
+`;
+  msg += `✅ *APPROVE:*
+${approveUrl}
+
+`;
+  msg += `❌ *REJECT:*
+${rejectUrl}
+`;
+  msg += `━━━━━━━━━━━━━━━━━━
+`;
+  msg += `_Tap a link to open CalTrack and record decision_`;
+  setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+}
+
+async function approveStage1(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j){ showToast('Job not found'); return; }
+  j.stage = 2;
+  j.stage1Pending = false;
+  j.stageHistory = j.stageHistory||{};
+  j.stageHistory[1] = {
+    completedAt: new Date().toISOString(),
+    approvedBy: session.name,
+    items: j.masterItems||[]
+  };
+  updateJob(j); await syncJobToSupabase(j);
+  // Send confirmation WA back to technician
+  const ap = approvers[0];
+  if(ap?.phone){
+    const items = j.masterItems||[];
+    let msg = `✅ *Issue Out APPROVED*
+━━━━━━━━━━━━━━━━━━
+`;
+    msg += `📋 Job: *${j.jobNum}*
+🏢 ${j.customer}
+📍 ${j.site}
+`;
+    msg += `
+🔧 ${items.length} instrument${items.length!==1?'s':''} approved for site work:
+`;
+    items.forEach(id=>{ msg += `• ${id}
+`; });
+    msg += `
+✅ Approved by: ${session.name}
+`;
+    msg += `▶ Proceed to Stage 2: On Site / MCL
+`;
+    msg += `━━━━━━━━━━━━━━━━━━
+_MSSI Cal Lab CalTrack_`;
+    setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+  }
+  showToast(`✓ Issue Out approved — ${j.jobNum} moved to Stage 2`);
+  renderTasks(); renderPipeline(); updateNotifs();
+  if(currentTab==='tasks') renderTasks();
+}
+
+async function rejectStage1(jobNum){
+  const j = jobs.find(x=>x.jobNum===jobNum);
+  if(!j){ showToast('Job not found'); return; }
+  const reason = prompt('Reason for rejection:') || 'No reason given';
+  j.stage1Pending = false;
+  j.stage1Rejected = true;
+  j.stage1RejectReason = reason;
+  j.stageHistory = j.stageHistory||{};
+  j.stageHistory['1_rejected'] = { rejectedAt: new Date().toISOString(), by: session.name, reason };
+  updateJob(j); await syncJobToSupabase(j);
+  // Notify technician
+  const ap = approvers[0];
+  if(ap?.phone){
+    let msg = `❌ *Issue Out REJECTED*
+━━━━━━━━━━━━━━━━━━
+`;
+    msg += `📋 Job: *${j.jobNum}*
+🏢 ${j.customer}
+`;
+    msg += `
+❌ Rejected by: ${session.name}
+📝 Reason: ${reason}
+`;
+    msg += `
+Please re-scan the correct instruments and resubmit.
+_MSSI Cal Lab CalTrack_`;
+    setTimeout(()=>{ window.location.href = `https://wa.me/${ap.phone}?text=${encodeURIComponent(msg)}`; }, 1200);
+  }
+  showToast(`Rejected — technician notified`);
+  renderTasks(); updateNotifs();
+}
+
+function resetStage1(){
+  activeJob.stage1Pending  = false;
+  activeJob.stage1Rejected = false;
+  activeJob.stage1RejectReason = '';
+  activeJob.masterItems = [];
+  updateJob(activeJob); syncJobToSupabase(activeJob);
+  batchQueue = [];
+  renderStageActionArea(); renderActivJobBanner();
+  showToast('Ready to re-scan instruments');
+}
+
+function cancelStage1Submission(){
+  if(!confirm('Cancel submission and re-scan instruments?')) return;
+  activeJob.stage1Pending = false;
+  activeJob.masterItems = [];
+  delete activeJob.stageHistory?.['1_submitted'];
+  updateJob(activeJob); syncJobToSupabase(activeJob);
+  batchQueue = [];
+  renderStageActionArea(); renderActivJobBanner();
+  showToast('Submission cancelled — re-scan instruments');
 }
 
 // ════════════════════════════════════════════════════
