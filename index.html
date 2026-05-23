@@ -360,10 +360,18 @@ textarea.field-input { resize: none; height: 80px; }
         <div class="header-logo-sub">MSSI Cal Lab</div>
       </div>
     </div>
-      <div class="role-pill" onclick="doLogout()">
+      <div class="role-pill" style="cursor:default">
         <div class="role-dot" id="header-role-dot"></div>
         <div class="role-name" id="header-role-name">—</div>
       </div>
+      <button onclick="confirmLogout()" title="Logout"
+        style="width:34px;height:34px;border-radius:50%;background:#fef2f2;border:1.5px solid rgba(220,38,38,.2);display:grid;place-items:center;cursor:pointer;flex-shrink:0;padding:0">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
     </div>
 
     <!-- Tab bar — dynamic per role -->
@@ -596,12 +604,12 @@ const STAGES = [
 ];
 
 const ROLE_CONFIG = {
-  technician:  { label:'Technician',        dot:'#f0a500', tabs:['new-job','tasks','jobs','settings'],          canApprove:false, readOnly:false },
-  ops_head:    { label:'Operations Head',   dot:'#00e5b0', tabs:['pipeline','tasks','jobs','settings'],         canApprove:true,  readOnly:false },
-  coordinator: { label:'Coordinator',       dot:'#388bfd', tabs:['tasks','delivery','jobs','settings'],         canApprove:false, readOnly:false },
-  accounts:    { label:'Accounts',          dot:'#ff6b35', tabs:['tasks','billing','jobs','settings'],          canApprove:false, readOnly:false },
-  quality:     { label:'Quality Manager',   dot:'#bc8cff', tabs:['pipeline','jobs','settings'],                 canApprove:false, readOnly:true  },
-  lab_head:    { label:'Lab Head',          dot:'#f85149', tabs:['pipeline','jobs','settings'],                 canApprove:false, readOnly:true  },
+  technician:  { label:'Technician',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['log','tasks','jobs'],               canApprove:false, readOnly:false },
+  ops_head:    { label:'Operations Head', icon:'👔', color:'#1a56db', dot:'#1a56db', tabs:['pipeline','tasks','jobs','settings'],canApprove:true,  readOnly:false },
+  coordinator: { label:'Coordinator',     icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['tasks','delivery','billing','jobs'], canApprove:false, readOnly:false },
+  sales:       { label:'Sales',           icon:'🌟', color:'#16a34a', dot:'#16a34a', tabs:['pipeline','sales','jobs'],           canApprove:false, readOnly:false, isSales:true },
+  quality:     { label:'Quality Manager', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['pipeline','jobs'],                   canApprove:false, readOnly:true  },
+  lab_head:    { label:'Lab Head',        icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['pipeline','jobs'],                   canApprove:false, readOnly:true  },
 };
 
 const TAB_CONFIG = {
@@ -653,20 +661,31 @@ function selectRole(el){
 
 function buildNamePicker(list, emptyMsg, hiddenId){
   if(!list.length){
-    return `<div style="background:#fff7ed;border:1px solid rgba(217,119,6,.2);border-radius:var(--r2);padding:12px;font-size:13px;color:#d97706;text-align:center">
-      ⚠ ${emptyMsg}<br><span style="font-size:11px;color:#8896ab;margin-top:3px;display:block">Ask Operations Head to add names in Settings</span>
-    </div>`;
+    return `<div style="background:#fff7ed;border:1px solid rgba(217,119,6,.2);border-radius:var(--r2);padding:14px;font-size:13px;color:#d97706;text-align:center">
+      ⚠ ${emptyMsg}<br><span style="font-size:11px;color:#8896ab;margin-top:4px;display:block">Ask Operations Head to add names in Settings</span>
+    </div>
+    <input type="hidden" id="${hiddenId}" value="">
+    <input type="hidden" id="login-name-hidden" value="">`;
   }
-  return `<div style="display:flex;flex-direction:column;gap:7px">
-    ${list.map(t=>`
-      <div onclick="selectStaffName('${t}','${hiddenId}')" id="sn-${hiddenId}-${t.replace(/[^a-z0-9]/gi,'_')}"
-        style="padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r2);cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--surface);transition:all .15s">
-        <div style="width:34px;height:34px;border-radius:50%;background:#eff6ff;border:1.5px solid rgba(26,86,219,.2);display:grid;place-items:center;font-size:14px;font-weight:700;color:#1a56db;flex-shrink:0">${t.charAt(0).toUpperCase()}</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text)">${t}</div>
-      </div>`).join('')}
+  return `<div style="position:relative">
+    <select id="${hiddenId}-select" onchange="onDropdownSelect(this,'${hiddenId}')"
+      style="width:100%;padding:13px 40px 13px 14px;border:1.5px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:var(--sans);font-size:15px;font-weight:600;background:var(--surface);outline:none;appearance:none;-webkit-appearance:none;cursor:pointer">
+      <option value="">— Select your name —</option>
+      ${list.map(t=>`<option value="${t}">${t}</option>`).join('')}
+    </select>
+    <svg style="position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8896ab" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
   </div>
   <input type="hidden" id="${hiddenId}" value="">
   <input type="hidden" id="login-name-hidden" value="">`;
+}
+
+function onDropdownSelect(el, hiddenId){
+  const name = el.value;
+  document.getElementById(hiddenId).value = name;
+  document.getElementById('login-name-hidden').value = name;
+  // Visual feedback — highlight border
+  el.style.borderColor = name ? '#1a56db' : 'var(--border)';
+  el.style.background  = name ? '#eff6ff'  : 'var(--surface)';
 }
 
 function updateNameField(){
@@ -686,17 +705,10 @@ function updateNameField(){
 }
 
 function selectStaffName(name, hiddenId){
-  // Set hidden field
   const hid = document.getElementById(hiddenId);
   const lnh = document.getElementById('login-name-hidden');
   if(hid) hid.value = name;
   if(lnh) lnh.value = name;
-  // Highlight selected card
-  document.querySelectorAll(`[id^="sn-${hiddenId}-"]`).forEach(el=>{
-    const isMe = el.id === `sn-${hiddenId}-${name.replace(/[^a-z0-9]/gi,'_')}`;
-    el.style.borderColor = isMe ? '#1a56db' : 'var(--border)';
-    el.style.background  = isMe ? '#eff6ff'  : 'var(--surface)';
-  });
 }
 
 function selectTechName(name){
@@ -710,8 +722,10 @@ function goToPIN(){
 
   // For roles with name picker (technician, sales)
   if(selectedRole==='technician'||selectedRole==='sales'){
-    const nameEl = document.getElementById('tech-name-select');
-    const name = nameEl ? nameEl.value : '';
+    // Try dropdown select first, then hidden field
+    const dropEl = document.getElementById('tech-name-select-select');
+    const hidEl  = document.getElementById('tech-name-select');
+    const name   = (dropEl ? dropEl.value : '') || (hidEl ? hidEl.value : '');
     if(!name){ showToast('Select your name from the list'); return; }
     document.getElementById('login-name-hidden').value = name;
   } else {
@@ -757,8 +771,10 @@ function checkPIN(){
   if(pinEntry===correct){
     // Get name — from hidden field (technician) or text input (others)
     let name = '';
-    if(selectedRole==='technician'){
+    if(selectedRole==='technician'||selectedRole==='sales'){
+      const dropEl = document.getElementById('tech-name-select-select');
       name = document.getElementById('login-name-hidden')?.value ||
+             (dropEl ? dropEl.value : '') ||
              document.getElementById('tech-name-select')?.value || '';
     } else {
       name = document.getElementById('login-name')?.value.trim() || '';
