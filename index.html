@@ -545,7 +545,19 @@ textarea.field-input { resize: none; height: 80px; }
           <button onclick="savePINSettings()" style="width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;margin-top:12px">Save PINs</button>
         </div>
         <div class="settings-card">
-          <div class="settings-card-title">⚙️ Supabase Database</div>
+          <div class="settings-card-title">📁 Document Storage (Supabase)</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.6">
+            SR photos and PO documents upload to <strong style="color:var(--text)">Supabase Storage</strong> when configured — keeping the app fast and storage lean. Without Supabase, files save locally on device only.
+          </div>
+          <div id="storage-status-box" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;font-size:12px;margin-bottom:10px"></div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.6">
+            <strong style="color:var(--text)">One-time Supabase setup:</strong><br>
+            1. Go to your Supabase project → Storage<br>
+            2. Create a new bucket named <strong style="font-family:var(--mono);color:var(--accent)">caltrack-docs</strong><br>
+            3. Set bucket to <strong>Public</strong><br>
+            4. Done — all future uploads go to cloud ✓
+          </div>
+        </div>
           <div class="field-label">Project URL</div>
           <input type="text" id="set-sb-url" class="field-input mono" placeholder="https://xxxx.supabase.co">
           <div class="field-label">Anon Key</div>
@@ -1232,7 +1244,7 @@ async function syncJobToSupabase(job){
     master_items:   JSON.stringify(job.masterItems||[]),
     mcl_items:      JSON.stringify(job.mclItems||[]),
     sr_number:      job.srNumber||'',
-    sr_photo:       job.srPhotoData||'',
+    sr_photo:       job.srPhotoUrl || (job.srPhotoData?.startsWith('http') ? job.srPhotoData : ''),
     cert_numbers:   JSON.stringify(job.certNumbers||[]),
     cert_assigned_to: job.certAssigned||'',
     delivery_ack:   job.deliveryAck||'',
@@ -1477,17 +1489,100 @@ function setItemCondNote(i, val){
 }
 
 function triggerPhotoUpload(){ document.getElementById('sr-photo-input').click(); }
-function handlePhotoUpload(e){
+// ════════════════════════════════════════════════════
+// SUPABASE STORAGE — file upload/download
+// ════════════════════════════════════════════════════
+async function sbStorageUpload(bucket, path, file){
+  if(!SB_URL||!SB_KEY_VAL) return null;
+  try{
+    const r = await fetch(`${SB_URL}/storage/v1/object/${bucket}/${path}`, {
+      method:'POST',
+      headers:{
+        'apikey': SB_KEY_VAL,
+        'Authorization': `Bearer ${SB_KEY_VAL}`,
+        'Content-Type': file.type||'application/octet-stream',
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+    if(!r.ok) return null;
+    // Return public URL
+    return `${SB_URL}/storage/v1/object/public/${bucket}/${path}`;
+  }catch(e){ return null; }
+}
+
+function sbStoragePublicUrl(bucket, path){
+  if(!SB_URL) return null;
+  return `${SB_URL}/storage/v1/object/public/${bucket}/${path}`;
+}
+
+async function handlePhotoUpload(e){
   const file = e.target.files[0];
   if(!file) return;
+
+  showToast('Uploading…');
+
+  // Try Supabase Storage first
+  if(SB_URL && SB_KEY_VAL){
+    const ext = file.name.split('.').pop()||'jpg';
+    const path = `sr-photos/${activeJob.jobNum}_${Date.now()}.${ext}`;
+    const url = await sbStorageUpload('caltrack-docs', path, file);
+    if(url){
+      activeJob.srPhotoData = url;   // store URL not base64
+      activeJob.srPhotoUrl  = url;
+      updateJob(activeJob);
+      await syncJobToSupabase(activeJob);
+      renderStageActionArea();
+      showToast('✓ Service report uploaded to cloud');
+      return;
+    }
+  }
+
+  // Fallback: base64 local storage
   const reader = new FileReader();
   reader.onload = ev=>{
     activeJob.srPhotoData = ev.target.result;
     updateJob(activeJob);
     renderStageActionArea();
-    showToast('✓ Service report photo uploaded');
+    showToast('✓ Service report photo saved locally');
   };
   reader.readAsDataURL(file);
+}
+
+async function onPODocUpload(e, num){
+  const j=jobs.find(x=>x.jobNum===num); if(!j) return;
+  const f=e.target.files[0]; if(!f) return;
+
+  showToast('Uploading PO document…');
+
+  // Try Supabase Storage first
+  if(SB_URL && SB_KEY_VAL){
+    const ext = f.name.split('.').pop()||'pdf';
+    const path = `po-docs/${num}_${Date.now()}.${ext}`;
+    const url = await sbStorageUpload('caltrack-docs', path, f);
+    if(url){
+      j.poDocData = url;
+      j.poDocUrl  = url;
+      j.poDocName = f.name;
+      j.poNumber  = document.getElementById('sales-po')?.value.trim()||j.poNumber||'';
+      updateJob(j); syncJob(j);
+      showToast('✓ PO document uploaded to cloud');
+      openSalesJobModal(num);
+      return;
+    }
+  }
+
+  // Fallback: base64
+  const r=new FileReader();
+  r.onload=ev=>{
+    j.poDocData=ev.target.result;
+    j.poDocName=f.name;
+    j.poNumber=document.getElementById('sales-po')?.value.trim()||j.poNumber||'';
+    updateJob(j); syncJob(j);
+    showToast('✓ PO document saved locally');
+    openSalesJobModal(num);
+  };
+  r.readAsDataURL(f);
 }
 
 // ════════════════════════════════════════════════════
@@ -2374,9 +2469,13 @@ function openJobDetailModal(jobNum){
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:14px;font-size:11px;color:var(--text2)">
       ${j.mclItems.map(m=>`<div style="padding:4px 0;border-bottom:0.5px solid var(--border)">${m.tagNo||'—'} · ${m.description||'—'} · ${m.serial||'—'} · <span style="color:${m.result==='Pass'?'var(--accent)':'var(--text3)'}">${m.result||'—'}</span></div>`).join('')}
     </div>`:''}
-    ${j.srPhotoData?`
-    <div class="section-hd">Service Report Photo</div>
-    <img src="${j.srPhotoData}" style="width:100%;border-radius:var(--r2);margin-bottom:14px;max-height:200px;object-fit:cover">`:''}
+    ${j.srPhotoData||j.srPhotoUrl?`
+    <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between">
+      Service Report Photo
+      <a href="${j.srPhotoUrl||j.srPhotoData}" download="SR_${j.jobNum}.jpg" target="_blank"
+        style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(26,86,219,.1);color:var(--blue);text-decoration:none;font-family:var(--mono)">⬇ Download SR</a>
+    </div>
+    <img src="${j.srPhotoUrl||j.srPhotoData}" style="width:100%;border-radius:var(--r2);margin-bottom:14px;max-height:200px;object-fit:cover">`:''}
     <div class="section-hd">Job Pipeline</div>
     <div class="stage-list">${stageRows}</div>`;
 
@@ -2785,40 +2884,6 @@ async function saveSalesPO(num){
   showToast('✓ PO number saved');
 }
 
-function onPODocUpload(e, num){
-  const j=jobs.find(x=>x.jobNum===num); if(!j) return;
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    j.poDocData=ev.target.result;
-    j.poDocName=f.name;
-    j.poNumber=document.getElementById('sales-po')?.value.trim()||j.poNumber||'';
-    updateJob(j); syncJob(j);
-    showToast('✓ PO document uploaded');
-    // Refresh modal
-    openSalesJobModal(num);
-  };
-  r.readAsDataURL(f);
-}
-
-function viewPODoc(num){
-  const j=jobs.find(x=>x.jobNum===num); if(!j||!j.poDocData) return;
-  const win=window.open('','_blank');
-  if(!win){ showToast('Allow popups to view documents'); return; }
-  if(j.poDocData.startsWith('data:application/pdf')){
-    win.document.write(`<html><body style="margin:0"><embed src="${j.poDocData}" width="100%" height="100%" type="application/pdf"></body></html>`);
-  } else {
-    win.document.write(`<html><head><title>PO Document — ${j.jobNum}</title></head>
-    <body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;min-height:100vh">
-      <div style="background:#1a56db;width:100%;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
-        <div style="color:#fff;font-size:14px;font-weight:600">PO Document — ${j.jobNum} · ${j.customer}</div>
-        <a href="${j.poDocData}" download="PO_${j.jobNum}_${j.poDocName||'document'}" style="background:#fff;color:#1a56db;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">⬇ Download</a>
-      </div>
-      <img src="${j.poDocData}" style="max-width:100%;margin-top:10px">
-    </body></html>`);
-  }
-}
-
 async function approveBillingSales(num){
   const j=jobs.find(x=>x.jobNum===num); if(!j) return;
   const comment=document.getElementById('sales-comment').value.trim();
@@ -3046,6 +3111,16 @@ function renderSettings(){
   const status = document.getElementById('set-sb-status');
   status.textContent = SB_URL ? '✓ Supabase configured' : 'Not configured';
   status.style.color = SB_URL ? 'var(--accent)' : 'var(--text3)';
+
+  // Storage status
+  const storageBox = document.getElementById('storage-status-box');
+  if(storageBox){
+    if(SB_URL){
+      storageBox.innerHTML = `<span style="color:var(--accent);font-weight:600">✓ Cloud storage active</span> — SR photos and PO documents upload to Supabase Storage bucket <span style="font-family:var(--mono);color:var(--blue)">caltrack-docs</span>. Files accessible by all offices.`;
+    } else {
+      storageBox.innerHTML = `<span style="color:var(--amber);font-weight:600">⚠ No Supabase configured</span> — Files saved as base64 on this device only. Configure Supabase below to enable cloud storage.`;
+    }
+  }
 }
 
 async function saveSupabaseSettings(){
