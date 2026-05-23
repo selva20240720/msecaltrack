@@ -5512,8 +5512,14 @@ function showWAPrompt(phone, msg, label){
     <button onclick="this.closest('#wa-prompt-bar').remove()" style="background:rgba(255,255,255,.1);border:none;border-radius:8px;width:28px;height:28px;color:#d1fae5;font-size:16px;cursor:pointer;display:grid;place-items:center;flex-shrink:0">×</button>
   `;
   document.body.appendChild(bar);
-  // Auto-dismiss after 12 seconds
-  _waPendingTimer = setTimeout(()=>{ bar.remove(); _waPendingTimer=null; }, 6000);
+  // Auto-dismiss after 8 seconds
+  _waPendingTimer = setTimeout(()=>{ if(bar.parentNode){ bar.style.animation='none'; bar.style.opacity='0'; bar.style.transform='translateX(-50%) translateY(20px)'; bar.style.transition='all .3s ease'; setTimeout(()=>bar.remove(),300); } _waPendingTimer=null; }, 8000);
+  // Dismiss on tap outside
+  setTimeout(()=>{
+    document.addEventListener('click', function dismissWA(e){
+      if(!bar.contains(e.target)){ bar.remove(); clearTimeout(_waPendingTimer); _waPendingTimer=null; document.removeEventListener('click', dismissWA); }
+    });
+  }, 500);
 }
 
 
