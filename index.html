@@ -269,9 +269,8 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
 .ib-purple { background: #f5f3ff;         border: 1px solid rgba(124,58,237,.2); color: #7c3aed; }
 
 /* ── BRANCH MANAGER PORTAL ── */
-#bm-portal { position:fixed; inset:0; background:var(--bg); z-index:500; display:none; flex-direction:column; overflow:hidden; pointer-events:none; }
-#bm-portal.open { pointer-events:all; }
-#bm-portal.open { display:flex; }
+#bm-portal { position:fixed; inset:0; background:var(--bg); z-index:500; flex-direction:column; overflow:hidden; pointer-events:none; opacity:0; visibility:hidden; transform:translateY(12px); transition:opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s; display:flex; will-change:transform,opacity; }
+#bm-portal.open { pointer-events:all; opacity:1; visibility:visible; transform:translateY(0); transition:opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0s; }
 .bm-header { background:linear-gradient(135deg,#1e40af 0%,#1a56db 60%,#3b82f6 100%); padding:16px 16px 12px; flex-shrink:0; }
 .bm-header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
 .bm-title { font-family:var(--mono); font-size:17px; font-weight:700; color:#fff; letter-spacing:-.02em; }
@@ -5541,18 +5540,23 @@ function bmCheckPIN(){
 }
 
 function bmOpenMain(){
-  document.getElementById('bm-login').style.display='none';
-  document.getElementById('bm-main').style.display='flex';
-  document.getElementById('bm-main').style.flexDirection='column';
-  document.getElementById('bm-main').style.height='100%';
+  const login = document.getElementById('bm-login');
+  const main  = document.getElementById('bm-main');
+  login.style.display='none';
+  main.style.display='flex';
+  main.style.flexDirection='column';
+  main.style.height='100%';
   const BRANCH_LABELS = {hq:'Muscat HQ 🏛️', sohar:'Sohar 🏭', salalah:'Salalah 🌴'};
   document.getElementById('bm-header-title').textContent = bmSession.name;
   document.getElementById('bm-header-sub').textContent = BRANCH_LABELS[bmSession.branch]||bmSession.branch;
   document.getElementById('bm-receive-branch-name').textContent = BRANCH_LABELS[bmSession.branch]||bmSession.branch;
   bmTransferItems=[];
   bmSelectedDest='';
-  bmRenderDestGrid();
-  bmSwitchTab('transfer');
+  // Defer heavy renders so UI appears instantly
+  requestAnimationFrame(()=>{
+    bmRenderDestGrid();
+    bmSwitchTab('transfer');
+  });
 }
 
 function bmSwitchTab(tab){
@@ -5724,6 +5728,10 @@ function bmConfirmTransfer(){
 function bmRenderMonitor(){
   const el = document.getElementById('bm-monitor-content');
   if(!el) return;
+  // Skip re-render if nothing changed
+  const cacheKey = JSON.stringify({tLen:Object.keys(transfers).length, eLen:equipDB.length});
+  if(el._cacheKey === cacheKey){ return; }
+  el._cacheKey = cacheKey;
 
   // Count assets per branch
   const counts = {hq:[], sohar:[], salalah:[]};
