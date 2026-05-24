@@ -49,7 +49,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 html { height: 100%; }
-body { height: 100%; background: var(--bg); font-family: var(--sans); color: var(--text); font-size: 14px; -webkit-font-smoothing: antialiased; overflow: hidden; position: fixed; width: 100%; }
+body { height: 100%; background: var(--bg); font-family: var(--sans); color: var(--text); font-size: 14px; -webkit-font-smoothing: antialiased; overflow: hidden; }
 
 /* ── APP SHELL ── */
 #app { display: flex; flex-direction: column; height: 100vh; max-width: 480px; margin: 0 auto; background: var(--bg); position: relative; overflow: hidden; }
@@ -1294,16 +1294,22 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
 
 <script>
 // ── SAMSUNG / ANDROID VIEWPORT HEIGHT FIX ──
-// On Android Chrome & Samsung Internet, 100vh includes the address bar height,
-// causing content to be hidden. This sets the real visible height via a CSS variable.
+// On Android Chrome & Samsung Internet, 100vh includes the address bar,
+// causing content to be cut off. This sets the real visible height.
 function setVH() {
-  var vh = window.innerHeight * 0.01;
-  document.documentElement.style.setProperty('--vh', vh + 'px');
-  document.getElementById('app').style.height = window.innerHeight + 'px';
+  var h = window.innerHeight;
+  document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+  var app = document.getElementById('app');
+  if(app) app.style.height = h + 'px';
+  var lv = document.getElementById('login-view');
+  if(lv) lv.style.height = h + 'px';
 }
+// Run immediately and after any resize/orientation change
 setVH();
-window.addEventListener('resize', setVH);
-window.addEventListener('orientationchange', function(){ setTimeout(setVH, 300); });
+window.addEventListener('resize', function(){ setTimeout(setVH, 100); });
+window.addEventListener('orientationchange', function(){ setTimeout(setVH, 400); });
+// Also run after page fully loads
+window.addEventListener('load', function(){ setTimeout(setVH, 200); });
 </script>
 // Run this SQL once in your Supabase SQL Editor:
 //
