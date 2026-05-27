@@ -1,0 +1,31 @@
+name: Supabase Keep-Alive Ping
+
+# Runs every 3 days at 8:00 AM (UTC) to prevent Supabase free tier pausing
+on:
+  schedule:
+    - cron: '0 8 */3 * *'   # Every 3 days at 08:00 UTC
+  workflow_dispatch:          # Also allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping:
+    name: Ping Supabase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping ct2_settings table
+        run: |
+          echo "Pinging Supabase at $(date)..."
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://cotuzmcqvrhigquvgald.supabase.co/rest/v1/ct2_settings?limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvdHV6bWNxdnJoaWdxdXZnYWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTYzNDcsImV4cCI6MjA5NDkzMjM0N30.2MvJ2YcAas3XNRmMT6K4xb7KaK3QQrCJaFt2RNlXpFA" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvdHV6bWNxdnJoaWdxdXZnYWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTYzNDcsImV4cCI6MjA5NDkzMjM0N30.2MvJ2YcAas3XNRmMT6K4xb7KaK3QQrCJaFt2RNlXpFA")
+
+          echo "HTTP Status: $STATUS"
+
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "206" ]; then
+            echo "✅ Supabase is active and responding"
+          else
+            echo "⚠️ Unexpected status: $STATUS — Supabase may need manual resume"
+            exit 1
+          fi
