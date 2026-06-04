@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CalTrack Login Test</title>
+<style>
+body { font-family: sans-serif; padding: 20px; background: #f0f4f8; }
+.btn { width: 100%; padding: 16px; margin: 8px 0; font-size: 16px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; }
+.role-btn { background: #fff; border: 2px solid #e2e8f0; color: #1a202c; }
+.pin-btn { background: #fff; border: 2px solid #e2e8f0; color: #1a202c; font-size: 20px; }
+.go-btn { background: #1a56db; color: #fff; }
+#status { margin: 16px 0; padding: 12px; background: #fff; border-radius: 8px; font-size: 14px; min-height: 50px; }
+#pinDisplay { font-size: 32px; text-align: center; letter-spacing: 16px; margin: 16px 0; }
+.keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+</style>
+</head>
+<body>
+<h2>CalTrack v2.6.0 - Login Test</h2>
+<div id="status">Tap Operations Head to test</div>
+
+<button class="btn role-btn" onclick="selectOpsHead()">👔 Operations Head</button>
+
+<div id="pin-section" style="display:none">
+  <div id="pinDisplay">----</div>
+  <div class="keypad">
+    <button class="btn pin-btn" onclick="addPin('1')">1</button>
+    <button class="btn pin-btn" onclick="addPin('2')">2</button>
+    <button class="btn pin-btn" onclick="addPin('3')">3</button>
+    <button class="btn pin-btn" onclick="addPin('4')">4</button>
+    <button class="btn pin-btn" onclick="addPin('5')">5</button>
+    <button class="btn pin-btn" onclick="addPin('6')">6</button>
+    <button class="btn pin-btn" onclick="addPin('7')">7</button>
+    <button class="btn pin-btn" onclick="addPin('8')">8</button>
+    <button class="btn pin-btn" onclick="addPin('9')">9</button>
+    <button class="btn pin-btn" onclick="clearPin()">Del</button>
+    <button class="btn pin-btn" onclick="addPin('0')">0</button>
+    <button class="btn pin-btn" onclick="clearPin()">←</button>
+  </div>
+</div>
+
+<script>
+var pin = '';
+var selectedUser = null;
+
+document.getElementById('status').textContent = 'Page loaded OK. JS working.';
+
+function selectOpsHead(){
+  selectedUser = { name: 'Operations Head', role: 'ops_head', password: '1988' };
+  document.getElementById('status').textContent = 'Selected: Operations Head. Enter PIN 1988';
+  document.getElementById('pin-section').style.display = 'block';
+  pin = '';
+  updateDisplay();
+}
+
+function addPin(d){
+  if(pin.length >= 4) return;
+  pin += d;
+  updateDisplay();
+  if(pin.length === 4) checkPin();
+}
+
+function clearPin(){
+  pin = pin.slice(0,-1);
+  updateDisplay();
+}
+
+function updateDisplay(){
+  var dots = '';
+  for(var i=0;i<4;i++) dots += (i < pin.length ? '●' : '○');
+  document.getElementById('pinDisplay').textContent = dots;
+}
+
+function checkPin(){
+  document.getElementById('status').textContent = 'Checking PIN: ' + pin;
+  if(pin === '1988'){
+    document.getElementById('status').textContent = '✅ PIN CORRECT! Login would work.';
+    document.getElementById('status').style.background = '#d1fae5';
+  } else {
+    document.getElementById('status').textContent = '❌ Wrong PIN: ' + pin;
+    document.getElementById('status').style.background = '#fee2e2';
+    pin = '';
+    setTimeout(updateDisplay, 1000);
+  }
+}
+</script>
+</body>
+</html>
