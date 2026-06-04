@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CalTrack Diagnosis</title>
+<style>
+body { font-family: sans-serif; padding: 16px; background: #f0f4f8; }
+.btn { width: 100%; padding: 14px; margin: 6px 0; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; background: #1a56db; color: #fff; }
+#out { background: #fff; border-radius: 8px; padding: 12px; margin: 10px 0; font-size: 12px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; }
+</style>
+</head>
+<body>
+<h2>CalTrack Diagnosis</h2>
+<div id="out">Ready...</div>
+<button class="btn" onclick="checkStorage()">1. Check localStorage</button>
+<button class="btn" onclick="clearBadData()">2. Clear corrupted data</button>
+<button class="btn" onclick="testMainApp()">3. Test main app load</button>
+
+<script>
+var out = document.getElementById('out');
+
+function log(msg){ out.textContent += '\n' + msg; }
+
+function checkStorage(){
+  out.textContent = 'Checking localStorage...\n';
+  try {
+    var total = 0;
+    var keys = [];
+    for(var i=0; i<localStorage.length; i++){
+      var k = localStorage.key(i);
+      var v = localStorage.getItem(k);
+      var size = v ? v.length : 0;
+      total += size;
+      keys.push({k: k, size: size});
+    }
+    keys.sort(function(a,b){ return b.size - a.size; });
+    log('Total keys: ' + keys.length);
+    log('Total size: ' + (total/1024).toFixed(1) + ' KB');
+    log('---');
+    keys.forEach(function(x){
+      log(x.k + ': ' + (x.size/1024).toFixed(1) + 'KB');
+    });
+  } catch(e) {
+    log('ERROR: ' + e.message);
+  }
+}
+
+function clearBadData(){
+  out.textContent = 'Clearing...\n';
+  try {
+    // Clear only photo/image data that could be huge
+    var toDelete = [];
+    for(var i=0; i<localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && (k.includes('photo') || k.includes('img') || k.includes('base64'))){
+        toDelete.push(k);
+      }
+    }
+    // Also clear jobs if over 500KB
+    var jobs = localStorage.getItem('ct2-jobs');
+    if(jobs && jobs.length > 500000){
+      toDelete.push('ct2-jobs');
+      log('Jobs data too large: ' + (jobs.length/1024).toFixed(0) + 'KB - clearing');
+    }
+    toDelete.forEach(function(k){
+      localStorage.removeItem(k);
+      log('Removed: ' + k);
+    });
+    log('Done. Reload main app now.');
+  } catch(e) {
+    log('ERROR: ' + e.message);
+  }
+}
+
+function testMainApp(){
+  window.location.href = 'index.html';
+}
+
+checkStorage();
+</script>
+</body>
+</html>
