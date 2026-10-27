@@ -16985,14 +16985,18 @@ function _s1AddFromSearchAfterTransferLoad(id){
   if(isWrongBranch){
     const br = BRANCHES.find(b=>b.id===instrBranch)||{label:instrBranch, icon:'📍'};
     showToast(`🚫 ${id} is at ${br.icon} ${br.label} — not available at your branch`, 4000);
-    // Clear search so engineer cannot retry with same stale result
     const el = document.getElementById('s1-search-results');
     if(el) el.innerHTML = `<div style="padding:12px;color:#dc2626;font-size:12px;text-align:center">🚫 ${id} is at ${br.label} — not your branch</div>`;
     return;
   }
+
+  // Check if locked by another job
+  const locked = getEffectiveLocks();
+  const lockInfo = locked.get(id);
+  const isLockedElsewhere = lockInfo && (!activeJob || lockInfo.jobNum !== activeJob.jobNum);
   if(isLockedElsewhere){
     const br = BRANCHES.find(b=>b.id===instrBranch)||{label:instrBranch,icon:'📍'};
-    showToast(`🔒 ${id} is OUT on job ${lockInfo.jobNum} at ${br.label} — cannot add`);
+    showToast(`🔒 ${id} is OUT on job ${lockInfo.jobNum} — cannot add`);
     return;
   }
   const instr = equipMap[id]||{};
