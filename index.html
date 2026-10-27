@@ -10394,6 +10394,10 @@ function renderStage1UI(el){
           </div>
         </div>`;
       }).join('')}
+      <button onclick="exportIMTEPdf()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1a56db,#0891b2);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Export IMTE Movement Record
+      </button>
       <button onclick="cancelStage1Submission()" style="width:100%;padding:11px;background:#f5f7fa;border:1.5px solid #dde1ea;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:600;color:#8896ab;cursor:pointer;margin-top:8px">
         ↩ Cancel & Re-scan
       </button>`;
@@ -16238,6 +16242,215 @@ async function cancelStage1Submission(){
   batchQueue = [];
   renderStageActionArea(); renderActivJobBanner();
   showToast('Submission cancelled — re-scan instruments');
+}
+
+// ═══════════════════════════════════════════════════════
+// IMTE MOVEMENT RECORD — PDF EXPORT
+// ═══════════════════════════════════════════════════════
+function exportIMTEPdf(){
+  if(!activeJob){ showToast('No active job'); return; }
+  const items = activeJob.masterItems || [];
+  if(!items.length){ showToast('No instruments scanned yet'); return; }
+
+  // Build approver dropdown from senior roles
+  const seniors = ctUsers.filter(u => ['ops_head','lab_head','quality','coordinator'].includes(u.role));
+  const seniorOptions = seniors.map(u => `<option value="${esc(u.name)}">${esc(u.name)} (${u.role.replace('_',' ')})</option>`).join('');
+
+  // Show approver selection modal
+  const overlay = document.createElement('div');
+  overlay.id = 'imte-pdf-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0)';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:24px;animation:sheet-up .25s ease">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#111">Export IMTE Movement Record</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px">Job ${activeJob.jobNum} · ${items.length} instrument${items.length!==1?'s':''}</div>
+        </div>
+        <button onclick="document.getElementById('imte-pdf-overlay').remove()" style="width:32px;height:32px;border-radius:50%;border:none;background:#f3f4f6;color:#6b7280;font-size:18px;cursor:pointer;display:grid;place-items:center">×</button>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Approved By</div>
+      <select id="imte-approver-select" style="width:100%;padding:12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;font-family:inherit;color:#111;background:#fff;margin-bottom:16px;appearance:auto">
+        <option value="">— Select approver —</option>
+        ${seniorOptions}
+      </select>
+
+      <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Designation</div>
+      <input type="text" id="imte-approver-desig" placeholder="e.g. Operations Head" style="width:100%;padding:12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;font-family:inherit;color:#111;background:#fff;margin-bottom:20px;box-sizing:border-box">
+
+      <button onclick="generateIMTEPdf()" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a56db,#0891b2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
+        📄 Generate PDF
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // Auto-fill designation when approver is selected
+  document.getElementById('imte-approver-select').addEventListener('change', function(){
+    const name = this.value;
+    const user = ctUsers.find(u => u.name === name);
+    if(user){
+      const desigMap = { ops_head:'Operations Head', lab_head:'Lab Head', quality:'Quality Specialist', coordinator:'Coordinator' };
+      document.getElementById('imte-approver-desig').value = desigMap[user.role] || user.role;
+    }
+  });
+}
+
+function generateIMTEPdf(){
+  const approver = document.getElementById('imte-approver-select')?.value || '';
+  const desig    = document.getElementById('imte-approver-desig')?.value || '';
+  if(!approver){ showToast('Please select an approver'); return; }
+
+  const job   = activeJob;
+  const items = job.masterItems || [];
+  const date  = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  const submittedAt = job.stageHistory?.['1_submitted']?.submittedAt
+    ? new Date(job.stageHistory['1_submitted'].submittedAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+    : date;
+
+  // Build instrument rows
+  const instrRows = items.map((id, i) => {
+    const eq = equipMap[id] || {};
+    return `<tr>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;text-align:center;font-weight:600">${i+1}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;font-family:monospace;font-weight:700;color:#1a56db">${id}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db">${eq.description || eq.make || '—'}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db">${eq.model || '—'}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;font-family:monospace">${eq.serial || '—'}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db">${eq.calDue ? new Date(eq.calDue).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>IMTE Movement Record - ${job.jobNum}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 12px; color: #111; padding: 30px; background: #fff; }
+  .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2.5px solid #1a56db; padding-bottom: 14px; margin-bottom: 18px; }
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+  .logo-circle { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg,#1a56db,#0891b2); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 18px; letter-spacing: 1px; flex-shrink: 0; }
+  .company-name { font-size: 15px; font-weight: 800; color: #1a56db; line-height: 1.3; }
+  .company-arabic { font-size: 13px; color: #374151; direction: rtl; }
+  .doc-title { text-align: right; }
+  .doc-title h1 { font-size: 16px; font-weight: 800; color: #1a56db; text-transform: uppercase; letter-spacing: 1px; }
+  .doc-title .doc-num { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+  .info-cell { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; }
+  .info-cell:nth-child(odd) { border-right: 1px solid #e5e7eb; }
+  .info-cell:nth-last-child(-n+2) { border-bottom: none; }
+  .info-label { font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 3px; }
+  .info-value { font-size: 13px; font-weight: 700; color: #111; }
+  .section-title { font-size: 11px; font-weight: 800; color: #1a56db; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid #bfdbfe; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  thead th { background: #1a56db; color: #fff; padding: 10px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; border: 1px solid #1a56db; }
+  tbody tr:nth-child(even) { background: #f0f7ff; }
+  tbody td { font-size: 11px; color: #111; }
+  .sign-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 30px; }
+  .sign-box { border-top: 1.5px solid #374151; padding-top: 10px; }
+  .sign-label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .sign-name { font-size: 13px; font-weight: 800; color: #111; margin-top: 4px; }
+  .sign-desig { font-size: 11px; color: #6b7280; }
+  .footer { margin-top: 30px; border-top: 1.5px solid #1a56db; padding-top: 10px; text-align: center; font-size: 9px; color: #6b7280; line-height: 1.6; }
+  .stamp-box { border: 2px dashed #d1d5db; border-radius: 8px; padding: 24px; text-align: center; font-size: 10px; color: #9ca3af; min-height: 70px; display: flex; align-items: center; justify-content: center; }
+  @media print { body { padding: 20px; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-circle">MSE</div>
+    <div>
+      <div class="company-arabic">شركة مصطفى سلطان للتجهيرات العلمية والصناعية ش.م.م</div>
+      <div class="company-name">Mustafa Sultan Science &amp; Industry Co. L.L.C.</div>
+    </div>
+  </div>
+  <div class="doc-title">
+    <h1>IMTE Movement Record</h1>
+    <div class="doc-num">Inspection, Measuring &amp; Test Equipment</div>
+    <div class="doc-num" style="margin-top:4px;color:#1a56db;font-weight:700">Ref: ${job.jobNum}</div>
+  </div>
+</div>
+
+<!-- JOB INFO -->
+<div class="section-title" style="margin-bottom:12px">Job Information</div>
+<div class="info-grid" style="margin-bottom:20px">
+  <div class="info-cell"><div class="info-label">Job Number</div><div class="info-value" style="color:#1a56db;font-family:monospace">${job.jobNum}</div></div>
+  <div class="info-cell"><div class="info-label">Date of Issue</div><div class="info-value">${submittedAt}</div></div>
+  <div class="info-cell"><div class="info-label">Customer</div><div class="info-value">${job.customer || '—'}</div></div>
+  <div class="info-cell"><div class="info-label">Site Location</div><div class="info-value">${job.site || '—'}</div></div>
+  <div class="info-cell"><div class="info-label">Cal. Engineer</div><div class="info-value">${job.tech || session?.name || '—'}</div></div>
+  <div class="info-cell"><div class="info-label">Total Instruments</div><div class="info-value">${items.length} instrument${items.length!==1?'s':''}</div></div>
+</div>
+
+<!-- INSTRUMENTS TABLE -->
+<div class="section-title">Master Instruments Issued to Site</div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:40px">#</th>
+      <th style="width:120px">IMTE ID</th>
+      <th>Description</th>
+      <th>Model</th>
+      <th>Serial No.</th>
+      <th style="width:100px">Cal. Due</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${instrRows}
+  </tbody>
+</table>
+
+<!-- SIGNATURES -->
+<div class="sign-row">
+  <div>
+    <div class="section-title">Issued By</div>
+    <div style="height:50px"></div>
+    <div class="sign-box" style="border:none;padding:0">
+      <div class="sign-name">${job.tech || session?.name || '—'}</div>
+      <div class="sign-desig">Cal. Engineer</div>
+      <div style="font-size:10px;color:#9ca3af;margin-top:4px">Date: ${date}</div>
+    </div>
+  </div>
+  <div>
+    <div class="section-title">Approved By</div>
+    <div style="height:50px"></div>
+    <div class="sign-box" style="border:none;padding:0">
+      <div class="sign-name">${approver}</div>
+      <div class="sign-desig">${desig}</div>
+      <div style="font-size:10px;color:#9ca3af;margin-top:4px">Date: ${date}</div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPANY STAMP -->
+<div style="margin-top:24px">
+  <div class="section-title">Company Stamp</div>
+  <div class="stamp-box">Stamp / Seal</div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Way #: 277, Warehouse #: G17, House #: 86, Ghala Industrial Estate, Muscat, Sultanate of Oman<br>
+  CR No: 1458337 &nbsp;|&nbsp; Website: www.mustafasultan.com &nbsp;|&nbsp; Email: cal-lab@mustafasultan.com &nbsp;|&nbsp; Tel: +968 24629927
+</div>
+
+</body>
+</html>`;
+
+  // Remove modal
+  document.getElementById('imte-pdf-overlay')?.remove();
+
+  // Open in new tab and print
+  const win = window.open('', '_blank');
+  if(!win){ showToast('Please allow popups to generate PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>{ win.focus(); win.print(); }, 600);
 }
 
 // ════════════════════════════════════════════════════
