@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20909,43 +20910,34 @@ async function kpiSaveTarget(techName){
   allTargets[dateStr][techName] = { site, lab };
   kpiSaveTargets(allTargets);
 
-  // Save to Supabase — try PATCH first (update existing), then POST (insert new)
+  // Save to Supabase — delete old record then insert fresh
   try {
-    // Try to update existing record first
-    const patchRes = await fetch(
+    // Step 1: Delete existing record for this date + engineer
+    await fetch(
       `${SB_URL}/rest/v1/kpi_targets?date=eq.${dateStr}&engineer_name=eq.${encodeURIComponent(techName)}`,
       {
-        method: 'PATCH',
+        method: 'DELETE',
         headers: {
-          'Content-Type':  'application/json',
           'apikey':        SB_KEY_VAL,
-          'Authorization': `Bearer ${SB_KEY_VAL}`,
-          'Prefer':        'return=minimal'
-        },
-        body: JSON.stringify({ site_target: site, lab_target: lab })
+          'Authorization': `Bearer ${SB_KEY_VAL}`
+        }
       }
     );
-
-    if(patchRes.ok){
-      // Check if any row was actually updated (content-range header)
-      const range = patchRes.headers.get('content-range');
-      const updated = range && range !== '*/0';
-      if(!updated){
-        // No existing row — insert new
-        await fetch(`${SB_URL}/rest/v1/kpi_targets`, {
-          method: 'POST',
-          headers: {
-            'Content-Type':  'application/json',
-            'apikey':        SB_KEY_VAL,
-            'Authorization': `Bearer ${SB_KEY_VAL}`,
-            'Prefer':        'return=minimal'
-          },
-          body: JSON.stringify({ date: dateStr, engineer_name: techName, site_target: site, lab_target: lab })
-        });
-      }
+    // Step 2: Insert fresh record
+    const res = await fetch(`${SB_URL}/rest/v1/kpi_targets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SB_KEY_VAL,
+        'Authorization': `Bearer ${SB_KEY_VAL}`,
+        'Prefer':        'return=minimal'
+      },
+      body: JSON.stringify({ date: dateStr, engineer_name: techName, site_target: site, lab_target: lab })
+    });
+    if(res.ok){
       showToast(`✅ Target updated for ${techName}`);
     } else {
-      console.warn('KPI target sync error:', await patchRes.text());
+      console.warn('KPI target save error:', await res.text());
       showToast(`✅ Target saved locally for ${techName}`);
     }
   } catch(e){
