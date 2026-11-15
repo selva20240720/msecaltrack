@@ -20909,27 +20909,43 @@ async function kpiSaveTarget(techName){
   allTargets[dateStr][techName] = { site, lab };
   kpiSaveTargets(allTargets);
 
-  // Save to Supabase
+  // Save to Supabase — try PATCH first (update existing), then POST (insert new)
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/kpi_targets`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'apikey':        SB_KEY_VAL,
-        'Authorization': `Bearer ${SB_KEY_VAL}`,
-        'Prefer':        'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify({
-        date:          dateStr,
-        engineer_name: techName,
-        site_target:   site,
-        lab_target:    lab
-      })
-    });
-    if(res.ok){
-      showToast(`✅ Target saved for ${techName}`);
+    // Try to update existing record first
+    const patchRes = await fetch(
+      `${SB_URL}/rest/v1/kpi_targets?date=eq.${dateStr}&engineer_name=eq.${encodeURIComponent(techName)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type':  'application/json',
+          'apikey':        SB_KEY_VAL,
+          'Authorization': `Bearer ${SB_KEY_VAL}`,
+          'Prefer':        'return=minimal'
+        },
+        body: JSON.stringify({ site_target: site, lab_target: lab })
+      }
+    );
+
+    if(patchRes.ok){
+      // Check if any row was actually updated (content-range header)
+      const range = patchRes.headers.get('content-range');
+      const updated = range && range !== '*/0';
+      if(!updated){
+        // No existing row — insert new
+        await fetch(`${SB_URL}/rest/v1/kpi_targets`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'apikey':        SB_KEY_VAL,
+            'Authorization': `Bearer ${SB_KEY_VAL}`,
+            'Prefer':        'return=minimal'
+          },
+          body: JSON.stringify({ date: dateStr, engineer_name: techName, site_target: site, lab_target: lab })
+        });
+      }
+      showToast(`✅ Target updated for ${techName}`);
     } else {
-      console.warn('KPI target sync error:', await res.text());
+      console.warn('KPI target sync error:', await patchRes.text());
       showToast(`✅ Target saved locally for ${techName}`);
     }
   } catch(e){
