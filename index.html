@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1716,15 +1715,24 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
 
       <!-- ═══ ENGINEER KPI TAB ═══ -->
       <div class="tab-panel" id="panel-eng-kpi">
-        <!-- Date selector -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-          <input type="date" id="kpi-date" class="field-input" style="flex:1;font-size:14px" onchange="renderEngKPI()">
-          <button onclick="renderEngKPI()" style="padding:10px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer">Refresh</button>
+        <!-- View toggle -->
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button id="kpi-btn-daily" onclick="kpiSetView('daily')" style="flex:1;padding:9px;border:1.5px solid var(--blue);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">📅 Daily</button>
+          <button id="kpi-btn-weekly" onclick="kpiSetView('weekly')" style="flex:1;padding:9px;border:1.5px solid var(--blue);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:var(--surface);color:var(--blue)">📊 Weekly</button>
         </div>
-        <!-- Summary strip -->
-        <div id="eng-kpi-summary" style="margin-bottom:14px"></div>
-        <!-- Cards -->
-        <div id="eng-kpi-cards"></div>
+        <!-- Daily view -->
+        <div id="kpi-daily-view">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <input type="date" id="kpi-date" class="field-input" style="flex:1;font-size:14px" onchange="renderEngKPI()">
+            <button onclick="renderEngKPI()" style="padding:10px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer">Refresh</button>
+          </div>
+          <div id="eng-kpi-summary" style="margin-bottom:14px"></div>
+          <div id="eng-kpi-cards"></div>
+        </div>
+        <!-- Weekly view -->
+        <div id="kpi-weekly-view" style="display:none">
+          <div id="eng-kpi-weekly"></div>
+        </div>
       </div>
 
       <div class="tab-panel" id="panel-history">
@@ -20946,6 +20954,174 @@ async function kpiSaveTarget(techName){
 
   document.getElementById('kpi-target-overlay')?.remove();
   renderEngKPI();
+}
+
+function kpiSetView(view){
+  document.getElementById('kpi-daily-view').style.display  = view==='daily'  ? '' : 'none';
+  document.getElementById('kpi-weekly-view').style.display = view==='weekly' ? '' : 'none';
+  document.getElementById('kpi-btn-daily').style.background  = view==='daily'  ? 'var(--blue)' : 'var(--surface)';
+  document.getElementById('kpi-btn-daily').style.color       = view==='daily'  ? '#fff' : 'var(--blue)';
+  document.getElementById('kpi-btn-weekly').style.background = view==='weekly' ? 'var(--blue)' : 'var(--surface)';
+  document.getElementById('kpi-btn-weekly').style.color      = view==='weekly' ? '#fff' : 'var(--blue)';
+  if(view==='weekly') renderWeeklyKPI();
+}
+
+async function renderWeeklyKPI(){
+  const el = document.getElementById('eng-kpi-weekly');
+  if(!el) return;
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div>`;
+
+  // Build last 7 days
+  const days = [];
+  for(let i=6; i>=0; i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+
+  // Fetch all targets and entries for date range
+  const fromDate = days[0];
+  const toDate   = days[days.length-1];
+
+  let targetsAll = {}, entriesAll = {};
+  try {
+    const [tRes, eRes] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/kpi_targets?date=gte.${fromDate}&date=lte.${toDate}&select=date,engineer_name,site_target,lab_target`,
+        { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } }),
+      fetch(`${SB_URL}/rest/v1/kpi_entries?date=gte.${fromDate}&date=lte.${toDate}&select=date,engineer_name,site_completed,lab_completed`,
+        { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } })
+    ]);
+    if(tRes.ok){ const rows = await tRes.json(); rows.forEach(r=>{ if(!targetsAll[r.date]) targetsAll[r.date]={}; targetsAll[r.date][r.engineer_name]={site:r.site_target||0,lab:r.lab_target||0}; }); }
+    if(eRes.ok){ const rows = await eRes.json(); rows.forEach(r=>{ if(!entriesAll[r.date]) entriesAll[r.date]={}; entriesAll[r.date][r.engineer_name]={site:r.site_completed||0,lab:r.lab_completed||0}; }); }
+  } catch(e){}
+
+  const techs = ctUsers.filter(u=>u.role==='technician');
+  if(!techs.length){ el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--text3)">No engineers found</div>`; return; }
+
+  const dayLabels = days.map(d => new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}));
+
+  let html = `<div style="font-size:11px;font-weight:800;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">📊 Last 7 Days — All Engineers</div>`;
+
+  techs.forEach(t => {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">👤 ${t.name}</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:420px">
+          <tr style="color:var(--text3)">
+            <td style="padding:4px 6px;font-weight:700">Type</td>
+            ${dayLabels.map(l=>`<td style="padding:4px 6px;text-align:center;font-weight:700;white-space:nowrap">${l}</td>`).join('')}
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:5px 6px;font-weight:700;color:#1a56db">📍 Site</td>
+            ${days.map(d=>{
+              const tgt = targetsAll[d]?.[t.name]?.site || 0;
+              const done = entriesAll[d]?.[t.name]?.site || 0;
+              const ok = tgt>0 && done>=tgt;
+              const color = ok ? '#16a34a' : done>0 ? '#1a56db' : 'var(--text3)';
+              return `<td style="padding:5px 6px;text-align:center">
+                <div style="font-weight:800;color:${color}">${done||'—'}</div>
+                ${tgt>0?`<div style="font-size:9px;color:var(--text3)">/${tgt}</div>`:''}
+              </td>`;
+            }).join('')}
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:5px 6px;font-weight:700;color:#7c3aed">🏛 Lab</td>
+            ${days.map(d=>{
+              const tgt = targetsAll[d]?.[t.name]?.lab || 0;
+              const done = entriesAll[d]?.[t.name]?.lab || 0;
+              const ok = tgt>0 && done>=tgt;
+              const color = ok ? '#16a34a' : done>0 ? '#7c3aed' : 'var(--text3)';
+              return `<td style="padding:5px 6px;text-align:center">
+                <div style="font-weight:800;color:${color}">${done||'—'}</div>
+                ${tgt>0?`<div style="font-size:9px;color:var(--text3)">/${tgt}</div>`:''}
+              </td>`;
+            }).join('')}
+          </tr>
+        </table>
+      </div>
+    </div>`;
+  });
+
+  html += `<button onclick="exportTATReport()" style="width:100%;padding:14px;margin-top:4px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation">
+    📥 Export TAT Report (Excel)
+  </button>`;
+
+  el.innerHTML = html;
+}
+
+async function exportTATReport(){
+  // Build last 7 days
+  const days = [];
+  for(let i=6; i>=0; i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+  const fromDate = days[0], toDate = days[days.length-1];
+
+  showToast('⏳ Preparing TAT Report...');
+
+  let targetsAll = {}, entriesAll = {};
+  try {
+    const [tRes, eRes] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/kpi_targets?date=gte.${fromDate}&date=lte.${toDate}&select=date,engineer_name,site_target,lab_target`,
+        { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } }),
+      fetch(`${SB_URL}/rest/v1/kpi_entries?date=gte.${fromDate}&date=lte.${toDate}&select=date,engineer_name,site_completed,lab_completed`,
+        { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } })
+    ]);
+    if(tRes.ok){ const rows = await tRes.json(); rows.forEach(r=>{ if(!targetsAll[r.date]) targetsAll[r.date]={}; targetsAll[r.date][r.engineer_name]={site:r.site_target||0,lab:r.lab_target||0}; }); }
+    if(eRes.ok){ const rows = await eRes.json(); rows.forEach(r=>{ if(!entriesAll[r.date]) entriesAll[r.date]={}; entriesAll[r.date][r.engineer_name]={site:r.site_completed||0,lab:r.lab_completed||0}; }); }
+  } catch(e){ showToast('❌ Failed to fetch data'); return; }
+
+  const techs = ctUsers.filter(u=>u.role==='technician');
+  const dayLabels = days.map(d=>new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}));
+
+  // Build CSV data (Excel-compatible)
+  const BOM = '﻿'; // UTF-8 BOM for Excel
+  let csv = BOM;
+  csv += 'TAT Report — Mustafa Sultan Calibration Lab\n';
+  csv += `Period:,${new Date(fromDate+'T00:00:00').toLocaleDateString('en-GB')} to ${new Date(toDate+'T00:00:00').toLocaleDateString('en-GB')}\n`;
+  csv += `Generated:,${new Date().toLocaleString('en-GB')}\n\n`;
+
+  // Header row
+  csv += 'Engineer,Type,' + dayLabels.join(',') + ',Total Assigned,Total Completed,Achievement %\n';
+
+  techs.forEach(t => {
+    let totalSiteTarget=0, totalSiteDone=0, totalLabTarget=0, totalLabDone=0;
+
+    const siteRow = [t.name, 'Site (Target/Done)'];
+    const labRow  = ['',     'Lab (Target/Done)'];
+
+    days.forEach(d => {
+      const tgt  = targetsAll[d]?.[t.name] || {site:0,lab:0};
+      const done = entriesAll[d]?.[t.name] || {site:0,lab:0};
+      siteRow.push(`${tgt.site}/${done.site}`);
+      labRow.push(`${tgt.lab}/${done.lab}`);
+      totalSiteTarget += tgt.site;
+      totalSiteDone   += done.site;
+      totalLabTarget  += tgt.lab;
+      totalLabDone    += done.lab;
+    });
+
+    const sitePct = totalSiteTarget>0 ? Math.round(totalSiteDone/totalSiteTarget*100)+'%' : '—';
+    const labPct  = totalLabTarget>0  ? Math.round(totalLabDone/totalLabTarget*100)+'%'   : '—';
+
+    siteRow.push(totalSiteTarget, totalSiteDone, sitePct);
+    labRow.push(totalLabTarget,   totalLabDone,  labPct);
+
+    csv += siteRow.join(',') + '\n';
+    csv += labRow.join(',')  + '\n';
+  });
+
+  // Download
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `TAT_Report_${fromDate}_to_${toDate}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ TAT Report downloaded!');
 }
 
 async function fetchKpiTargetsFromSupabase(dateStr){
