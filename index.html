@@ -2961,16 +2961,12 @@ async function loadCTUsers(){
     technicians.forEach(name=>{
       if(!supaNames.has(name+'_technician')){
         supaUsers.push({name, role:'technician', password: techPins[name]||pins['technician']||'0000'});
-        supaUsers.push({name, role:'kpi_user',   password: pins['ops_head']||pins['kpi_user']||'0000'});
       }
     });
-    // Add KPI clones for all technician accounts
-    const techAccounts = supaUsers.filter(u=>u.role==='technician');
-    techAccounts.forEach(u=>{
-      if(!supaUsers.find(x=>x.name===u.name && x.role==='kpi_user')){
-        supaUsers.push({name:u.name, role:'kpi_user', password:u.password||pins['kpi_user']||'0000'});
-      }
-    });
+    // Add single KPI Monitor account only
+    if(!supaUsers.find(x=>x.role==='kpi_user')){
+      supaUsers.push({name:'KPI Monitor', role:'kpi_user', password: pins['ops_head']||pins['kpi_user']||'0000'});
+    }
     // Deduplicate
     const seen = new Map();
     supaUsers.forEach(u=>{ seen.set(u.name+'_'+u.role, u); });
