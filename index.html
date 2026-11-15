@@ -21026,7 +21026,21 @@ async function renderMyKPI(){
     <!-- Today entry card -->
     <div style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(8,145,178,.08));border:1.5px solid rgba(26,86,219,.2);border-radius:var(--r);padding:16px;margin-bottom:16px">
       <div style="font-size:13px;font-weight:800;color:var(--blue);margin-bottom:2px">📅 Today — ${dateFormatted}</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:14px">Log your completed work for today</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Hello <b>${name}</b> — log your completed work below</div>
+
+      <!-- Target banner -->
+      ${todayTarget.site > 0 || todayTarget.lab > 0
+        ? `<div style="background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;align-items:center">
+            <span style="font-size:18px">🎯</span>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:2px">Today's Target (assigned by Ops Head)</div>
+              <div style="font-size:13px;font-weight:800;color:var(--text)">📍 Site: <b>${todayTarget.site}</b> &nbsp;|&nbsp; 🏛 Lab: <b>${todayTarget.lab}</b></div>
+            </div>
+          </div>`
+        : `<div style="background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.2);border-radius:10px;padding:10px 14px;margin-bottom:14px">
+            <div style="font-size:11px;color:#d97706;font-weight:600">⏳ No target assigned yet for today — check back later or contact Ops Head</div>
+          </div>`
+      }
 
       <!-- Site -->
       <div style="margin-bottom:12px">
@@ -21786,4 +21800,3 @@ if('serviceWorker' in navigator){
 
 </body>
 </html>
-
