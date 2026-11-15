@@ -380,7 +380,7 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
             <div class="role-card-icon">🎯</div><div class="role-card-label">Quality Specialist</div>
           </div>
           <div class="role-card" data-role="kpi_user" onclick="selectRole(this)">
-            <div class="role-card-icon">📊</div><div class="role-card-label">KPI</div>
+            <div class="role-card-icon">📊</div><div class="role-card-label">KPI Monitor</div>
           </div>
           <div class="role-card" data-role="lab_head" onclick="selectRole(this)" style="display:none">
             <div class="role-card-icon">🏛️</div><div class="role-card-label">Lab Head</div>
@@ -2276,7 +2276,7 @@ const ROLE_CONFIG = {
   sales:       { label:'Sales',              icon:'📈', color:'#16a34a', dot:'#16a34a', tabs:['mytasks','audit','find-master','sales','customers','jobs','docs','track'],  canApprove:false, canAssignCert:false, readOnly:false, isSales:true },
   quality:     { label:'Quality Specialist', icon:'🎯', color:'#7c3aed', dot:'#7c3aed', tabs:['mytasks','audit','qc','find-master','jobs','docs','track'],  canApprove:false, canAssignCert:false, readOnly:false },
   lab_head:    { label:'Lab Head',           icon:'🏛️', color:'#dc2626', dot:'#dc2626', tabs:['mytasks','audit','qc','find-master','pipeline','jobs','docs','track'], canApprove:false, canAssignCert:true,  readOnly:false, isLabHead:true },
-  kpi_user:    { label:'KPI',                icon:'📊', color:'#0891b2', dot:'#0891b2', tabs:['tasks'],                                                                               canApprove:false, canAssignCert:false, readOnly:true,  isKPI:true },
+  kpi_user:    { label:'KPI Monitor',        icon:'📊', color:'#0891b2', dot:'#0891b2', tabs:['eng-kpi'],                                                                           canApprove:false, canAssignCert:false, readOnly:true,  isKPI:true },
   management:  { label:'Management',          icon:'👔', color:'#7c3aed', dot:'#7c3aed', tabs:['mgmt-dashboard','mgmt-pipeline','mgmt-reports','track'], canApprove:false, canAssignCert:false, readOnly:true,  isMgmt:true },
 };
 
@@ -2875,13 +2875,13 @@ function selectRole(el){
   card.classList.add('selected');
   selectedRole = card.dataset.role;
   const supaUser = ctUsers.find(u=>u.role===selectedRole);
-  const defaultNames = {ops_head:'Operations Head',coordinator:'Coordinator',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI',management:'Management'};
+  const defaultNames = {ops_head:'Operations Head',coordinator:'Coordinator',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI Monitor',management:'Management'};
   const name = supaUser ? supaUser.name : (defaultNames[selectedRole]||selectedRole);
   const password = supaUser ? supaUser.password : (pins[selectedRole]||'0000');
   selectedUser = {name, role:selectedRole, password, branch: supaUser?.branch||'hq'};
   renderNameDropdown(selectedRole);
   document.getElementById('name-select-card').style.display = 'block';
-  const roleLabels = {technician:'Cal. Engineer',ops_head:'Operations Head',coordinator:'Coordinator',asst_coordinator:'Asst. Coordinator',sales:'Sales',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI',management:'Management'};
+  const roleLabels = {technician:'Cal. Engineer',ops_head:'Operations Head',coordinator:'Coordinator',asst_coordinator:'Asst. Coordinator',sales:'Sales',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI Monitor',management:'Management'};
   // For coordinator card show both coordinator types
   const displayLabel = selectedRole==='coordinator' ? 'Coordinator / Asst. Coordinator' : (roleLabels[selectedRole]||selectedRole);
   document.getElementById('name-card-title').textContent = 'Select Name — '+displayLabel;
@@ -2940,7 +2940,7 @@ async function loadCTUsers(){
     {name:'Coordinator',     role:'coordinator'},
     {name:'Quality Specialist', role:'quality'},
     {name:'Lab Head',        role:'lab_head'},
-    {name:'KPI',             role:'kpi_user'},
+    {name:'KPI Monitor',     role:'kpi_user'},
     {name:'Cal. Engineer',   role:'technician'},
     {name:'Sales',           role:'sales'},
   ];
@@ -2961,7 +2961,7 @@ async function loadCTUsers(){
     technicians.forEach(name=>{
       if(!supaNames.has(name+'_technician')){
         supaUsers.push({name, role:'technician', password: techPins[name]||pins['technician']||'0000'});
-        supaUsers.push({name, role:'kpi_user',   password: techPins[name]||pins['kpi_user']||'0000'});
+        supaUsers.push({name, role:'kpi_user',   password: pins['ops_head']||pins['kpi_user']||'0000'});
       }
     });
     // Add KPI clones for all technician accounts
@@ -2983,7 +2983,7 @@ async function loadCTUsers(){
   technicians.forEach(n=>ctUsers.push({name:n, role:'technician', password: techPins[n]||pins['technician']||'0000'}));
   salesStaff.forEach(n=>ctUsers.push({name:n, role:'sales', password: salesPins[n]||pins['sales']||'0000'}));
   // KPI accounts — all technicians can also log in as KPI user with their own PIN or role PIN
-  technicians.forEach(n=>ctUsers.push({name:n, role:'kpi_user', password: techPins[n]||pins['kpi_user']||'0000'}));
+  ctUsers.push({name:'KPI Monitor', role:'kpi_user', password: pins['ops_head']||pins['kpi_user']||'0000'});
   // Always add default role accounts
   defaultRoles.forEach(r=>{
     if(!ctUsers.find(u=>u.role===r.role)){
@@ -2996,7 +2996,7 @@ function renderUserSelect(){
   const area = document.getElementById('name-select-area');
   if(!area) return;
   const roleIcons = {technician:'🔧',ops_head:'👔',coordinator:'🚗',sales:'🌟',quality:'🎯',lab_head:'🏛️',kpi_user:'📊'};
-  const roleLabels = {technician:'Cal. Engineer',ops_head:'Operations Head',coordinator:'Coordinator',asst_coordinator:'Asst. Coordinator',sales:'Sales',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI',management:'Management'};
+  const roleLabels = {technician:'Cal. Engineer',ops_head:'Operations Head',coordinator:'Coordinator',asst_coordinator:'Asst. Coordinator',sales:'Sales',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI Monitor',management:'Management'};
   if(!ctUsers.length){
     area.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;line-height:1.6">
       <div style="font-size:28px;margin-bottom:8px">👋</div>
@@ -14521,7 +14521,7 @@ function renderStaffAccountsSettings(){
   const el = document.getElementById('staff-accounts-list');
   if(!el) return;
   const roleIcons  = {technician:'🔧',ops_head:'⚙️',coordinator:'🚗',asst_coordinator:'🚗',sales:'📈',quality:'🎯',lab_head:'🏛️',kpi_user:'📊',management:'👔'};
-  const roleLabels = {technician:'Cal. Engineer',ops_head:'Operations Head',coordinator:'Coordinator',asst_coordinator:'Asst. Coordinator',sales:'Sales',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI',management:'Management'};
+  const roleLabels = {technician:'Cal. Engineer',ops_head:'Operations Head',coordinator:'Coordinator',asst_coordinator:'Asst. Coordinator',sales:'Sales',quality:'Quality Specialist',lab_head:'Lab Head',kpi_user:'KPI Monitor',management:'Management'};
   if(!ctUsers.length){
     el.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:10px">No accounts yet — add one below</div>';
     return;
