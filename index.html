@@ -20744,13 +20744,23 @@ async function renderEngKPI(){
   if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
 
   const dateStr = kpiTodayStr();
-  const allTargets = kpiGetTargets();
-  const dayTargets = allTargets[dateStr] || {};
+
+  // Fetch targets from Supabase, fall back to localStorage
+  const sbTargets = await fetchKpiTargetsFromSupabase(dateStr);
+  const localTargets = kpiGetTargets();
+  const dayTargets = sbTargets || localTargets[dateStr] || {};
+
+  // Sync cloud targets back to localStorage
+  if(sbTargets){
+    const all = kpiGetTargets();
+    all[dateStr] = sbTargets;
+    kpiSaveTargets(all);
+  }
 
   // Get technicians from ctUsers
   const techs = ctUsers.filter(u => u.role === 'technician');
 
-  // Fetch from Supabase, fall back to localStorage
+  // Fetch entries from Supabase, fall back to localStorage
   const sbEntries = await fetchKpiEntriesFromSupabase(dateStr);
   const localEntries = kpiGetEntries();
   const allKpiEntries = sbEntries || localEntries[dateStr] || {};
@@ -20892,17 +20902,60 @@ function kpiSetTarget(techName){
   setTimeout(()=>document.getElementById('kpi-site-input')?.focus(), 300);
 }
 
-function kpiSaveTarget(techName){
+async function kpiSaveTarget(techName){
   const site = parseInt(document.getElementById('kpi-site-input')?.value)||0;
   const lab  = parseInt(document.getElementById('kpi-lab-input')?.value)||0;
   const dateStr    = kpiTodayStr();
+
+  // Save to localStorage
   const allTargets = kpiGetTargets();
   if(!allTargets[dateStr]) allTargets[dateStr] = {};
   allTargets[dateStr][techName] = { site, lab };
   kpiSaveTargets(allTargets);
+
+  // Save to Supabase
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/kpi_targets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SB_KEY_VAL,
+        'Authorization': `Bearer ${SB_KEY_VAL}`,
+        'Prefer':        'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        date:          dateStr,
+        engineer_name: techName,
+        site_target:   site,
+        lab_target:    lab
+      })
+    });
+    if(res.ok){
+      showToast(`✅ Target saved for ${techName}`);
+    } else {
+      console.warn('KPI target sync error:', await res.text());
+      showToast(`✅ Target saved locally for ${techName}`);
+    }
+  } catch(e){
+    showToast(`✅ Target saved locally for ${techName}`);
+  }
+
   document.getElementById('kpi-target-overlay')?.remove();
-  showToast(`✅ Target saved for ${techName}`);
   renderEngKPI();
+}
+
+async function fetchKpiTargetsFromSupabase(dateStr){
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/kpi_targets?date=eq.${dateStr}&select=engineer_name,site_target,lab_target`,
+      { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } }
+    );
+    if(!res.ok) return null;
+    const rows = await res.json();
+    const map = {};
+    rows.forEach(r => { map[r.engineer_name] = { site: r.site_target||0, lab: r.lab_target||0 }; });
+    return map;
+  } catch(e){ return null; }
 }
 
 // ════════════════════════════════════════════════════
@@ -20922,27 +20975,39 @@ async function renderMyKPI(){
   const today     = new Date().toISOString().slice(0,10);
   const name      = session?.name || '';
 
-  // Try to load today's entry from Supabase first
+  // Load today's entry AND target from Supabase in parallel
   let todayEntryFromCloud = null;
+  let todayTargetFromCloud = null;
   try {
-    const res = await fetch(
-      `${SB_URL}/rest/v1/kpi_entries?date=eq.${today}&engineer_name=eq.${encodeURIComponent(name)}&select=site_completed,lab_completed`,
-      { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } }
-    );
-    if(res.ok){
-      const rows = await res.json();
+    const [entryRes, targetRes] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/kpi_entries?date=eq.${today}&engineer_name=eq.${encodeURIComponent(name)}&select=site_completed,lab_completed`,
+        { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } }),
+      fetch(`${SB_URL}/rest/v1/kpi_targets?date=eq.${today}&engineer_name=eq.${encodeURIComponent(name)}&select=site_target,lab_target`,
+        { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } })
+    ]);
+    if(entryRes.ok){
+      const rows = await entryRes.json();
       if(rows.length > 0) todayEntryFromCloud = { site: rows[0].site_completed||0, lab: rows[0].lab_completed||0 };
+    }
+    if(targetRes.ok){
+      const rows = await targetRes.json();
+      if(rows.length > 0) todayTargetFromCloud = { site: rows[0].site_target||0, lab: rows[0].lab_target||0 };
     }
   } catch(e){ /* offline fallback */ }
 
   const allEntries = kpiGetEntries();
   const allTargets = kpiGetTargets();
 
-  // Merge: cloud takes priority, then localStorage
+  // Merge cloud data into localStorage
   if(todayEntryFromCloud){
     if(!allEntries[today]) allEntries[today] = {};
     allEntries[today][name] = todayEntryFromCloud;
     kpiSaveEntries(allEntries);
+  }
+  if(todayTargetFromCloud){
+    if(!allTargets[today]) allTargets[today] = {};
+    allTargets[today][name] = todayTargetFromCloud;
+    kpiSaveTargets(allTargets);
   }
 
   // Show last 7 days history
@@ -21721,3 +21786,4 @@ if('serviceWorker' in navigator){
 
 </body>
 </html>
+
