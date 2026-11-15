@@ -1708,6 +1708,19 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
         <div id="track-passport"></div>
       </div>
 
+      <!-- ═══ ENGINEER KPI TAB ═══ -->
+      <div class="tab-panel" id="panel-eng-kpi">
+        <!-- Date selector -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <input type="date" id="kpi-date" class="field-input" style="flex:1;font-size:14px" onchange="renderEngKPI()">
+          <button onclick="renderEngKPI()" style="padding:10px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer">Refresh</button>
+        </div>
+        <!-- Summary strip -->
+        <div id="eng-kpi-summary" style="margin-bottom:14px"></div>
+        <!-- Cards -->
+        <div id="eng-kpi-cards"></div>
+      </div>
+
       <div class="tab-panel" id="panel-history">
           <!-- Header row -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -2252,7 +2265,7 @@ const CAL_WARNING_DAYS = 60;
 
 const ROLE_CONFIG = {
   technician:  { label:'Cal. Engineer',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['new-job','find-master','consumables','audit'],                       canApprove:false, canAssignCert:false, readOnly:false },
-  ops_head:    { label:'Operations Head',    icon:'⚙️', color:'#1a56db', dot:'#1a56db', tabs:['mytasks','audit','consumables','approvals','kpi-view','qc','find-master','pipeline','master-log','legacy-review','new-job','jobs','docs','customers','track','settings'], canApprove:true, canAssignCert:true, readOnly:false },
+  ops_head:    { label:'Operations Head',    icon:'⚙️', color:'#1a56db', dot:'#1a56db', tabs:['mytasks','audit','consumables','approvals','kpi-view','qc','find-master','pipeline','master-log','legacy-review','new-job','jobs','docs','customers','track','eng-kpi','settings'], canApprove:true, canAssignCert:true, readOnly:false },
   coordinator:      { label:'Coordinator',       icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['mytasks','audit','consumables','find-master','delivery','coord-upload','billing','jobs','docs','customers','track'], canApprove:false, canAssignCert:false, readOnly:false },
   asst_coordinator: { label:'Asst. Coordinator', icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['mytasks','audit','consumables','find-master','delivery','coord-upload','billing','jobs','docs','customers','track'], canApprove:false, canAssignCert:false, readOnly:false },
   sales:       { label:'Sales',              icon:'📈', color:'#16a34a', dot:'#16a34a', tabs:['mytasks','audit','find-master','sales','customers','jobs','docs','track'],  canApprove:false, canAssignCert:false, readOnly:false, isSales:true },
@@ -2293,6 +2306,7 @@ const TAB_CONFIG = {
   'qc':           { label:'QC',         icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
   'history':      { label:'History',    icon:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
   'track':        { label:'Track',      icon:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>' },
+  'eng-kpi':      { label:'Eng KPI',    icon:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><polyline points="20 6 22 8 26 4"/>' },
 };
 
 // ════════════════════════════════════════════════════
@@ -9542,6 +9556,7 @@ function switchTab(tab, fromSync){
     if(tab==='mgmt-customers')    renderMgmtCustomers();
     if(tab==='history')      renderHistory();
     if(tab==='track')        renderTrackTab();
+    if(tab==='eng-kpi')      renderEngKPI();
     updateNotifs();
     _tabsDirty = false;
   }
@@ -20700,6 +20715,194 @@ function renderTrackTab(){
   if(passport && !passport.innerHTML.trim()){
     passport.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text3);"><div style="font-size:48px;margin-bottom:12px">🔍</div><div style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:6px">Job Passport</div><div style="font-size:12px">Enter a job number to see full details</div></div>`;
   }
+}
+
+// ════════════════════════════════════════════════════
+// ENGINEER KPI TAB
+// ════════════════════════════════════════════════════
+const KEY_KPI_TARGETS = 'ct2-kpi-targets'; // { "2026-11-15": { "EngineerName": { site: 30, lab: 5 } } }
+
+function kpiGetTargets(){
+  try{ return JSON.parse(lsGet(KEY_KPI_TARGETS,'{}')); }catch(e){ return {}; }
+}
+function kpiSaveTargets(t){ lsSet(KEY_KPI_TARGETS, JSON.stringify(t)); }
+
+function kpiTodayStr(){
+  return document.getElementById('kpi-date')?.value || new Date().toISOString().slice(0,10);
+}
+
+function renderEngKPI(){
+  // Set today as default date if not set
+  const dateEl = document.getElementById('kpi-date');
+  if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+
+  const dateStr = kpiTodayStr();
+  const allTargets = kpiGetTargets();
+  const dayTargets = allTargets[dateStr] || {};
+
+  // Get technicians from ctUsers
+  const techs = ctUsers.filter(u => u.role === 'technician');
+
+  // Calculate completed for each tech on selected date
+  const allJobsToCheck = [...jobs, ...LEGACY_JOBS];
+
+  techs.forEach(t => {
+    // Site: sum qtyCalibratedSite from jobs where tech=t.name and stage2 completed on dateStr
+    t._siteCompleted = allJobsToCheck.filter(j => {
+      if(j.tech !== t.name) return false;
+      const s2date = j.stageHistory?.[2]?.completedAt || j.stageHistory?.['2']?.completedAt;
+      return s2date && s2date.slice(0,10) === dateStr;
+    }).reduce((sum, j) => sum + (parseInt(j.qtyCalibratedSite)||parseInt(j.totalQty)||0), 0);
+
+    // Lab: count jobs completed (status=complete) on dateStr
+    t._labCompleted = allJobsToCheck.filter(j => {
+      if(j.tech !== t.name) return false;
+      const doneDate = j.stageHistory?.[4]?.completedAt || j.completedAt || j.updatedAt;
+      return j.status === 'complete' && doneDate && doneDate.slice(0,10) === dateStr;
+    }).length;
+
+    t._siteTarget = dayTargets[t.name]?.site || 0;
+    t._labTarget  = dayTargets[t.name]?.lab  || 0;
+  });
+
+  // Summary strip
+  const totalSiteTarget    = techs.reduce((s,t) => s + t._siteTarget, 0);
+  const totalSiteCompleted = techs.reduce((s,t) => s + t._siteCompleted, 0);
+  const totalLabTarget     = techs.reduce((s,t) => s + t._labTarget, 0);
+  const totalLabCompleted  = techs.reduce((s,t) => s + t._labCompleted, 0);
+
+  const summaryEl = document.getElementById('eng-kpi-summary');
+  if(summaryEl) summaryEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+      ${[
+        { label:'Site Target',    val:totalSiteTarget,    color:'#1a56db' },
+        { label:'Site Done',      val:totalSiteCompleted, color: totalSiteCompleted>=totalSiteTarget&&totalSiteTarget>0?'#16a34a':'#d97706' },
+        { label:'Lab Jobs Target',val:totalLabTarget,     color:'#7c3aed' },
+        { label:'Lab Jobs Done',  val:totalLabCompleted,  color: totalLabCompleted>=totalLabTarget&&totalLabTarget>0?'#16a34a':'#d97706' },
+      ].map(k=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:${k.color}">${k.val}</div>
+        <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">${k.label}</div>
+      </div>`).join('')}
+    </div>`;
+
+  // Engineer cards
+  const cardsEl = document.getElementById('eng-kpi-cards');
+  if(!cardsEl) return;
+
+  if(!techs.length){
+    cardsEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text3)">No engineers found</div>`;
+    return;
+  }
+
+  const dateFormatted = new Date(dateStr+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  cardsEl.innerHTML = `
+    <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">
+      📅 ${dateFormatted} · ${techs.length} Engineer${techs.length!==1?'s':''}
+    </div>
+    ${techs.map(t => {
+      const sitePct  = t._siteTarget > 0 ? Math.min(100, Math.round(t._siteCompleted / t._siteTarget * 100)) : 0;
+      const labPct   = t._labTarget  > 0 ? Math.min(100, Math.round(t._labCompleted  / t._labTarget  * 100)) : 0;
+      const siteOK   = t._siteTarget > 0 && t._siteCompleted >= t._siteTarget;
+      const labOK    = t._labTarget  > 0 && t._labCompleted  >= t._labTarget;
+
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a56db,#0891b2);display:grid;place-items:center;color:#fff;font-size:14px;font-weight:800;flex-shrink:0">${(t.name||'?')[0].toUpperCase()}</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text)">${t.name}</div>
+              <div style="font-size:10px;color:var(--text3)">Cal. Engineer</div>
+            </div>
+          </div>
+          <button onclick="kpiSetTarget('${t.name}')" style="padding:6px 12px;background:rgba(26,86,219,.1);color:var(--blue);border:1px solid rgba(26,86,219,.2);border-radius:20px;font-size:11px;font-weight:700;cursor:pointer">✏️ Set Target</button>
+        </div>
+
+        <!-- Site KPI -->
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-size:11px;font-weight:700;color:#1a56db">📍 Site Instruments</span>
+            <span style="font-size:12px;font-weight:800;color:${siteOK?'#16a34a':t._siteTarget>0?'#d97706':'var(--text3)'}">
+              ${t._siteCompleted} / ${t._siteTarget||'—'}
+              ${siteOK?'✅':''}
+            </span>
+          </div>
+          ${t._siteTarget > 0 ? `
+          <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${sitePct}%;background:${siteOK?'#16a34a':'#1a56db'};border-radius:4px;transition:width .4s ease"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">${sitePct}% complete</div>
+          ` : `<div style="font-size:11px;color:var(--text3);padding:6px 0">No target set for today</div>`}
+        </div>
+
+        <!-- Lab KPI -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-size:11px;font-weight:700;color:#7c3aed">🏛 Lab Jobs</span>
+            <span style="font-size:12px;font-weight:800;color:${labOK?'#16a34a':t._labTarget>0?'#d97706':'var(--text3)'}">
+              ${t._labCompleted} / ${t._labTarget||'—'}
+              ${labOK?'✅':''}
+            </span>
+          </div>
+          ${t._labTarget > 0 ? `
+          <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${labPct}%;background:${labOK?'#16a34a':'#7c3aed'};border-radius:4px;transition:width .4s ease"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">${labPct}% complete</div>
+          ` : `<div style="font-size:11px;color:var(--text3);padding:6px 0">No target set for today</div>`}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function kpiSetTarget(techName){
+  const dateStr    = kpiTodayStr();
+  const allTargets = kpiGetTargets();
+  const existing   = allTargets[dateStr]?.[techName] || { site:0, lab:0 };
+
+  const overlay = document.createElement('div');
+  overlay.id = 'kpi-target-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0)';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:24px;animation:sheet-up .25s ease">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--text)">Set Daily Target</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${techName} · ${dateStr}</div>
+        </div>
+        <button onclick="document.getElementById('kpi-target-overlay').remove()" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--surface2);color:var(--text3);font-size:18px;cursor:pointer;display:grid;place-items:center">×</button>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px">📍 Site Instruments Target</div>
+      <input type="number" id="kpi-site-input" min="0" placeholder="e.g. 30"
+        value="${existing.site||''}"
+        style="width:100%;padding:12px;border:1.5px solid var(--border2);border-radius:10px;font-size:16px;font-family:var(--mono);font-weight:700;color:var(--text);background:var(--surface);margin-bottom:14px;box-sizing:border-box">
+
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px">🏛 Lab Jobs Target</div>
+      <input type="number" id="kpi-lab-input" min="0" placeholder="e.g. 5"
+        value="${existing.lab||''}"
+        style="width:100%;padding:12px;border:1.5px solid var(--border2);border-radius:10px;font-size:16px;font-family:var(--mono);font-weight:700;color:var(--text);background:var(--surface);margin-bottom:20px;box-sizing:border-box">
+
+      <button onclick="kpiSaveTarget('${techName}')" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a56db,#0891b2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
+        ✅ Save Target
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>document.getElementById('kpi-site-input')?.focus(), 300);
+}
+
+function kpiSaveTarget(techName){
+  const site = parseInt(document.getElementById('kpi-site-input')?.value)||0;
+  const lab  = parseInt(document.getElementById('kpi-lab-input')?.value)||0;
+  const dateStr    = kpiTodayStr();
+  const allTargets = kpiGetTargets();
+  if(!allTargets[dateStr]) allTargets[dateStr] = {};
+  allTargets[dateStr][techName] = { site, lab };
+  kpiSaveTargets(allTargets);
+  document.getElementById('kpi-target-overlay')?.remove();
+  showToast(`✅ Target saved for ${techName}`);
+  renderEngKPI();
 }
 
 function trackSearchLive(val){
