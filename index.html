@@ -20738,7 +20738,7 @@ function kpiTodayStr(){
   return document.getElementById('kpi-date')?.value || new Date().toISOString().slice(0,10);
 }
 
-function renderEngKPI(){
+async function renderEngKPI(){
   // Set today as default date if not set
   const dateEl = document.getElementById('kpi-date');
   if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
@@ -20750,15 +20750,14 @@ function renderEngKPI(){
   // Get technicians from ctUsers
   const techs = ctUsers.filter(u => u.role === 'technician');
 
-  // Calculate completed for each tech on selected date
-  const allJobsToCheck = [...jobs, ...LEGACY_JOBS];
-
-  // Read manual entries from engineers' self-entry (My KPI tab)
-  const allKpiEntries = kpiGetEntries();
+  // Fetch from Supabase, fall back to localStorage
+  const sbEntries = await fetchKpiEntriesFromSupabase(dateStr);
+  const localEntries = kpiGetEntries();
+  const allKpiEntries = sbEntries || localEntries[dateStr] || {};
 
   techs.forEach(t => {
-    // Read from engineer's manual self-entry (My KPI tab → ct2-kpi-entries)
-    const entry = allKpiEntries[dateStr]?.[t.name] || { site: 0, lab: 0 };
+    // Read from engineer's manual self-entry (My KPI tab → kpi_entries Supabase table)
+    const entry = allKpiEntries[t.name] || { site: 0, lab: 0 };
     t._siteCompleted = entry.site || 0;
     t._labCompleted  = entry.lab  || 0;
 
@@ -20916,14 +20915,35 @@ function kpiGetEntries(){
 }
 function kpiSaveEntries(e){ lsSet(KEY_KPI_ENTRIES, JSON.stringify(e)); }
 
-function renderMyKPI(){
+async function renderMyKPI(){
   const el = document.getElementById('my-kpi-content');
   if(!el) return;
 
   const today     = new Date().toISOString().slice(0,10);
   const name      = session?.name || '';
+
+  // Try to load today's entry from Supabase first
+  let todayEntryFromCloud = null;
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/kpi_entries?date=eq.${today}&engineer_name=eq.${encodeURIComponent(name)}&select=site_completed,lab_completed`,
+      { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } }
+    );
+    if(res.ok){
+      const rows = await res.json();
+      if(rows.length > 0) todayEntryFromCloud = { site: rows[0].site_completed||0, lab: rows[0].lab_completed||0 };
+    }
+  } catch(e){ /* offline fallback */ }
+
   const allEntries = kpiGetEntries();
   const allTargets = kpiGetTargets();
+
+  // Merge: cloud takes priority, then localStorage
+  if(todayEntryFromCloud){
+    if(!allEntries[today]) allEntries[today] = {};
+    allEntries[today][name] = todayEntryFromCloud;
+    kpiSaveEntries(allEntries);
+  }
 
   // Show last 7 days history
   const days = [];
@@ -20999,19 +21019,64 @@ function renderMyKPI(){
     }).join('')}`;
 }
 
-function saveMyKPI(){
+async function saveMyKPI(){
   const site = parseInt(document.getElementById('mykpi-site')?.value)||0;
   const lab  = parseInt(document.getElementById('mykpi-lab')?.value)||0;
   const today = new Date().toISOString().slice(0,10);
   const name  = session?.name||'';
   if(!name){ showToast('Not logged in'); return; }
 
+  // Save to localStorage first (offline fallback)
   const allEntries = kpiGetEntries();
   if(!allEntries[today]) allEntries[today] = {};
   allEntries[today][name] = { site, lab, savedAt: new Date().toISOString() };
   kpiSaveEntries(allEntries);
-  showToast('✅ KPI saved!');
+
+  // Save to Supabase (upsert by date + engineer_name)
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/kpi_entries`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SB_KEY_VAL,
+        'Authorization': `Bearer ${SB_KEY_VAL}`,
+        'Prefer':        'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        date:             today,
+        engineer_name:    name,
+        site_completed:   site,
+        lab_completed:    lab,
+        saved_at:         new Date().toISOString()
+      })
+    });
+    if(res.ok){
+      showToast('✅ KPI saved & synced!');
+    } else {
+      const err = await res.text();
+      console.warn('KPI Supabase save error:', err);
+      showToast('✅ KPI saved locally (sync failed)');
+    }
+  } catch(e){
+    console.warn('KPI sync error:', e);
+    showToast('✅ KPI saved locally (offline)');
+  }
   renderMyKPI();
+}
+
+async function fetchKpiEntriesFromSupabase(dateStr){
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/kpi_entries?date=eq.${dateStr}&select=engineer_name,site_completed,lab_completed`,
+      { headers: { 'apikey': SB_KEY_VAL, 'Authorization': `Bearer ${SB_KEY_VAL}` } }
+    );
+    if(!res.ok) return null;
+    const rows = await res.json();
+    // Convert to { "EngineerName": { site, lab } }
+    const map = {};
+    rows.forEach(r => { map[r.engineer_name] = { site: r.site_completed||0, lab: r.lab_completed||0 }; });
+    return map;
+  } catch(e){ return null; }
 }
 
 function trackSearchLive(val){
