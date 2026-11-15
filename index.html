@@ -20917,7 +20917,7 @@ async function kpiSaveTarget(techName){
         'Content-Type':  'application/json',
         'apikey':        SB_KEY_VAL,
         'Authorization': `Bearer ${SB_KEY_VAL}`,
-        'Prefer':        'resolution=merge-duplicates'
+        'Prefer':        'resolution=merge-duplicates,return=minimal'
       },
       body: JSON.stringify({
         date:          dateStr,
@@ -21115,7 +21115,7 @@ async function saveMyKPI(){
         'Content-Type':  'application/json',
         'apikey':        SB_KEY_VAL,
         'Authorization': `Bearer ${SB_KEY_VAL}`,
-        'Prefer':        'resolution=merge-duplicates'
+        'Prefer':        'resolution=merge-duplicates,return=minimal'
       },
       body: JSON.stringify({
         date:             today,
