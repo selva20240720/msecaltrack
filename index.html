@@ -1708,6 +1708,11 @@ textarea.field-input, textarea.fi { resize: none; height: 80px; }
         <div id="track-passport"></div>
       </div>
 
+      <!-- ═══ MY KPI (ENGINEER SELF-ENTRY) ═══ -->
+      <div class="tab-panel" id="panel-my-kpi">
+        <div id="my-kpi-content"></div>
+      </div>
+
       <!-- ═══ ENGINEER KPI TAB ═══ -->
       <div class="tab-panel" id="panel-eng-kpi">
         <!-- Date selector -->
@@ -2264,7 +2269,7 @@ function getJobStage(j){
 const CAL_WARNING_DAYS = 60;
 
 const ROLE_CONFIG = {
-  technician:  { label:'Cal. Engineer',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['new-job','find-master','consumables','audit'],                       canApprove:false, canAssignCert:false, readOnly:false },
+  technician:  { label:'Cal. Engineer',      icon:'🔧', color:'#d97706', dot:'#d97706', tabs:['new-job','find-master','consumables','audit','my-kpi'],                       canApprove:false, canAssignCert:false, readOnly:false },
   ops_head:    { label:'Operations Head',    icon:'⚙️', color:'#1a56db', dot:'#1a56db', tabs:['mytasks','audit','consumables','approvals','kpi-view','qc','find-master','pipeline','master-log','legacy-review','new-job','jobs','docs','customers','track','eng-kpi','settings'], canApprove:true, canAssignCert:true, readOnly:false },
   coordinator:      { label:'Coordinator',       icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['mytasks','audit','consumables','find-master','delivery','coord-upload','billing','jobs','docs','customers','track'], canApprove:false, canAssignCert:false, readOnly:false },
   asst_coordinator: { label:'Asst. Coordinator', icon:'🚗', color:'#0891b2', dot:'#0891b2', tabs:['mytasks','audit','consumables','find-master','delivery','coord-upload','billing','jobs','docs','customers','track'], canApprove:false, canAssignCert:false, readOnly:false },
@@ -2307,6 +2312,7 @@ const TAB_CONFIG = {
   'history':      { label:'History',    icon:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
   'track':        { label:'Track',      icon:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>' },
   'eng-kpi':      { label:'Eng KPI',    icon:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><polyline points="20 6 22 8 26 4"/>' },
+  'my-kpi':       { label:'My KPI',     icon:'<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>' },
 };
 
 // ════════════════════════════════════════════════════
@@ -9557,6 +9563,7 @@ function switchTab(tab, fromSync){
     if(tab==='history')      renderHistory();
     if(tab==='track')        renderTrackTab();
     if(tab==='eng-kpi')      renderEngKPI();
+    if(tab==='my-kpi')       renderMyKPI();
     updateNotifs();
     _tabsDirty = false;
   }
@@ -20746,20 +20753,14 @@ function renderEngKPI(){
   // Calculate completed for each tech on selected date
   const allJobsToCheck = [...jobs, ...LEGACY_JOBS];
 
-  techs.forEach(t => {
-    // Site: sum qtyCalibratedSite from jobs where tech=t.name and stage2 completed on dateStr
-    t._siteCompleted = allJobsToCheck.filter(j => {
-      if(j.tech !== t.name) return false;
-      const s2date = j.stageHistory?.[2]?.completedAt || j.stageHistory?.['2']?.completedAt;
-      return s2date && s2date.slice(0,10) === dateStr;
-    }).reduce((sum, j) => sum + (parseInt(j.qtyCalibratedSite)||parseInt(j.totalQty)||0), 0);
+  // Read manual entries from engineers' self-entry (My KPI tab)
+  const allKpiEntries = kpiGetEntries();
 
-    // Lab: count jobs completed (status=complete) on dateStr
-    t._labCompleted = allJobsToCheck.filter(j => {
-      if(j.tech !== t.name) return false;
-      const doneDate = j.stageHistory?.[4]?.completedAt || j.completedAt || j.updatedAt;
-      return j.status === 'complete' && doneDate && doneDate.slice(0,10) === dateStr;
-    }).length;
+  techs.forEach(t => {
+    // Read from engineer's manual self-entry (My KPI tab → ct2-kpi-entries)
+    const entry = allKpiEntries[dateStr]?.[t.name] || { site: 0, lab: 0 };
+    t._siteCompleted = entry.site || 0;
+    t._labCompleted  = entry.lab  || 0;
 
     t._siteTarget = dayTargets[t.name]?.site || 0;
     t._labTarget  = dayTargets[t.name]?.lab  || 0;
@@ -20903,6 +20904,114 @@ function kpiSaveTarget(techName){
   document.getElementById('kpi-target-overlay')?.remove();
   showToast(`✅ Target saved for ${techName}`);
   renderEngKPI();
+}
+
+// ════════════════════════════════════════════════════
+// MY KPI — Engineer self-entry
+// ════════════════════════════════════════════════════
+const KEY_KPI_ENTRIES = 'ct2-kpi-entries'; // { "2026-11-15": { "EngineerName": { site: 25, lab: 3 } } }
+
+function kpiGetEntries(){
+  try{ return JSON.parse(lsGet(KEY_KPI_ENTRIES,'{}')); }catch(e){ return {}; }
+}
+function kpiSaveEntries(e){ lsSet(KEY_KPI_ENTRIES, JSON.stringify(e)); }
+
+function renderMyKPI(){
+  const el = document.getElementById('my-kpi-content');
+  if(!el) return;
+
+  const today     = new Date().toISOString().slice(0,10);
+  const name      = session?.name || '';
+  const allEntries = kpiGetEntries();
+  const allTargets = kpiGetTargets();
+
+  // Show last 7 days history
+  const days = [];
+  for(let i=0; i<7; i++){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+
+  const todayEntry  = allEntries[today]?.[name] || { site:0, lab:0 };
+  const todayTarget = allTargets[today]?.[name]  || { site:0, lab:0 };
+
+  const dateFormatted = new Date(today+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});
+
+  el.innerHTML = `
+    <!-- Today entry card -->
+    <div style="background:linear-gradient(135deg,rgba(26,86,219,.08),rgba(8,145,178,.08));border:1.5px solid rgba(26,86,219,.2);border-radius:var(--r);padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:800;color:var(--blue);margin-bottom:2px">📅 Today — ${dateFormatted}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:14px">Log your completed work for today</div>
+
+      <!-- Site -->
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:#1a56db">📍 Site Instruments Completed</span>
+          ${todayTarget.site > 0 ? `<span style="font-size:10px;color:var(--text3)">Target: <b>${todayTarget.site}</b></span>` : ''}
+        </div>
+        <input type="number" id="mykpi-site" min="0" placeholder="e.g. 28"
+          value="${todayEntry.site||''}"
+          style="width:100%;padding:12px;border:1.5px solid var(--border2);border-radius:10px;font-size:18px;font-family:var(--mono);font-weight:800;color:var(--text);background:var(--surface);box-sizing:border-box;text-align:center">
+      </div>
+
+      <!-- Lab -->
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:#7c3aed">🏛 Lab Jobs Completed</span>
+          ${todayTarget.lab > 0 ? `<span style="font-size:10px;color:var(--text3)">Target: <b>${todayTarget.lab}</b></span>` : ''}
+        </div>
+        <input type="number" id="mykpi-lab" min="0" placeholder="e.g. 3"
+          value="${todayEntry.lab||''}"
+          style="width:100%;padding:12px;border:1.5px solid var(--border2);border-radius:10px;font-size:18px;font-family:var(--mono);font-weight:800;color:var(--text);background:var(--surface);box-sizing:border-box;text-align:center">
+      </div>
+
+      <button onclick="saveMyKPI()" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a56db,#0891b2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation">
+        ✅ Save Today's Entry
+      </button>
+    </div>
+
+    <!-- History -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Last 7 Days</div>
+    ${days.map(d => {
+      const entry  = allEntries[d]?.[name]  || { site:0, lab:0 };
+      const target = allTargets[d]?.[name]  || { site:0, lab:0 };
+      const isToday = d === today;
+      const df = new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
+      const siteOK = target.site > 0 && entry.site >= target.site;
+      const labOK  = target.lab  > 0 && entry.lab  >= target.lab;
+      return `<div style="background:var(--surface);border:1px solid ${isToday?'rgba(26,86,219,.3)':'var(--border)'};border-radius:var(--r2);padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:12px">
+        <div style="min-width:70px">
+          <div style="font-size:11px;font-weight:700;color:${isToday?'var(--blue)':'var(--text2)'}">${df}</div>
+          ${isToday?'<div style="font-size:9px;color:var(--blue);font-weight:700">TODAY</div>':''}
+        </div>
+        <div style="flex:1;display:flex;gap:12px">
+          <div style="text-align:center">
+            <div style="font-size:16px;font-weight:800;color:${siteOK?'#16a34a':entry.site>0?'#1a56db':'var(--text3)'}">${entry.site||'—'}</div>
+            <div style="font-size:9px;color:var(--text3)">Site${target.site>0?' /'+target.site:''}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:16px;font-weight:800;color:${labOK?'#16a34a':entry.lab>0?'#7c3aed':'var(--text3)'}">${entry.lab||'—'}</div>
+            <div style="font-size:9px;color:var(--text3)">Lab${target.lab>0?' /'+target.lab:''}</div>
+          </div>
+        </div>
+        <div style="font-size:18px">${siteOK&&labOK?'✅':entry.site>0||entry.lab>0?'📝':'⬜'}</div>
+      </div>`;
+    }).join('')}`;
+}
+
+function saveMyKPI(){
+  const site = parseInt(document.getElementById('mykpi-site')?.value)||0;
+  const lab  = parseInt(document.getElementById('mykpi-lab')?.value)||0;
+  const today = new Date().toISOString().slice(0,10);
+  const name  = session?.name||'';
+  if(!name){ showToast('Not logged in'); return; }
+
+  const allEntries = kpiGetEntries();
+  if(!allEntries[today]) allEntries[today] = {};
+  allEntries[today][name] = { site, lab, savedAt: new Date().toISOString() };
+  kpiSaveEntries(allEntries);
+  showToast('✅ KPI saved!');
+  renderMyKPI();
 }
 
 function trackSearchLive(val){
