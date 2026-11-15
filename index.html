@@ -20743,10 +20743,17 @@ function kpiTodayStr(){
   return document.getElementById('kpi-date')?.value || new Date().toISOString().slice(0,10);
 }
 
+const KPI_START_DATE = '2026-11-12'; // KPI tracking starts from this date
+
 async function renderEngKPI(){
   // Set today as default date if not set
   const dateEl = document.getElementById('kpi-date');
-  if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  if(dateEl){
+    if(!dateEl.min) dateEl.min = KPI_START_DATE;
+    if(!dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+    // Clamp to minimum date
+    if(dateEl.value < KPI_START_DATE) dateEl.value = KPI_START_DATE;
+  }
 
   const dateStr = kpiTodayStr();
 
@@ -20762,8 +20769,19 @@ async function renderEngKPI(){
     kpiSaveTargets(all);
   }
 
-  // Get technicians from ctUsers
-  const techs = ctUsers.filter(u => u.role === 'technician');
+  // Get technicians — always fetch fresh from Supabase to pick up newly added engineers
+  let techs = ctUsers.filter(u => u.role === 'technician');
+  try {
+    const freshRows = await sbSelect('ct2_users', 'select=name,role&role=eq.technician&order=name.asc');
+    if(freshRows && Array.isArray(freshRows) && freshRows.length){
+      // Merge: keep any local-only techs, add any Supabase techs not in ctUsers
+      const localNames = new Set(techs.map(t=>t.name));
+      freshRows.forEach(r => {
+        if(!localNames.has(r.name)) techs.push({name:r.name, role:'technician'});
+      });
+      techs.sort((a,b)=>a.name.localeCompare(b.name));
+    }
+  } catch(e){}
 
   // Fetch entries from Supabase, fall back to localStorage
   const sbEntries = await fetchKpiEntriesFromSupabase(dateStr);
@@ -20971,12 +20989,14 @@ async function renderWeeklyKPI(){
   if(!el) return;
   el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div>`;
 
-  // Build last 7 days
+  // Build last 7 days, clamped to KPI_START_DATE
   const days = [];
   for(let i=6; i>=0; i--){
     const d = new Date(); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
+    const ds = d.toISOString().slice(0,10);
+    if(ds >= KPI_START_DATE) days.push(ds);
   }
+  if(!days.length){ el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--text3)">No KPI data available before 12 Nov 2026</div>`; return; }
 
   // Fetch all targets and entries for date range
   const fromDate = days[0];
@@ -20994,7 +21014,15 @@ async function renderWeeklyKPI(){
     if(eRes.ok){ const rows = await eRes.json(); rows.forEach(r=>{ if(!entriesAll[r.date]) entriesAll[r.date]={}; entriesAll[r.date][r.engineer_name]={site:r.site_completed||0,lab:r.lab_completed||0}; }); }
   } catch(e){}
 
-  const techs = ctUsers.filter(u=>u.role==='technician');
+  let techs = ctUsers.filter(u=>u.role==='technician');
+  try {
+    const freshRows = await sbSelect('ct2_users', 'select=name,role&role=eq.technician&order=name.asc');
+    if(freshRows && Array.isArray(freshRows) && freshRows.length){
+      const localNames = new Set(techs.map(t=>t.name));
+      freshRows.forEach(r => { if(!localNames.has(r.name)) techs.push({name:r.name, role:'technician'}); });
+      techs.sort((a,b)=>a.name.localeCompare(b.name));
+    }
+  } catch(e){}
   if(!techs.length){ el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--text3)">No engineers found</div>`; return; }
 
   const dayLabels = days.map(d => new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}));
@@ -21049,12 +21077,14 @@ async function renderWeeklyKPI(){
 }
 
 async function exportTATReport(){
-  // Build last 7 days
+  // Build last 7 days, clamped to KPI_START_DATE
   const days = [];
   for(let i=6; i>=0; i--){
     const d = new Date(); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
+    const ds = d.toISOString().slice(0,10);
+    if(ds >= KPI_START_DATE) days.push(ds);
   }
+  if(!days.length){ showToast('No KPI data available yet'); return; }
   const fromDate = days[0], toDate = days[days.length-1];
 
   showToast('⏳ Preparing TAT Report...');
@@ -21071,7 +21101,15 @@ async function exportTATReport(){
     if(eRes.ok){ const rows = await eRes.json(); rows.forEach(r=>{ if(!entriesAll[r.date]) entriesAll[r.date]={}; entriesAll[r.date][r.engineer_name]={site:r.site_completed||0,lab:r.lab_completed||0}; }); }
   } catch(e){ showToast('❌ Failed to fetch data'); return; }
 
-  const techs = ctUsers.filter(u=>u.role==='technician');
+  let techs = ctUsers.filter(u=>u.role==='technician');
+  try {
+    const freshRows = await sbSelect('ct2_users', 'select=name,role&role=eq.technician&order=name.asc');
+    if(freshRows && Array.isArray(freshRows) && freshRows.length){
+      const localNames = new Set(techs.map(t=>t.name));
+      freshRows.forEach(r => { if(!localNames.has(r.name)) techs.push({name:r.name, role:'technician'}); });
+      techs.sort((a,b)=>a.name.localeCompare(b.name));
+    }
+  } catch(e){}
   const dayLabels = days.map(d=>new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}));
 
   // Build CSV data (Excel-compatible)
@@ -21190,11 +21228,12 @@ async function renderMyKPI(){
     kpiSaveTargets(allTargets);
   }
 
-  // Show last 7 days history
+  // Show last 7 days history, clamped to KPI_START_DATE
   const days = [];
   for(let i=0; i<7; i++){
     const d = new Date(); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
+    const ds = d.toISOString().slice(0,10);
+    if(ds >= KPI_START_DATE) days.push(ds);
   }
 
   const todayEntry  = allEntries[today]?.[name] || { site:0, lab:0 };
